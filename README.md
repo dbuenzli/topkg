@@ -1,13 +1,12 @@
 topkg — The trivial OCaml package builder
 -------------------------------------------------------------------------------
-Release %%VERSION%%
 
-`topkg` is a trivial package builder for distributing OCaml
-software. It provides a mechanism to describe an
-[OPAM](http://opam.ocaml.org/) `$PKG.install` file and make
-corresponding invocations in your build system.
+topkg is a trivial package builder for distributing OCaml software. It
+provides a mechanism to describe an [OPAM](http://opam.ocaml.org/)
+`$PKG.install` file and make corresponding invocations in your build
+system.
 
-`topkg` brings the following advantages:
+topkg brings the following advantages:
 
 1. It frees you from implementing an install procedure in your build
    system: this task is delegated to OPAM or to the `opam-installer`
@@ -23,10 +22,10 @@ corresponding invocations in your build system.
 topkg has been designed with `ocamlbuild` in mind but it should be
 usable with any other build system as long as it is able to understand
 the targets topkg
-[generates](#Map-from-descriptions-to-targets-and-build-artefacts).
+[generates](#map-from-descriptions-to-targets-and-build-artefacts).
 
-topkg is a single OCaml BSD3 licensed [file](pkg/topkg.ml) that you
-add to your repo.
+topkg is a single BSD3 licensed OCaml [script builder](pkg/topkg.ml)
+that you add to your repo.
 
 ## Basic setup 
 
@@ -34,9 +33,10 @@ Your repository and distribution should have the following files, you
 can arrange that differently but it is better to have a single set 
 of conventions across packages.
 
-* `pkg/META`, an `ocamlfind` `META` file.
+* `pkg/META`, an [Findlib](http://projects.camlcity.org/projects/findlib.html) 
+  `META` file.
 * `pkg/build.ml`, the package builder written with `topkg.ml`.
-   See [Package description](#Package-description).
+   See [Package description](#package-description).
 * [`pkg/tokpg.ml`](pkg/topkg.ml), support for writing `build.ml`.
 * `opam`, your package metadata, its dependencies and the instructions
    to build it. Having it at the root of your repository allows OPAM
@@ -86,37 +86,38 @@ install in the corresponding directory (or subdirectories). See the OPAM
 (https://github.com/ocaml/opam/raw/master/doc/dev-manual/dev-manual.pdf)
 section §2.3.3 for more information.
 
-In `topkg`, the package build description file `pkg/build.ml` is
-simply a *manual* specification of every files you want to put in each
-field of the OPAM `.install` file by calling the install field
-functions `Pkg.{lib,bin,doc,...}`. Here is an example for a single
-module library that also installs a command line tool `jsontrip`:
+In topkg, the package build description file `pkg/build.ml` is simply
+a *manual* specification of every file you want to put in each field
+of the OPAM `.install` file by calling install field functions
+[`Pkg.{lib,bin,doc,...}`](pkg/topkg.ml#L47). Here is an example of a
+`pkg/build.ml` description for a single module library that also
+installs a command line tool called `jsontrip`:
 
 ```ocaml
 #!/usr/bin/env ocaml 
 #directory "pkg"
 #use "topkg.ml"
 
-let () = Pkg.describe "jsonm" ~builder:`OCamlbuild [
-  Pkg.lib "pkg/META";
-  Pkg.lib "src/jsonm.mli";
-  Pkg.lib "src/jsonm.cmti";
-  Pkg.lib "src/jsonm.cmi";
-  Pkg.lib "src/jsonm.cma";
-  Pkg.lib "src/jsonm.cmx";
-  Pkg.lib "src/jsonm.a";
-  Pkg.lib "src/jsonm.cmxa";
-  Pkg.lib "src/jsonm.cmxs";
-  Pkg.bin "test/jsontrip.byte";
-  Pkg.bin "test/jsontrip.native";
-  Pkg.doc "README.md"; 
-  Pkg.doc "CHANGES.md";
-  ]
+let () =
+  Pkg.describe "jsonm" ~builder:`OCamlbuild [
+    Pkg.lib "pkg/META";
+    Pkg.lib "src/jsonm.mli";
+    Pkg.lib "src/jsonm.cmti";
+    Pkg.lib "src/jsonm.cmi";
+    Pkg.lib "src/jsonm.cma";
+    Pkg.lib "src/jsonm.cmx";
+    Pkg.lib "src/jsonm.a";
+    Pkg.lib "src/jsonm.cmxa";
+    Pkg.lib "src/jsonm.cmxs";
+    Pkg.bin "test/jsontrip.byte";
+    Pkg.bin "test/jsontrip.native";
+    Pkg.doc "README.md"; 
+    Pkg.doc "CHANGES.md"; ]
 ```
 
 This says that we are declaring a package named `jsonm` which means
 that the generated install file will be `jsonm.install`. It also says
-that we are using ocamlbuild as a build tool and that we want all the
+that we are using `ocamlbuild` as a build tool and that we want all the
 files specified with `Pkg.lib` to be installed the `lib` directory,
 those with `Pkg.bin` in `bin`, those with `Pkg.doc` in `doc` etc.
 
@@ -125,11 +126,11 @@ declaration.
 
 1. The set of files to generate for a library is usually always the 
    same and it's painful to write them down explicitely. This
-   is solved by [extension sets](#Extension-sets).
+   is solved by [extension sets](#extension-sets).
 2. For the binaries, we usually don't want to install both byte and
    native code. We want to install one tool without the `byte` or
    `native` suffix, and the native one if available. This is solved
-   by [auto binaries](#Auto-binaries)
+   by [auto binaries](#auto-binaries).
 
 Using these features the above declaration can be reduced to: 
 
@@ -138,21 +139,21 @@ Using these features the above declaration can be reduced to:
 #directory "pkg"
 #use "topkg.ml"
 
-let () = Pkg.declare "jsonm" ~builder:`OCamlbuild [
-  Pkg.lib "pkg/META";
-  Pkg.lib ~exts:Exts.module_library "src/jsonm";
-  Pkg.bin ~auto:true "test/jsontrip";
-  Pkg.doc "README.md"; 
-  Pkg.doc "CHANGES.md";
-  ]
+let () = 
+  Pkg.declare "jsonm" ~builder:`OCamlbuild [
+    Pkg.lib "pkg/META";
+    Pkg.lib ~exts:Exts.module_library "src/jsonm";
+    Pkg.bin ~auto:true "test/jsontrip";
+    Pkg.doc "README.md"; 
+    Pkg.doc "CHANGES.md"; ]
 ```
 
 Optional builds and installs are handled by declaring boolean keys
-specified on the command line (see [Environment](#Environment)) and
-using the [cond] optional argument of install field functions (see
-[Conditions](#Conditions)). The following example compiles the
-`vgr_pdf` library only if both `uutf` and `otfm` are present and
-`vgr_htmlc` only if `js_of_ocaml` is present:
+specified on the command line (see [Environment](#environment)) and
+using the `cond` optional argument of install field functions (see
+[Conditions](#conditions)). The following example compiles the
+`vgr_pdf` library only if both Uutf and Otfm are present and
+`vgr_htmlc` only if js_of_ocaml is present:
 
 ```ocaml
 #!/usr/bin/env ocaml 
@@ -183,20 +184,20 @@ let () =
 
 The install field functions have an optional `exts` argument. If
 present these extensions are appended to the path given to the
-function. The module (`Exts`)[pkg/topkg.ml#LXXX] defines a few
+function. The module [`Exts`](pkg/topkg.ml#L23) defines a few
 predefined extension sets. For example a module library implemented in
 `src/mylib.ml` can be declared by:
 
 ```ocaml
 Pkg.lib ~exts:Exts.library_module "src/mylib"
 ```
-
-as a shortcut for:
+which is, effectively, a shortcut for:
 
 ```ocaml 
 Pkg.lib "src/mylib.mli";
 Pkg.lib "src/mylib.cmti";
 Pkg.lib "src/mylib.cmi";
+Pkg.lib "src/mylib.cmx";
 Pkg.lib "src/mylib.cma";
 Pkg.lib "src/mylib.a";
 Pkg.lib "src/mylib.cmxa";
@@ -207,7 +208,7 @@ Pkg.lib "src/mylib.cmxs";
 
 For generating an installing native binaries if native code
 compilation is available and byte code binaries if not you can use the
-[auto] optional argument of `Pkg.bin` and `Pkg.sbin`. Using it with
+`auto` optional argument of `Pkg.bin` and `Pkg.sbin`. Using it with
 `true` you can simply specify the binary name prefix. It will use the
 base name as the name of the tool and ask for either a `.native` or
 `.byte` target depending if native compilation is available or not.
@@ -219,14 +220,14 @@ Pkg.bin ~auto:true "src/mybinary"
 ## Conditions
 
 Conditional installation is handled through the optional argument
-`cond` of install field functions. If `cond` is [false] it's neither
+`cond` of install field functions. If `cond` is `false` it's neither
 built nor installed. For example for a library that depends on the
 presence of another:
 
 ```ocaml
 let otherlib = Env.bool "otherlib" 
 ...
-Pkg.lib ~cond:otherlib ~lib "src/mylib"
+Pkg.lib ~cond:otherlib ~exts:Exts.library_module "src/mylib"
 ```
 
 Conditions related to native code and native code dynamic linking 
@@ -252,7 +253,7 @@ key`. To output a sample environment you can invoke the build script with
 
 By default install field functions use the basename of the path given
 to the function as the install name. If you need to rename the build
-artefact or to install to a subdirectory you can use the `dst`
+artefact or install to a subdirectory you can use the `dst`
 optional argument of install field functions. For example for a
 library that needs to be installed in a `subdir` subdirectory of
 `lib` use:
@@ -263,15 +264,16 @@ Pkg.lib ~exts:Exts.library_module ~dst:"subdir/mylib" "src/mylib"
 
 ## Handling cmt and cmti files
 
-Since `ocamlbuild` doesn't handle targets for `.cmt` and `.cmti` files
-at the moment, they are treated specially: they are not built. For 
+Since the OCaml tools generate `.cmt` and `.cmti` files only as a side
+effect they are treated specially: they are not built. For
 `ocamlbuild` you should add this line to your `_tags` file:
 
-    <**/*.{ml,mli}> bin_annot
+    <**/*.{ml,mli}> : bin_annot
     
 this will build them as a side effect of other build invocations. In
-the `.install` file the `cmt` and `cmti` files are prefixed by a ? so
-that if they are not built (pre OCaml 4.01) the install doesn't fail.
+the `.install` file generated by tokpkg the `cmt` and `cmti` files are
+prefixed by a ? so that if they are not built (pre OCaml 4.01 for
+`ocamlbuild`) the install doesn't fail.
 
 ## Verifying the build invocation and .install generation
 
@@ -297,4 +299,4 @@ boolean key.
 Given an invocation `Pkg.{lib,bin,...} "$PATH"`, the system generates
 a target `$PATH` for your build system and expects to find the build
 artefact in `$BUILD/$PATH` where `$BUILD` is the build directory of
-the build tool (`_build` for `ocamlbuild`).
+the build tool (e.g. `_build` for `ocamlbuild`).

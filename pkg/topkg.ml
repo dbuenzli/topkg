@@ -58,8 +58,8 @@ module type Pkg = sig
   val lib : field
   val bin : ?auto:bool -> field 
   (** If [auto] is true (defaults to false) generates 
-      [path ^ ".native"]) if {!Env.native} is [true] and 
-      ([path] ^ ".byte") if {!Env.native} is [false]. *)
+      [path ^ ".native"] if {!Env.native} is [true] and 
+      [path ^ ".byte"] if {!Env.native} is [false]. *)
   val sbin : ?auto:bool -> field (** See {!bin}. *) 
   val toplevel : field
   val share : field
