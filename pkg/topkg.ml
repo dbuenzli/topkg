@@ -31,7 +31,7 @@ module type Exts = sig
   (** [library] is [[".cma"; ".cmxa"; ".cmxs"; ".a"]] *) 
 
   val module_library : string list
-  (** [library_module] is [(interface_opt @ library)]. *)
+  (** [module_library] is [(interface_opt @ library)]. *)
 end
 
 (** Package description. *) 
@@ -249,7 +249,8 @@ module Pkg : Pkg = struct
       | None -> Some (Filename.basename src)
       | Some _ as dst -> dst 
       in
-      if Env.native then (src ^ ".native"), dst else (src ^ ".byte", dst)
+      let src = if Env.native then src ^ ".native" else src ^ ".byte" in
+      src, dst
     in
     mvs ~drop_exts:bin_drops sec ?cond ?dst src 
       
