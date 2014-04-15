@@ -33,7 +33,7 @@ Your repository and distribution should have the following files, you
 can arrange that differently but it is better to have a single set 
 of conventions across packages.
 
-* `pkg/META`, an [Findlib](http://projects.camlcity.org/projects/findlib.html) 
+* `pkg/META`, a [Findlib](http://projects.camlcity.org/projects/findlib.html) 
   `META` file.
 * `pkg/build.ml`, the package builder written with `topkg.ml`.
    See [Package description](#package-description).
