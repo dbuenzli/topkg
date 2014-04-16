@@ -165,7 +165,7 @@ module Pkg : Pkg = struct
     let install = Buffer.create 1871 in
     let exec = Buffer.create 1871 in 
     let rec add_mvs current = function 
-    | (sec, (src, dst)) :: mvs when sec = current -> 
+    | (field, (src, dst)) :: mvs when field = current -> 
         if List.exists (has_suffix src) no_build then 
           Buffer.add_string install (str "\n  \"?%s/%s\" {\"%s\"}" bdir src dst)
         else begin 
@@ -173,10 +173,10 @@ module Pkg : Pkg = struct
           Buffer.add_string install (str "\n  \"%s/%s\" {\"%s\"}" bdir src dst);
         end;
         add_mvs current mvs
-    | (((sec, _) :: _) as mvs) ->
+    | (((field, _) :: _) as mvs) ->
         if current <> "" (* first *) then Buffer.add_string install " ]\n"; 
-        Buffer.add_string install (str "%s: [" sec);
-        add_mvs sec mvs
+        Buffer.add_string install (str "%s: [" field);
+        add_mvs field mvs
     | [] -> ()
     in
     Buffer.add_string exec btool;
@@ -242,7 +242,7 @@ module Pkg : Pkg = struct
   let man = mvs "man" 
       
   let bin_drops = if not Env.native then [ ".native" ] else []
-  let bin_mvs sec ?(auto = false) ?cond ?exts ?dst src = 
+  let bin_mvs field ?(auto = false) ?cond ?exts ?dst src = 
     let src, dst = 
       if not auto then src, dst else 
       let dst = match dst with 
@@ -252,7 +252,7 @@ module Pkg : Pkg = struct
       let src = if Env.native then src ^ ".native" else src ^ ".byte" in
       src, dst
     in
-    mvs ~drop_exts:bin_drops sec ?cond ?dst src 
+    mvs ~drop_exts:bin_drops field ?cond ?dst src 
       
   let bin = bin_mvs "bin"
   let sbin = bin_mvs "sbin"
