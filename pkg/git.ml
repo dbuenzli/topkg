@@ -7,8 +7,7 @@
 
 let () = 
   if Dir.exists ".git" then begin
-    Vars.substitute ~skip:Config.substitute_skip ~vars:Config.vars ~dir:".";
-    match Config.hook_git with
-    | None -> () | Some hook -> Cmd.(exec_ocaml hook |> exit_on_error)
+    Vars.subst ~skip:Config.subst_skip ~vars:Config.vars ~dir:"." &>>= fun () ->
+    Cmd.exec_hook Config.git_hook &>>= fun () -> ()
   end
 

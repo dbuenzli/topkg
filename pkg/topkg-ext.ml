@@ -5,7 +5,9 @@
   ---------------------------------------------------------------------------*)
 
 let ( >>= ) v f = match v with `Ok v -> f v | `Error _ as e -> e  
-let ( |> ) v f = f v
+let ( &>>= ) v f = match v with 
+| `Ok v -> f v | `Error e -> Printf.eprintf "%s: %s" Sys.argv.(0) e; exit 1
+
 type 'a result = [ `Ok of 'a | `Error of string ] 
 
 (** Working with files *) 
@@ -19,12 +21,11 @@ module File : sig
   val write : string -> string -> unit result 
   (** [write file content] writes [contents] to [file]. *) 
 
-  val write_substitute : string -> (string * string) list -> string -> 
-    unit result
-  (** [write_substitute file vars content] writes [contents] to [file] 
-      substituting variables of the form [%%ID%%] by their definition. 
-      The [ID]'s are [List.map fst vars] and their definition content is found 
-      with [List.assoc]. *)
+  val write_subst : string -> (string * string) list -> string -> unit result
+  (** [write_subst file vars content] writes [contents] to [file]
+      substituting variables of the form [%%ID%%] by their definition.
+      The [ID]'s are [List.map fst vars] and their definition content
+      is found with [List.assoc]. *)
 
   val delete : ?maybe:bool -> string -> unit result
   (** [delete maybe file] deletes file [file]. If [maybe] is [true] (defaults
@@ -47,7 +48,7 @@ end = struct
     output_string oc s; close_out oc; `Ok ()
   with Sys_error e -> `Error e
 
-  let write_substitute f vars s = try 
+  let write_subst f vars s = try 
     let oc = open_out f in
     let start = ref 0 in
     let last = ref 0 in 
@@ -98,6 +99,9 @@ module Dir : sig
   val exists : string -> bool
   (** [exists dir] is [true] if directory [dir] exists. *) 
 
+  val change_cwd : string -> unit result 
+  (** [change_cwd dir] changes the current working directory to [dir]. *)
+
   val fold_files_rec : ?skip:string list -> (string -> 'a -> 'a result) -> 
     'a -> string list -> 'a result
   (** [fold_files_rec skip f acc paths] folds [f] over the files 
@@ -105,6 +109,7 @@ module Dir : sig
       element of [skip] are skipped. *)
 end = struct
   let exists dir = Sys.file_exists dir && Sys.is_directory dir
+  let change_cwd dir = try `Ok (Sys.chdir dir) with Sys_error e -> `Error e
   let fold_files_rec ?(skip = []) f acc paths = 
     let is_dir d = try Sys.is_directory d with Sys_error _ -> false in
     let readdir d = try Array.to_list (Sys.readdir d) with Sys_error _ -> [] in
@@ -134,28 +139,24 @@ end
 
 (** Command invocation. *) 
 module Cmd : sig
-  val exit_on_error : 'a result -> 'a
-  (** [exit_on_error r] on [`Error e] prints [e] on stderr and exits 
-      with [1], on [`Ok v] returns [v]. *)
-
   val exec : string -> unit result
   (** [exec cmd] executes [cmd]. *) 
 
-  val exec_ocaml : string -> unit result
-  (** [exec_ocaml args] is [exec ("ocaml " ^ "args")]. *) 
+  val exec_hook : string option -> unit result 
+  (** [exec_hook args] is [exec ("ocaml " ^ "args")] if [args] is some. *)
 
   val read : string -> string result
-  (** [read cmd] executes [cmd] and returns the contents of its
-      stdout. *) 
+  (** [read cmd] executes [cmd] and returns the contents of its stdout. *) 
 end = struct
-  let error msg = Printf.eprintf "%s: %s" Sys.argv.(0) msg; exit 1
-  let exit_on_error r = match r with `Ok v -> v | `Error e -> error e
   let exec cmd =
     let code = Sys.command cmd in 
     if code = 0 then `Ok () else
     `Error (Printf.sprintf "invocation `%s' exited with %d" cmd code)
 
-  let exec_ocaml args = exec (Printf.sprintf "ocaml %s" args)
+  let exec_hook args = match args with 
+  | None -> `Ok () 
+  | Some args -> exec (Printf.sprintf "ocaml %s" args)
+
   let read cmd =
     File.temp () >>= fun file ->
     exec (Printf.sprintf "%s > %s" cmd file) >>= fun () ->
@@ -165,17 +166,27 @@ end
 
 (** Variable substitution. *)
 module Vars : sig
-  val substitute : skip:string list -> vars:(string * string) list -> 
-    dir:string -> unit
-  (** [substitute skip vars dir] substitutes [vars] in all files 
+  val subst : skip:string list -> vars:(string * string) list -> 
+    dir:string -> unit result
+  (** [subst skip vars dir] substitutes [vars] in all files 
       in [dir] except those that are [skip]ped (see {!Dir.fold_files_rec}). *)
+      
+  val get : string -> (string * string) list -> string result 
+  (** [get v] lookup variable [v] in [vars]. Returns an error if [v] is 
+      absent or if it is the empty string. *)
+
 end = struct
-  let substitute ~skip ~vars ~dir =
-    let substitute f () = 
+  let subst ~skip ~vars ~dir =
+    let subst f () = 
       File.read f >>= fun contents -> 
-      File.write_substitute f vars contents >>= fun () -> `Ok ()
+      File.write_subst f vars contents >>= fun () -> `Ok ()
     in
-    Dir.fold_files_rec ~skip substitute () [dir] |> Cmd.exit_on_error
+    Dir.fold_files_rec ~skip subst () [dir]
+
+  let get v vars = 
+    let v = try List.assoc v vars with Not_found -> "" in 
+    if v <> "" then `Ok v else
+    `Error (Printf.sprintf "empty or undefined variable %s in Config.vars" v)
 end
 
 (** Git invocations. *) 
@@ -186,8 +197,7 @@ module Git : sig
       is chopped. *)
 end = struct
   let describe ?(chop_v = false) branch =
-    Cmd.read (Printf.sprintf "git describe %s" branch) |>
-    Cmd.exit_on_error |> fun d ->
+    Cmd.read (Printf.sprintf "git describe %s" branch) &>>= fun d ->
     let len = String.length d in
     if chop_v && len > 0 && d.[0] = 'v' then String.sub d 1 (len - 2) else 
     String.sub d 0 (len - 1) (* remove \n *)
@@ -195,21 +205,30 @@ end
 
 (** Default configuration. *) 
 module Config_default : sig
-  val substitute_skip : string list
-  (** [substitute_skip] is a list of suffixes that are automatically
-      skipped during variable substitution. *) 
+  val subst_skip : string list
+  (** [subst_skip] is a list of suffixes that are automatically
+      skipped during variable substitution. *)
 
   val vars : (string * string) list 
   (** [vars] is the list of variables to substitute, empty. *) 
 
-  val hook_git : string option
-  (** [hook_git] is an ocaml script to invoke after variable substitution 
-      in git builds. *) 
+  val git_hook : string option
+  (** [git_start_hook] is an ocaml script to invoke before a git package 
+      build, after variable substitution occured. *) 
+
+  val distrib_remove : string list
+  (** [distrib_remove] is a list of files to remove before making 
+      the distributino tarball. *) 
+
+  val distrib_hook : string option 
+  (** [distrib_hook] is an ocaml script to invoke before trying 
+      to build the distribution. *)
 end = struct
-  let substitute_skip = 
-    [".git"; ".png"; ".jpeg"; ".otf"; ".ttf"; ".pdf" ]
-  let vars = [] 
-  let hook_git = None
+  let subst_skip = [".git"; ".png"; ".jpeg"; ".otf"; ".ttf"; ".pdf" ]
+  let vars = []
+  let git_hook = None
+  let distrib_remove = [".git"; ".gitignore"; "build"]
+  let distrib_hook = None
 end
 
 
