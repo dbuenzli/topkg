@@ -87,7 +87,7 @@ module Topkg : sig
 end = struct 
 
   (* Parses the command line. The actual cmd execution occurs in the call
-     to Pkg.description. *)
+     to Pkg.describe. *)
 
   let err fmt = 
     let k _ = exit 1 in
