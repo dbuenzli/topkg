@@ -6,7 +6,7 @@
 
 let ( >>= ) v f = match v with `Ok v -> f v | `Error _ as e -> e  
 let ( &>>= ) v f = match v with 
-| `Ok v -> f v | `Error e -> Printf.eprintf "%s: %s" Sys.argv.(0) e; exit 1
+| `Ok v -> f v | `Error e -> Printf.eprintf "%s: %s\n%!" Sys.argv.(0) e; exit 1
 
 type 'a result = [ `Ok of 'a | `Error of string ] 
 
