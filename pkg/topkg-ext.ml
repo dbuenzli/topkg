@@ -224,12 +224,17 @@ module Config_default : sig
   val distrib_hook : string option 
   (** [distrib_hook] is an ocaml script to invoke before trying 
       to build the distribution. *)
+
+  val www_demos : string list 
+  (** [www_demos] is a list of build targets that represent single page
+      js_of_ocaml demo. *)
 end = struct
   let subst_skip = [".git"; ".png"; ".jpeg"; ".otf"; ".ttf"; ".pdf" ]
   let vars = []
   let git_hook = None
   let distrib_remove = [".git"; ".gitignore"; "build"]
   let distrib_hook = None
+  let www_demos = [] 
 end
 
 
