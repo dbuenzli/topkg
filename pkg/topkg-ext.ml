@@ -197,6 +197,7 @@ module Git : sig
       is chopped. *)
 end = struct
   let describe ?(chop_v = false) branch =
+    if not (Dir.exists ".git") then "not-a-git-checkout" else
     Cmd.read (Printf.sprintf "git describe %s" branch) &>>= fun d ->
     let len = String.length d in
     if chop_v && len > 0 && d.[0] = 'v' then String.sub d 1 (len - 2) else 
