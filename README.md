@@ -17,7 +17,7 @@ topkg brings the following advantages:
    description and a build environment explicitely specified on the
    command line.
    
-3. It's a simple approach implemented by a short OCaml script.
+3. It's a simple approach implemented by a short [OCaml script](pkg/topkg.ml).
 
 topkg has been designed with `ocamlbuild` in mind but it should be
 usable with any other build system as long as it is able to understand
