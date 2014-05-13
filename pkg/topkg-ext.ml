@@ -53,7 +53,7 @@ end = struct
     let start = ref 0 in
     let last = ref 0 in 
     let len = String.length s in
-    while (!last < len - 2) do
+    while (!last < len - 4) do
       if not (s.[!last] = '%' && s.[!last + 1] = '%') then incr last else 
       begin 
         let start_subst = !last in
