@@ -141,7 +141,7 @@ Using these features the above declaration can be reduced to:
 #use "topkg.ml"
 
 let () = 
-  Pkg.declare "jsonm" ~builder:`OCamlbuild [
+  Pkg.describe "jsonm" ~builder:`OCamlbuild [
     Pkg.lib "pkg/META";
     Pkg.lib ~exts:Exts.module_library "src/jsonm";
     Pkg.bin ~auto:true "test/jsontrip";
