@@ -36,8 +36,23 @@ end
 
 (** Package description. *)
 module type Pkg = sig
-  type builder = [ `OCamlbuild | `Other of string * string ]
-  (** The type for build tools. Either [`OCamlbuild] or an
+  type arg =
+    [ `OCamlfind
+    | `ClassicDisplay
+    | `PluginTag of string
+    | `NoLinks
+    | `Jobs of int
+    | `Other of string
+    ]
+  (** OCamlbuild args *)
+
+  type builder =
+    [ `OCamlbuild
+    | `OCamlbuildCustom of arg list
+    | `Other of string * string
+    ]
+  (** The type for build tools. Either [`OCamlbuild],
+      [`OCamlbuildCustom custom_args] or an
       [`Other (tool, bdir)] tool [tool] that generates its build artefacts
       in [bdir]. *)
 
@@ -148,7 +163,19 @@ module Exts : Exts = struct
 end
 
 module Pkg : Pkg = struct
-  type builder = [ `OCamlbuild | `Other of string * string ]
+  type arg =
+    [ `OCamlfind
+    | `ClassicDisplay
+    | `PluginTag of string
+    | `NoLinks
+    | `Jobs of int
+    | `Other of string
+    ]
+  type builder =
+    [ `OCamlbuild
+    | `OCamlbuildCustom of arg list
+    | `Other of string * string
+    ]
   type moves = (string * (string * string)) list
   type field = ?cond:bool -> ?exts:string list -> ?dst:string -> string -> moves
 
@@ -257,10 +284,22 @@ module Pkg : Pkg = struct
   let bin = bin_mvs "bin"
   let sbin = bin_mvs "sbin"
 
+  let ocamlbuild_args args =
+    let aux = function
+      | `OCamlfind -> "-use-ocamlfind"
+      | `ClassicDisplay -> "-classic-display"
+      | `PluginTag plugin -> "-plugin-tag " ^ plugin
+      | `NoLinks -> "-no-links"
+      | `Jobs n -> "-j " ^ string_of_int n
+      | `Other args -> args
+    in
+    String.concat " " (List.map aux args)
+
   let describe pkg ~builder mvs =
     let mvs = List.sort compare (List.flatten mvs) in
     let btool, bdir = match builder with
     | `OCamlbuild -> "ocamlbuild -use-ocamlfind -classic-display", "_build"
+    | `OCamlbuildCustom args -> "ocamlbuild " ^ ocamlbuild_args args, "_build"
     | `Other (btool, bdir) -> btool, bdir
     in
     match Topkg.cmd with
