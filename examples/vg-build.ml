@@ -1,4 +1,4 @@
-#!/usr/bin/env ocaml 
+#!/usr/bin/env ocaml
 #directory "pkg";;
 #use "topkg.ml";;
 
@@ -6,7 +6,7 @@ let uutf = Env.bool "uutf"
 let otfm = Env.bool "otfm"
 let jsoo = Env.bool "jsoo"
 let vgr_pdf = uutf && otfm
-let () = 
+let () =
   Pkg.describe "vg" ~builder:`OCamlbuild [
     Pkg.lib "pkg/META";
     Pkg.lib ~exts:Exts.module_library "src/vg";
@@ -20,6 +20,3 @@ let () =
     Pkg.doc "test/min_htmlc.ml";
     Pkg.doc "test/min_pdf.ml";
     Pkg.doc "test/min_svg.ml"; ]
-
-
-

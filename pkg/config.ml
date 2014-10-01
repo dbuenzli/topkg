@@ -2,7 +2,7 @@
 #directory "pkg"
 #use "topkg-ext.ml"
 
-(* Sample configuration file *) 
+(* Sample configuration file *)
 
 module Config = struct
   include Config_default
