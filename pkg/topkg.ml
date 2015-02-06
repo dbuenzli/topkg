@@ -61,6 +61,7 @@ module type Pkg = sig
       [path ^ ".native"] if {!Env.native} is [true] and
       [path ^ ".byte"] if {!Env.native} is [false]. *)
   val sbin : ?auto:bool -> field (** See {!bin}. *)
+  val libexec : ?auto:bool -> field (** See {!bin}. *)
   val toplevel : field
   val share : field
   val share_root : field
@@ -256,6 +257,7 @@ module Pkg : Pkg = struct
 
   let bin = bin_mvs "bin"
   let sbin = bin_mvs "sbin"
+  let libexec = bin_mvs "libexec"
 
   let describe pkg ~builder mvs =
     let mvs = List.sort compare (List.flatten mvs) in
