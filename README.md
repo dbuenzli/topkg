@@ -82,10 +82,10 @@ OPAM.
 An OPAM `$PKG.install` file is a description of a standard UNIX
 install. It has fields for each of the standard directories (`lib`,
 `bin`, `man`, `etc`, etc.). Each of these fields lists the files to
-install in the corresponding directory (or subdirectories). See the OPAM
-[developer manual]
-(https://github.com/ocaml/opam/raw/master/doc/dev-manual/dev-manual.pdf)
-section §2.3.3 for more information.
+install in the corresponding directory (or subdirectories). See the
+`.install` file
+[specification](http://opam.ocaml.org/doc/manual/dev-manual.html#sec25)
+in the OPAM developer manual for more information.
 
 In topkg, the package build description file `pkg/build.ml` is simply
 a *manual* specification of every file you want to put in each field
