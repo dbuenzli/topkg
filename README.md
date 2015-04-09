@@ -312,7 +312,7 @@ version. For installing the script:
 opam pin add topkg http://erratique.ch/repos/topkg.git
 ```
 
-The simply go your repo and type:
+Then simply go your repo and type:
 
 ```
 topkg-update
