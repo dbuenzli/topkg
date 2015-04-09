@@ -28,12 +28,12 @@ module type Exts = sig
   (** [interface_opt] is [".cmx" :: interface] *)
 
   val c_library : string list
-  (** Extension of the native platform library, [".a"] for
-      unices and [".lib"] for win32 *)
+  (** [c_library] is the extension for C libraries, [".a"] for unices
+      and [".lib"] for win32 *)
 
   val c_dll_library : string list
-  (** Extension of the native platform dynamic library,
-      [".so"] for unices and [".dll"] for win32 *)
+  (** [c_dll_library] is the extension for C dynamic libraries [".so"]
+      for unices and [".dll"] for win32 *)
 
   val library : string list
   (** [library] is [[".cma"; ".cmxa"; ".cmxs"] @ c_library] *)
