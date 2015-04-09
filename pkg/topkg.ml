@@ -27,8 +27,16 @@ module type Exts = sig
   val interface_opt : string list
   (** [interface_opt] is [".cmx" :: interface] *)
 
+  val c_library : string list
+  (** Extension of the native platform library, [".a"] for
+      unices and [".lib"] for win32 *)
+
+  val c_dll_library : string list
+  (** Extension of the native platform dynamic library,
+      [".so"] for unices and [".dll"] for win32 *)
+
   val library : string list
-  (** [library] is [[".cma"; ".cmxa"; ".cmxs"; ".a"]] *)
+  (** [library] is [[".cma"; ".cmxa"; ".cmxs"] @ c_library] *)
 
   val module_library : string list
   (** [module_library] is [(interface_opt @ library)]. *)
@@ -144,7 +152,9 @@ end
 module Exts : Exts = struct
   let interface = [".mli"; ".cmi"; ".cmti"]
   let interface_opt = ".cmx" :: interface
-  let library = [".cma"; ".cmxa"; ".cmxs"; ".a"]
+  let c_library = if Sys.win32 then [".lib"] else [".a"]
+  let c_dll_library = if Sys.win32 then [".dll"] else [".so"]
+  let library = [".cma"; ".cmxa"; ".cmxs"] @ c_library
   let module_library = (interface_opt @ library)
 end
 
@@ -229,7 +239,8 @@ module Pkg : Pkg = struct
   let lib =
     let drop_exts =
       if Env.native && not Env.native_dynlink then [ ".cmxs" ] else
-      if not Env.native then [ ".a"; ".cmx"; ".cmxa"; ".cmxs" ] else []
+      if not Env.native then Exts.c_library @ [".cmx"; ".cmxa"; ".cmxs" ]
+      else []
     in
     mvs ~drop_exts "lib"
 
