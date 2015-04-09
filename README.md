@@ -301,3 +301,23 @@ Given an invocation `Pkg.{lib,bin,...} "$PATH"`, the system generates
 a target `$PATH` for your build system and expects to find the build
 artefact in `$BUILD/$PATH` where `$BUILD` is the build directory of
 the build tool (e.g. `_build` for `ocamlbuild`).
+
+## Updating `topkg.ml`
+
+If you are using git [`bin/topkg-update`](bin/topkg-update) is a
+script that automates the process of updating `topkg.ml` to the latest
+version. For installing the script:
+
+```
+opam pin add topkg http://erratique.ch/repos/topkg.git
+```
+
+The simply go your repo and type:
+
+```
+topkg-update
+```
+
+This will make sure you have no staged changes and that `topkg.ml` is not
+modified. If that is the case it will update the script and commit the
+change on the current branch.
