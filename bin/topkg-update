@@ -1,0 +1,28 @@
+#!/bin/sh 
+
+LOC=`pwd`
+
+if [ ! -f "$LOC/pkg/topkg.ml" ]; then
+    echo "The file \`$LOC/pkg/topkg.ml' does not exist."
+    exit 1
+fi
+
+git diff-index --quiet --cached HEAD
+if [ $? -eq 1 ]; then
+    echo "The repository has staged changes. Commit or stash them to proceed."
+    exit 1
+fi
+
+git diff-files --quiet -- $LOC/pkg/topkg.ml
+if [ $? -eq 1 ]; then
+    echo "The file \`$LOC/pkg/topkg.ml' has changes. Discard them to proceed."
+    exit 1
+fi
+
+cp `opam config var topkg:lib`/topkg.ml $LOC/pkg/topkg.ml
+git add $LOC/pkg/topkg.ml
+git commit -a -m "Update topkg support."
+
+
+
+

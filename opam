@@ -1,0 +1,9 @@
+opam-version: "1.2"
+maintainer: "Daniel Bünzli <daniel.buenzl i@erratique.ch>"
+authors: ["Daniel Bünzli <daniel.buenzl i@erratique.ch>"]
+dev-repo: "http://erratique.ch/repos/topkg.git"
+bug-reports: "https://github.com/dbuenzli/topkg/issues"
+tags: [ "distribution" "package" "build" "org:erratique" ]
+license: "BSD3"
+available: [ ocaml-version >= "4.01.0"]
+depends: [ "ocamlfind" ]
