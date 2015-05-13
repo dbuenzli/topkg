@@ -64,6 +64,7 @@ module type Pkg = sig
          [Filename.basename path].} *)
 
   val lib : field
+  val lib_bin : ?auto:bool -> field (** See {!bin}. *)
   val bin : ?auto:bool -> field
   (** If [auto] is true (defaults to false) generates
       [path ^ ".native"] if {!Env.native} is [true] and
@@ -266,6 +267,7 @@ module Pkg : Pkg = struct
     in
     mvs ~drop_exts:bin_drops field ?cond ?dst src
 
+  let lib_bin = bin_mvs "lib"
   let bin = bin_mvs "bin"
   let sbin = bin_mvs "sbin"
   let libexec = bin_mvs "libexec"
