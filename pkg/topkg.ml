@@ -150,10 +150,11 @@ end = struct
 end
 
 module Exts : Exts = struct
+  let win32 = match Sys.os_type with "Win32" -> true | _ -> false
   let interface = [".mli"; ".cmi"; ".cmti"]
   let interface_opt = ".cmx" :: interface
-  let c_library = if Sys.win32 then [".lib"] else [".a"]
-  let c_dll_library = if Sys.win32 then [".dll"] else [".so"]
+  let c_library = if win32 then [".lib"] else [".a"]
+  let c_dll_library = if win32 then [".dll"] else [".so"]
   let library = [".cma"; ".cmxa"; ".cmxs"] @ c_library
   let module_library = (interface_opt @ library)
 end
