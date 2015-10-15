@@ -180,26 +180,25 @@ end
 module Topkg : sig
   val cmd : [`Build | `Explain | `Help ]
   val env : (string * bool) list
-  val err_parse : string -> 'a
-  val err_mdef : string -> 'a
-  val err_miss : string -> 'a
-  val err_file : string -> string -> 'a
+  val err_parse : string -> unit
+  val err_mdef : string -> unit
+  val err_miss : string -> unit
+  val err_file : string -> string -> unit
   val warn_unused : string -> unit
 end = struct
 
   (* Parses the command line. The actual cmd execution occurs in the call
      to Pkg.describe. *)
 
-  let err fmt =
-    let k _ = exit 1 in
+  let err ?(stop = true) fmt =
+    let k _ = if stop then exit 1 else () in
     Format.kfprintf k Format.err_formatter ("%s: " ^^ fmt ^^ "@.") Sys.argv.(0)
 
   let err_parse a = err "argument `%s' is not of the form key=(true|false)" a
   let err_mdef a = err "bool `%s' is defined more than once" a
-  let err_miss a = err "argument `%s=(true|false)' is missing" a
   let err_file f e = err "%s: %s" f e
-  let warn_unused k =
-    Format.eprintf "%s: warning: environment key `%s` unused.@." Sys.argv.(0) k
+  let err_miss a = err ~stop:false "argument `%s=(true|false)' is missing" a
+  let warn_unused k = err ~stop:false "warning: environment key `%s` unused" k
 
   let cmd, env =
     let rec parse_env acc = function                            (* not t.r. *)
@@ -211,10 +210,10 @@ end = struct
           let bool = bool_of_string (String.sub arg (eq + 1) (len - eq - 1)) in
           let key = String.sub arg 0 eq in
           if key = "" then raise Exit else
-          try ignore (List.assoc key acc); err_mdef key with
+          try ignore (List.assoc key acc); err_mdef key; [] with
           | Not_found -> parse_env ((key, bool) :: acc) args
         with
-        | Invalid_argument _ | Not_found | Exit -> err_parse arg
+        | Invalid_argument _ | Not_found | Exit -> err_parse arg; []
         end
     | [] -> acc
     in
@@ -227,18 +226,23 @@ end
 module Env : sig
   include Env
   val get : unit -> (string * bool) list
+  val error : unit -> bool
 end = struct
+  let error = ref false
   let env = ref []
   let get () = !env
   let add_bool key b = env := (key, b) :: !env
   let bool key =
     let b = try List.assoc key Topkg.env with
-    | Not_found -> if Topkg.cmd = `Build then Topkg.err_miss key else true
+    | Not_found ->
+        if Topkg.cmd = `Build then (error := true; Topkg.err_miss key; true)
+        else true
     in
     add_bool key b; b
 
   let native = bool "native"
   let native_dynlink = bool "native-dynlink"
+  let error () = !error
 end
 
 module Exts (* : Exts *) = struct
@@ -405,10 +409,11 @@ module Pkg : Pkg = struct
     OCaml_config.ccomp config
 
   let describe pkg ~builder mvs =
+    if Env.error () then (pr_help (); exit 1) else
     let mvs = List.sort compare (List.flatten mvs) in
     let btool, bdir = match builder with
     | `OCamlbuild args ->
-        let args = "-use-ocamlfind" :: "-classic_display" :: args in
+        let args = "-use-ocamlfind" :: "-classic-display" :: args in
         str "ocamlbuild %s" (String.concat " " args), "_build"
     | `OCamlbuild_no_ocamlfind args ->
         str "ocamlbuild %s" (String.concat " " args), "_build"
