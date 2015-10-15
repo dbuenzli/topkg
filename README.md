@@ -100,7 +100,7 @@ installs a command line tool called `jsontrip`:
 #use "topkg.ml"
 
 let () =
-  Pkg.describe "jsonm" ~builder:`OCamlbuild [
+  Pkg.describe "jsonm" ~builder:(`OCamlbuild []) [
     Pkg.lib "pkg/META";
     Pkg.lib "src/jsonm.mli";
     Pkg.lib "src/jsonm.cmti";
@@ -141,7 +141,7 @@ Using these features the above declaration can be reduced to:
 #use "topkg.ml"
 
 let () = 
-  Pkg.describe "jsonm" ~builder:`OCamlbuild [
+  Pkg.describe "jsonm" ~builder:(`OCamlbuild []) [
     Pkg.lib "pkg/META";
     Pkg.lib ~exts:Exts.module_library "src/jsonm";
     Pkg.bin ~auto:true "test/jsontrip";
@@ -166,7 +166,7 @@ let otfm = Env.bool "otfm"
 let jsoo = Env.bool "jsoo"
 let vgr_pdf = uutf && otfm
 let () = 
-  Pkg.describe "vg" ~builder:`OCamlbuild [
+  Pkg.describe "vg" ~builder:(`OCamlbuild []) [
     Pkg.lib "pkg/META";
     Pkg.lib ~exts:Exts.module_library "src/vg";
     Pkg.lib ~exts:Exts.module_library "src/vgr_svg";

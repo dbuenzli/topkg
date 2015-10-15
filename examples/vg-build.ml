@@ -7,7 +7,7 @@ let otfm = Env.bool "otfm"
 let jsoo = Env.bool "jsoo"
 let vgr_pdf = uutf && otfm
 let () =
-  Pkg.describe "vg" ~builder:`OCamlbuild [
+  Pkg.describe "vg" ~builder:(`OCamlbuild []) [
     Pkg.lib "pkg/META";
     Pkg.lib ~exts:Exts.module_library "src/vg";
     Pkg.lib ~exts:Exts.module_library "src/vgr_svg";
