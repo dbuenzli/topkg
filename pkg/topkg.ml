@@ -46,7 +46,7 @@ module type Exts = sig
   (** [module_library] is [(interface_opt @ library)]. *)
 
   val exe : ext list
-  (** [exe] is the extension for C libraries. This is determined from
+  (** [exe] is the extension for executables. This is determined from
       [ocamlc -config]. *)
 
   val exts : string list -> ext list
