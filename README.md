@@ -190,7 +190,7 @@ predefined extension sets. For example a module library implemented in
 `src/mylib.ml` can be declared by:
 
 ```ocaml
-Pkg.lib ~exts:Exts.library_module "src/mylib"
+Pkg.lib ~exts:Exts.module_library "src/mylib"
 ```
 which is, effectively, a shortcut for:
 
@@ -228,7 +228,7 @@ presence of another:
 ```ocaml
 let otherlib = Env.bool "otherlib" 
 ...
-Pkg.lib ~cond:otherlib ~exts:Exts.library_module "src/mylib"
+Pkg.lib ~cond:otherlib ~exts:Exts.module_library "src/mylib"
 ```
 
 Conditions related to native code and native code dynamic linking 
@@ -260,7 +260,7 @@ library that needs to be installed in a `subdir` subdirectory of
 `lib` use:
 
 ```
-Pkg.lib ~exts:Exts.library_module ~dst:"subdir/mylib" "src/mylib"
+Pkg.lib ~exts:Exts.module_library ~dst:"subdir/mylib" "src/mylib"
 ```
 
 ## Handling cmt and cmti files
