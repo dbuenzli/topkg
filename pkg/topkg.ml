@@ -74,12 +74,16 @@ module type Pkg = sig
   type moves
   (** The type for install moves. *)
 
-  type field = ?cond:bool ->
+  type field =
+    ?built:bool -> ?cond:bool ->
     ?exts:[`Ext of string | `Obj | `Lib | `Dll | `Exe] list -> ?dst:string ->
     string -> moves
   (** The type for field install functions. A call
       [field cond exts dst path] generates install moves as follows:
       {ul
+      {- If [built] is [true] (defaults), [path] is looked up relative
+         to the build directory rather than the root directory of the
+         distribution.}
       {- If [cond] is [false] (defaults to [true]), no move is generated.}
       {- If [exts] is present, generates a move for each path in
          the list [List.map (fun e -> path ^ e) exts].}
@@ -274,9 +278,10 @@ module Pkg : Pkg = struct
   | `Other of string * string ]
 
   type file = string * Exts.ext
-  type moves = (string * (file * file)) list
+  type moves = (string * (bool * file * file)) list
   type field =
-    ?cond:bool -> ?exts:Exts.ext list -> ?dst:string -> string -> moves
+    ?built:bool -> ?cond:bool -> ?exts:Exts.ext list ->
+    ?dst:string -> string -> moves
 
   let to_file s = match String.cut ~rev:true s ~at:'.' with
   | None -> s, `Ext ""
@@ -301,14 +306,15 @@ module Pkg : Pkg = struct
       str "%s%s" n (ext_to_string ext)
     in
     let rec add_mvs current = function
-    | (field, (src, dst)) :: mvs when field = current ->
+    | (field, (built, src, dst)) :: mvs when field = current ->
         let src = file_to_str ~target:true src in
         let dst = file_to_str dst in
+        let bdir = if built then str "%s/" bdir else "" in
         if List.exists (Filename.check_suffix src) no_build then
-          Buffer.add_string install (str "\n  \"?%s/%s\" {\"%s\"}" bdir src dst)
+          Buffer.add_string install (str "\n  \"?%s%s\" {\"%s\"}" bdir src dst)
         else begin
-          Buffer.add_string exec (str "%s%s" exec_sep src);
-          Buffer.add_string install (str "\n  \"%s/%s\" {\"%s\"}" bdir src dst);
+          if built then Buffer.add_string exec (str "%s%s" exec_sep src);
+          Buffer.add_string install (str "\n  \"%s%s\" {\"%s\"}" bdir src dst);
         end;
         add_mvs current mvs
     | (((field, _) :: _) as mvs) ->
@@ -357,9 +363,12 @@ module Pkg : Pkg = struct
       output_string oc install; flush oc; close_out oc
     with Sys_error e -> Topkg.err_file install_file e
 
-  let mvs ?(drop_exts = []) field ?(cond = true) ?(exts = []) ?dst src =
+  let mvs
+      ?(drop_exts = []) field ?(built = true) ?(cond = true) ?(exts = [])
+      ?dst src
+    =
     if not cond then [] else
-    let mv src dst = (field, (src, dst)) in
+    let mv src dst = (field, (built, src, dst)) in
     let expand exts s d = List.map (fun e -> mv (s, e) (d, e)) exts in
     let dst = match dst with None -> Filename.basename src | Some dst -> dst in
     let files =
@@ -367,7 +376,7 @@ module Pkg : Pkg = struct
       expand exts src dst
     in
     let has_ext (_, ext) ext' = ext = ext' in
-    let keep (_, (src, _)) = not (List.exists (has_ext src) drop_exts) in
+    let keep (_, (_, src, _)) = not (List.exists (has_ext src) drop_exts) in
     List.find_all keep files
 
   let lib =
@@ -388,7 +397,7 @@ module Pkg : Pkg = struct
   let man = mvs "man"
 
   let bin_drops = if not Env.native then Exts.ext ".native" else []
-  let bin_mvs field ?(auto = false) ?cond ?(exts = Exts.exe) ?dst src =
+  let bin_mvs field ?(auto = false) ?built ?cond ?(exts = Exts.exe) ?dst src =
     let src, dst =
       if not auto then src, dst else
       let dst = match dst with
@@ -398,7 +407,7 @@ module Pkg : Pkg = struct
       let src = if Env.native then src ^ ".native" else src ^ ".byte" in
       src, dst
     in
-    mvs ~drop_exts:bin_drops field ?cond ~exts ?dst  src
+    mvs ~drop_exts:bin_drops field ?built ?cond ~exts ?dst  src
 
   let bin = bin_mvs "bin"
   let sbin = bin_mvs "sbin"
