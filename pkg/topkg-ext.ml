@@ -171,6 +171,13 @@ module Vars : sig
   (** [subst skip vars dir] substitutes [vars] in all files
       in [dir] except those that are [skip]ped (see {!Dir.fold_files_rec}). *)
 
+  val subst_file : skip:string list -> vars:(string * string) list ->
+    ?dest:string -> string -> unit result
+  (** [subst_file ~skip ~vars file ~dest] substitutes [vars] in file
+      [file], except those that are [skip]ped (see {!Dir.fold_files_rec}).
+      If the optional parameter [dest] is present, the result is written
+      to [dest], or otherwise to [file]. *)
+
   val get : string -> (string * string) list -> string result
   (** [get v] lookup variable [v] in [vars]. Returns an error if [v] is
       absent or if it is the empty string. *)
@@ -182,6 +189,14 @@ end = struct
       File.write_subst f vars contents >>= fun () -> `Ok ()
     in
     Dir.fold_files_rec ~skip subst () [dir]
+
+  let subst_file ~skip ~vars ?dest file =
+    let dest = match dest with
+      | None -> file
+      | Some dest -> dest in
+    File.read file >>= fun contents ->
+    File.write_subst dest vars contents >>= fun () ->
+    `Ok ()
 
   let get v vars =
     let v = try List.assoc v vars with Not_found -> "" in
