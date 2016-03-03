@@ -1,6 +1,0 @@
-lib:
-[ "pkg/topkg.ml" {"topkg.ml"} ]
-
-bin:
-[ "bin/topkg-update" { "topkg-update" } ]
-

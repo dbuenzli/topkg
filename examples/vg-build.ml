@@ -1,6 +1,7 @@
 #!/usr/bin/env ocaml
-#directory "pkg";;
-#use "topkg.ml";;
+#use "topfind"
+#require "topkg"
+open Topkg
 
 let uutf = Env.bool "uutf"
 let otfm = Env.bool "otfm"

@@ -1,0 +1,7 @@
+description = "The trivial OCaml package builder"
+version = "%%VERSION%%"
+
+archive(byte) = "topkg.cma"
+archive(byte, plugin) = "topkg.cma"
+archive(native) = "topkg.cmxa"
+archive(native, plugin) = "topkg.cmxs"

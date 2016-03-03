@@ -1,121 +1,10 @@
 (*---------------------------------------------------------------------------
-   Copyright (c) 2014 Daniel C. Bünzli. All rights reserved.
-   Distributed under the BSD3 license, see license at the end of the file.
-   %%NAME%% release %%VERSION%%
+   Copyright (c) 2016 Daniel C. Bünzli. All rights reserved.
+   Distributed under the ISC license, see terms at the end of the file.
+   %%NAME%% v%%VERSION%%
   ---------------------------------------------------------------------------*)
 
-(* Public api *)
-
-(** Build environment access *)
-module type Env = sig
-  val bool : string -> bool
-  (** [bool key] declares [key] as being a boolean key in the environment.
-      Specifing key=(true|false) on the command line becomes mandatory. *)
-
-  val native : bool
-  (** [native] is [bool "native"]. *)
-
-  val native_dynlink : bool
-  (** [native_dylink] is [bool "native-dynlink"] *)
-end
-
-(** Exts defines sets of file extensions. *)
-module type Exts = sig
-
-  type ext = [`Ext of string | `Obj | `Lib | `Dll | `Exe]
-  (** The type for extensions. *)
-
-  val interface : ext list
-  (** [interface] is [[".mli"; ".cmi"; ".cmti"]] *)
-
-  val interface_opt : ext list
-  (** [interface_opt] is [".cmx" :: interface] *)
-
-  val c_library : ext list
-  (** [c_library] is the extension for C libraries. This is determined
-      from [ocamlc -config]. *)
-
-  val c_dll_library : ext list
-  (** [c_dll_library] is the extension for C dynamic libraries. This
-      is determined from [ocamlc -config]. *)
-
-  val library : ext list
-  (** [library] is [[".cma"; ".cmxa"; ".cmxs"] @ c_library] *)
-
-  val module_library : ext list
-  (** [module_library] is [(interface_opt @ library)]. *)
-
-  val exe : ext list
-  (** [exe] is the extension for executables. This is determined from
-      [ocamlc -config]. *)
-
-  val exts : string list -> ext list
-  (** [exts sl] is [sl] as a list of extensions. *)
-
-  val ext : string -> ext list
-  (** [ext s] is [s] as a list of extensions. *)
-end
-
-(** Package description. *)
-module type Pkg = sig
-  type builder =
-  [ `OCamlbuild of string list
-  | `OCamlbuild_no_ocamlfind of string list
-  | `Other of string * string ]
-  (** The type for build tools.
-      {ul
-      {- [`OCamlbuild args], [ocamlbuild] is invoked with `args` and
-         `-use-ocamlfind`.}
-      {- [`OCamlbuild_no_ocamlfind args], [ocamlbuild] is invoked with
-         [args]}
-      {- [`Other (tool, bdir)], tool [tool] is invoked that generates
-         its build artefacts in [bdir].}} *)
-
-  type moves
-  (** The type for install moves. *)
-
-  type field =
-    ?built:bool -> ?cond:bool ->
-    ?exts:[`Ext of string | `Obj | `Lib | `Dll | `Exe] list -> ?dst:string ->
-    string -> moves
-  (** The type for field install functions. A call
-      [field cond exts dst path] generates install moves as follows:
-      {ul
-      {- If [built] is [true] (defaults), [path] is looked up relative
-         to the build directory rather than the root directory of the
-         distribution.}
-      {- If [cond] is [false] (defaults to [true]), no move is generated.}
-      {- If [exts] is present, generates a move for each path in
-         the list [List.map (fun e -> path ^ e) exts].}
-      {- If [dst] is present this path is used as the move destination
-         (allows to install in subdirectories). If absent [dst] is
-         [Filename.basename path].} *)
-
-  val lib : field
-  val bin : ?auto:bool -> field
-  (** If [auto] is true (defaults to false) generates
-      [path ^ ".native"] if {!Env.native} is [true] and
-      [path ^ ".byte"] if {!Env.native} is [false]. If
-      [auto] is true it also adds {!Ext.exe} to the destination. *)
-
-  val sbin : ?auto:bool -> field (** See {!bin}. *)
-  val libexec : ?auto:bool -> field (** See {!bin}. *)
-  val toplevel : field
-  val share : field
-  val share_root : field
-  val etc : field
-  val doc : field
-  val misc : field
-  val stublibs : field
-  val man : field
-  val describe : string -> builder:builder -> moves list -> unit
-  (** [describe name builder moves] describes a package named [name] with
-      builder [builder] and install moves [moves]. *)
-end
-
-(* Implementation *)
-
-let str = Printf.sprintf
+let strf = Printf.sprintf
 
 module String = struct
   include String
@@ -150,9 +39,9 @@ end = struct
 
   let read ~ocamlc = try
     let tmpf = tmp_file () in
-    let cmd = str "%s -config > %s" ocamlc (Filename.quote tmpf) in
+    let cmd = strf "%s -config > %s" ocamlc (Filename.quote tmpf) in
     let ret = Sys.command cmd in
-    if ret <> 0 then failwith (str "exec `%s' exited with %d" cmd ret) else
+    if ret <> 0 then failwith (strf "exec `%s' exited with %d" cmd ret) else
     let ic = open_in tmpf in
     try
       let rec loop acc = try match String.cut ~at:':' (input_line ic) with
@@ -227,11 +116,7 @@ end = struct
     | args -> `Build, parse_env [] args
 end
 
-module Env : sig
-  include Env
-  val get : unit -> (string * bool) list
-  val error : unit -> bool
-end = struct
+module Env = struct
   let error = ref false
   let env = ref []
   let get () = !env
@@ -249,7 +134,7 @@ end = struct
   let error () = !error
 end
 
-module Exts (* : Exts *) = struct
+module Exts = struct
   type ext = [`Ext of string | `Obj | `Lib | `Dll | `Exe]
   let interface = [`Ext ".mli"; `Ext ".cmi"; `Ext ".cmti"]
   let interface_opt = `Ext ".cmx" :: interface
@@ -271,7 +156,7 @@ module Exts (* : Exts *) = struct
     | `Other ->    r [`Obj, ".o";   `Lib, ".a";   `Dll, ".so";  `Exe, ""    ]
 end
 
-module Pkg : Pkg = struct
+module Pkg = struct
   type builder =
   [ `OCamlbuild of string list
   | `OCamlbuild_no_ocamlfind of string list
@@ -285,7 +170,7 @@ module Pkg : Pkg = struct
 
   let to_file s = match String.cut ~rev:true s ~at:'.' with
   | None -> s, `Ext ""
-  | Some (name, ext) -> name, `Ext (str ".%s" ext)
+  | Some (name, ext) -> name, `Ext (strf ".%s" ext)
 
   let warn_unused () =
     let keys = List.map fst Topkg.env in
@@ -303,23 +188,23 @@ module Pkg : Pkg = struct
       | `Exe when target -> `Ext ""
       | _ -> ext
       in
-      str "%s%s" n (ext_to_string ext)
+      strf "%s%s" n (ext_to_string ext)
     in
     let rec add_mvs current = function
     | (field, (built, src, dst)) :: mvs when field = current ->
         let src = file_to_str ~target:true src in
         let dst = file_to_str dst in
-        let bdir = if built then str "%s/" bdir else "" in
+        let bdir = if built then strf "%s/" bdir else "" in
         if List.exists (Filename.check_suffix src) no_build then
-          Buffer.add_string install (str "\n  \"?%s%s\" {\"%s\"}" bdir src dst)
+          Buffer.add_string install (strf "\n  \"?%s%s\" {\"%s\"}" bdir src dst)
         else begin
-          if built then Buffer.add_string exec (str "%s%s" exec_sep src);
-          Buffer.add_string install (str "\n  \"%s%s\" {\"%s\"}" bdir src dst);
+          if built then Buffer.add_string exec (strf "%s%s" exec_sep src);
+          Buffer.add_string install (strf "\n  \"%s%s\" {\"%s\"}" bdir src dst);
         end;
         add_mvs current mvs
     | (((field, _) :: _) as mvs) ->
         if current <> "" (* first *) then Buffer.add_string install " ]\n";
-        Buffer.add_string install (str "%s: [" field);
+        Buffer.add_string install (strf "%s: [" field);
         add_mvs field mvs
     | [] -> ()
     in
@@ -430,9 +315,9 @@ module Pkg : Pkg = struct
     let btool, bdir = match builder with
     | `OCamlbuild args ->
         let args = "-use-ocamlfind" :: "-classic-display" :: args in
-        str "ocamlbuild %s" (String.concat " " args), "_build"
+        strf "ocamlbuild %s" (String.concat " " args), "_build"
     | `OCamlbuild_no_ocamlfind args ->
-        str "ocamlbuild %s" (String.concat " " args), "_build"
+        strf "ocamlbuild %s" (String.concat " " args), "_build"
     | `Other (btool, bdir) -> btool, bdir
     in
     let ccomp = get_ccomp builder in
@@ -443,34 +328,17 @@ module Pkg : Pkg = struct
 end
 
 (*---------------------------------------------------------------------------
-   Copyright (c) 2014 Daniel C. Bünzli.
-   All rights reserved.
+   Copyright (c) 2016 Daniel C. Bünzli
 
-   Redistribution and use in source and binary forms, with or without
-   modification, are permitted provided that the following conditions
-   are met:
+   Permission to use, copy, modify, and/or distribute this software for any
+   purpose with or without fee is hereby granted, provided that the above
+   copyright notice and this permission notice appear in all copies.
 
-   1. Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-
-   2. Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-
-   3. Neither the name of Daniel C. Bünzli nor the names of
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-   A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-   OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-   SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-   LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-   THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+   WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+   MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+   ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+   WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+   ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   ---------------------------------------------------------------------------*)

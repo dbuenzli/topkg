@@ -1,2 +1,4 @@
-SRC pkg
-SRC examples
+PKG bytes result uchar bos bos.setup
+S src
+S test
+B _build/**

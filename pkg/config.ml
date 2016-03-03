@@ -2,12 +2,10 @@
 #directory "pkg"
 #use "topkg-ext.ml"
 
-(* Sample configuration file *)
-
 module Config = struct
   include Config_default
   let vars =
-    [ "NAME", "pkg";
+    [ "NAME", "topkg";
       "VERSION", Git.describe ~chop_v:true "master";
-      "MAINTAINER", "someone\\@example.org>" ]
+      "PKG_WWW", "http://erratique.ch/software/topkg" ]
 end
