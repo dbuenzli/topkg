@@ -1,4 +1,4 @@
-PKG bytes result uchar bos bos.setup
+PKG bytes result rresult astring fmt fpath logs bos cmdliner opam-lib
 S src
 S test
 B _build/**

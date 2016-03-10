@@ -1,0 +1,53 @@
+(*---------------------------------------------------------------------------
+   Copyright (c) 2016 Daniel C. Bünzli. All rights reserved.
+   Distributed under the ISC license, see terms at the end of the file.
+   %%NAME%% %%VERSION%%
+  ---------------------------------------------------------------------------*)
+
+type t = string
+
+let dir_sep_prefix s =
+  Topkg_string.is_prefix Filename.dir_sep s ||
+  (String.length s > 0 && s.[0] = '/')
+
+let dir_sep_suffix s =
+  Topkg_string.is_suffix Filename.dir_sep s ||
+  (String.length s > 0 && s.[String.length s - 1] = '/')
+
+let append =
+  fun p q -> match p with
+  | "" -> q
+  | p ->
+      match q with
+      | "" -> p
+      | q ->
+          if dir_sep_prefix q then q else
+          if dir_sep_suffix p then (p ^ q) else
+          (p ^ Filename.dir_sep ^ q)
+
+let ( // ) = append
+
+let ext s =
+  let max = String.length s - 1 in
+  let rec loop s i =
+    if i < 0 then "" else
+    if s.[i] = '.' then Topkg_string.with_index_range ~first:i s else
+    loop s (i - 1)
+  in
+  loop s max
+
+(*---------------------------------------------------------------------------
+   Copyright (c) 2016 Daniel C. Bünzli
+
+   Permission to use, copy, modify, and/or distribute this software for any
+   purpose with or without fee is hereby granted, provided that the above
+   copyright notice and this permission notice appear in all copies.
+
+   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+   WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+   MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+   ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+   WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+   ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  ---------------------------------------------------------------------------*)

@@ -10,12 +10,16 @@ OCAMLBUILD=${OCAMLBUILD:="ocamlbuild -use-ocamlfind -classic-display \
 action ()
 {
     case $1 in
-        default)    action lib-native ;;
-        lib-byte)   $OCAMLBUILD topkg.cma ;;
-        lib-native) $OCAMLBUILD topkg.cmxa ;;
+        default)    action lib-native; action bin-native ;;
+        bin-byte)   $OCAMLBUILD topkg_bin.byte
+                    $OCAMLBUILD toy_github_delegate.byte ;;
+        bin-native) $OCAMLBUILD topkg_bin.native
+                    $OCAMLBUILD toy_github_delegate.native ;;
+        lib-byte)   $OCAMLBUILD topkg.cma topkg_care.cma ;;
+        lib-native) $OCAMLBUILD topkg.cmxa topkg_care.cmxa ;;
         test|tests) $OCAMLBUILD test/tests.otarget ;;
-        doc)        shift; pkg-doc $* doc/dev-api.docdir ;;
-        api-doc)    shift; pkg-doc $* doc/api.docdir ;;
+        doc)        shift; topkg doc --dev $*;;
+        api-doc)    shift; topkg doc $* ;;
         clean)      $OCAMLBUILD -clean ;;
         *)          $OCAMLBUILD $* ;;
     esac
