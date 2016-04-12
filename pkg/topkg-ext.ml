@@ -37,7 +37,7 @@ module File : sig
 end = struct
   let exists = Sys.file_exists
   let read file = try
-    let ic = open_in file in
+    let ic = open_in_bin file in
     let len = in_channel_length ic in
     let s = String.create len in
     really_input ic s 0 len; close_in ic; `Ok s
