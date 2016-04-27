@@ -46,18 +46,22 @@ let level_of_string = function
 | l -> R.error_msgf "%S: unknown log level" l
 
 type 'a msgf =
-  (('a, Format.formatter, unit) Pervasives.format -> 'a) -> unit
+  (?header:string ->
+   ('a, Format.formatter, unit) Pervasives.format -> 'a) -> unit
 
 let _err_count = ref 0
 let err_count () = !_err_count
 
-let pp_level_header ppf l = Format.pp_print_string ppf begin match l with
-| App -> ""
-| Error -> "[ERROR] "
-| Warning -> "[WARNING] "
-| Info -> "[INFO] "
-| Debug -> "[DEBUG] "
-end
+let pp_level_header ppf (h,l) = match h with
+| Some h -> Format.fprintf ppf "[%s] " h
+| None ->
+    Format.pp_print_string ppf begin match l with
+    | App -> ""
+    | Error -> "[ERROR] "
+    | Warning -> "[WARNING] "
+    | Info -> "[INFO] "
+    | Debug -> "[DEBUG] "
+    end
 
 let msg level msgf = match !_level with
 | None -> ()
@@ -65,8 +69,9 @@ let msg level msgf = match !_level with
 | Some _ ->
     if level = Error then incr _err_count;
     msgf @@
-    (fun fmt ->
-       Format.eprintf ("%s: %a@[" ^^ fmt ^^ "@]@.") exec pp_level_header level)
+    (fun ?header fmt ->
+       Format.eprintf ("%s: %a@[" ^^ fmt ^^ "@]@.")
+         exec pp_level_header (header, level))
 
 let app msgf = msg App msgf
 let err msgf = msg Error msgf

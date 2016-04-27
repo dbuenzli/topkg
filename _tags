@@ -7,10 +7,8 @@ true : bin_annot, safe_string, package(bytes), package(result)
 
 <src-{care,bin}> : include
 <src-{care,bin}/*> : package(opam-lib), package(cmdliner), \
-  package(astring), package(rresult), package(fpath), \
-  package(fmt), package(fmt.tty), package(fmt.cli), \
-  package(logs), package(logs.fmt), package(logs.cli), \
-  package(bos), package(bos.setup)
+                     package(fmt.cli), package(logs.cli), \
+                     package(bos.setup)
 
 <test> : include
 <support> : include

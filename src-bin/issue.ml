@@ -4,9 +4,7 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-open Rresult
-open Astring
-open Bos
+open Bos_setup
 
 let get_id = function
 | Some id -> Ok id
@@ -23,7 +21,7 @@ let get_issue_msg ~info = function
     in
     OS.File.tmp "topkg-issue-msg-%s"
     >>= fun f -> OS.File.write f info
-    >>= fun () -> Topkg_care.Editor.edit_file f
+    >>= fun () -> Topkg_care.Text.edit_file f
     >>= function
     | 0 ->
         OS.File.read f >>= fun m ->
@@ -38,10 +36,10 @@ let get_issue_msg ~info = function
 
 (* Actions *)
 
-let issue_show ~del ~id =
-  get_id id >>= fun id -> Topkg_care.Delegate.issue_show ~del ~id
+let issue_show pkg ~id =
+  get_id id >>= fun id -> Topkg_care.Delegate.issue_show pkg ~id
 
-let issue_open ~del msg =
+let issue_open pkg msg =
   let open_info =
     "\n\
      # Please enter an issue description. The first non-blank line will be\n\
@@ -51,15 +49,15 @@ let issue_open ~del msg =
   get_issue_msg ~info:open_info msg >>= function
   | None ->
       Logs.app (fun m -> m "Open issue aborted due to empty issue message.");
-      Ok 1;
+      Ok ();
   | Some lines ->
       let title, body = match lines with
       | title :: body -> title, String.(trim @@ concat ~sep:"\n" body)
       | [] -> assert false
       in
-      Topkg_care.Delegate.issue_open ~del ~title ~body
+      Topkg_care.Delegate.issue_open pkg ~title ~body
 
-let issue_close ~del ~id msg =
+let issue_close pkg ~id msg =
   let close_info =
     "\n\
      # Please enter a closing message. Lines starting with '#' will\n\
@@ -71,27 +69,23 @@ let issue_close ~del ~id msg =
   | None ->
       Logs.app
         (fun m -> m "Close issue %s aborted due to empty issue message." id);
-      Ok 1
+      Ok ()
   | Some lines ->
       let msg = String.(trim @@ concat ~sep:"\n" lines) in
-      Topkg_care.Delegate.issue_close ~del ~id ~msg
+      Topkg_care.Delegate.issue_close pkg ~id ~msg
 
 (* Command *)
 
-let issue () pkg_file opam del action id msg =
+let issue () pkg_file opam delegate action id msg =
   begin
-    Topkg_care.Delegate.find ~pkg_file ~opam ~del
-    >>= function
-    | None ->
-        Logs.err (fun m -> m "%a" Topkg_care.Delegate.pp_not_found ()); Ok 1
-    | Some del ->
-        let ret = match action with
-        | `List -> Topkg_care.Delegate.issue_list ~del
-        | `Show -> issue_show ~del ~id
-        | `Open -> issue_open ~del msg
-        | `Close -> issue_close ~del ~id msg
-        in
-        ret >>= fun ret -> Ok ret
+    let pkg = Topkg_care.Pkg.v ?opam ?delegate pkg_file in
+    let ret = match action with
+    | `List -> Topkg_care.Delegate.issue_list pkg
+    | `Show -> issue_show pkg ~id
+    | `Open -> issue_open pkg msg
+    | `Close -> issue_close pkg ~id msg
+    in
+    ret >>= fun () -> Ok 0
   end
   |> Cli.handle_error
 
@@ -148,7 +142,7 @@ let man =
 
 let cmd =
   let info = Term.info "issue" ~sdocs:Cli.common_opts ~doc ~man in
-  let t = Term.(pure issue $ Cli.setup $ Cli.pkg_file $ Cli.opam_file $
+  let t = Term.(pure issue $ Cli.setup $ Cli.pkg_file $ Cli.opam $
                 Cli.delegate $ action $ id $ msg) in
   (t, info)
 

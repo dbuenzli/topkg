@@ -4,13 +4,13 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-let () = Topkg.Pkg.prevent_standalone_main ()
 
 open Cmdliner
 
 let cmds =
-  [ Build.cmd; Distrib.cmd; Doc.cmd; Help.cmd; Ipc.cmd; Issue.cmd; Lint.cmd;
-    Log.cmd; Opam.cmd; Publish.cmd; Status.cmd; Tag.cmd; Browse.cmd ]
+  [ Bistro.cmd; Browse.cmd; Build.cmd; Distrib.cmd; Doc.cmd;
+    Help.cmd; Ipc.cmd; Issue.cmd; Lint.cmd; Log.cmd; Opam.cmd;
+    Publish.cmd; Status.cmd; Tag.cmd; ]
 
 let main () = `Help (`Pager, None)
 
@@ -40,10 +40,12 @@ let main =
   let t = Term.(ret (const main $ Cli.setup)) in
   (t, info)
 
-let main () = match Term.eval_choice main cmds with
-| `Error _ -> exit 3
-| `Ok ret when ret <> 0 -> exit ret
-| _ -> if Logs.err_count () > 0 then exit 3 else exit 0
+let main () =
+  Topkg.Private.disable_auto_main ();
+  match Term.eval_choice main cmds with
+  | `Error _ -> exit 3
+  | `Ok ret when ret <> 0 -> exit ret
+  | _ -> if Logs.err_count () > 0 then exit 3 else exit 0
 
 let () = main ()
 

@@ -8,8 +8,9 @@
 
     See {!Topkg_care.Browser}. *)
 
-open Rresult
-open Bos
+(** {1 Browser} *)
+
+open Bos_setup
 
 module Cli : sig
   val browser : Cmd.t option Cmdliner.Term.t

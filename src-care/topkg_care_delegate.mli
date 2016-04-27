@@ -6,39 +6,38 @@
 
 (** Package delegate.
 
-    See {!Topkg_care.delegate} for documentation. *)
+    See {!Topkg_care.Delegate} for documentation. *)
 
-open Rresult
-open Bos
-
-type t
-
-val pp_not_found : unit Fmt.t
-
-val find :
-    pkg_file:Fpath.t -> opam:Fpath.t option -> del:string option ->
-    (t option, R.msg) result
+open Bos_setup
 
 (** {1 Publish} *)
 
 val publish_distrib :
-  del:t -> name:string -> version:string -> msg:string -> archive:Fpath.t ->
-  (int, R.msg) Result.result
+  Topkg_care_pkg.t -> msg:string -> archive:Fpath.t ->
+  (unit, R.msg) Result.result
 
 val publish_doc :
-  del:t -> name:string -> version:string -> msg:string -> docdir:Fpath.t ->
-  (int, R.msg) Result.result
+  Topkg_care_pkg.t -> msg:string -> docdir:Fpath.t ->
+  (unit, R.msg) Result.result
 
 val publish_alt :
-  del:t -> kind:string -> name:string -> version:string -> msg:string ->
-  archive:Fpath.t -> (int, R.msg) Result.result
+  Topkg_care_pkg.t -> kind:string -> msg:string -> archive:Fpath.t ->
+  (unit, R.msg) Result.result
+
+val publish_in_git_branch :
+  branch:string -> name:string -> version:string -> docdir:Fpath.t ->
+  dir:Fpath.t -> (unit, R.msg) result
 
 (** {1 Delegate} *)
 
-val issue_list : del:t -> (int, R.msg) result
-val issue_show : del:t -> id:string -> (int, R.msg) result
-val issue_open : del:t -> title:string -> body:string -> (int, R.msg) result
-val issue_close : del:t -> id:string -> msg:string -> (int, R.msg) result
+val issue_list : Topkg_care_pkg.t -> (unit, R.msg) result
+val issue_show : Topkg_care_pkg.t -> id:string -> (unit, R.msg) result
+
+val issue_open :
+  Topkg_care_pkg.t -> title:string -> body:string -> (unit, R.msg) result
+
+val issue_close :
+  Topkg_care_pkg.t -> id:string -> msg:string -> (unit, R.msg) result
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

@@ -11,7 +11,9 @@ open Rresult
 
 (** {1 Manual sections and fragments} *)
 
-val common_opts :string
+val common_opts : string
+(** [common_opts] is the section name under which common options
+    are documented. *)
 
 val common_opts_man : Manpage.block list
 (** [common_opts_man] is the manual section for common options. *)
@@ -19,7 +21,7 @@ val common_opts_man : Manpage.block list
 val see_also : cmds:string list -> Manpage.block list
 (** [see_also cmds] is a "see also" manpage fragment. *)
 
-(** {1 Converters, arguments and lookups} *)
+(** {1 Converters and options} *)
 
 val path_arg : Fpath.t Arg.converter
 (** [path_arg] is a path argument converter. *)
@@ -27,46 +29,53 @@ val path_arg : Fpath.t Arg.converter
 val pkg_file : Fpath.t Term.t
 (** A [--pkg-file] option to specify the package description file to use. *)
 
-val ignore_pkg : bool Term.t
-(** An [--ignore-pkg] option to ignore the package description file. *)
+val opam : Fpath.t option Term.t
+(** An [--opam] option for defining an OPAM file. *)
 
-val dist_pkg_file : Fpath.t Term.t
-(** A [--dist-pkg-file] option to define the package description
-    file to use in a distribution. *)
+val dist_name : string option Term.t
+(** A [--dist-name] option to define the package name of the distribution. *)
+
+val dist_version : string option Term.t
+(** A [--dist-version] option to define the package version. *)
 
 val dist_file : Fpath.t option Term.t
 (** A [--dist-file] option to define the distribution archive file. *)
 
+val dist_uri : string option Term.t
+(** A [--dist-uri] option to define the distribution archive URI on the WWW. *)
+
+val dist_opam : Fpath.t option Term.t
+(** An [--dist-opam] option to define the OPAM file. *)
+
+val readme : Fpath.t option Term.t
+(** A [--readme] option to define the readme. *)
+
 val change_log : Fpath.t option Term.t
 (** A [--change-log] option to define the change log. *)
 
-val opam_file : Fpath.t option Term.t
-(** An [--opam-file] option to define the opam file. *)
+val opam : Fpath.t option Term.t
+(** An [--opam] option to define an OPAM file. *)
 
-val delegate : string option Term.t
+val delegate : Bos.Cmd.t option Term.t
 (** A [--delegate] option to define the delegate. *)
 
-(** {1 Common Lookups} *)
+val build_dir : Fpath.t option Term.t
+(** A [--build-dir] option to define the build directory. *)
 
-val find_dist_file :
-  Topkg_care.Distrib.det -> Fpath.t option ->
-  (Fpath.t, [> Rresult.R.msg ]) Result.result
-(** [find_dist_file] is a distribution archive file lookup procedure
-    to use with {!dist_file} *)
+val publish_msg : string option Term.t
+(** A [--msg] option to define a publication message. *)
 
 (** {1 Terms} *)
 
 val setup : unit Term.t
-(** [setup env] defines a basic setup common to all. The setup includes,
-    by side effect, setting log verbosity for {!Logs}, ajusting
-    colored output and setting the current  *)
+(** [setup env] defines a basic setup common to all commands. The
+    setup does, by side effect, set {!Logs} log verbosity, adjusts
+    colored output and sets the current working directory. *)
 
-val distrib_determine :
-  (pkg_file:Fpath.t -> (Topkg_care.Distrib.det, R.msg) result) Term.t
-(** [distrib_determine] defines a function that given a package description
-    file will determine a distribution. *)
+(** {1 Warnings and errors} *)
 
-(** {1 Error handling} *)
+val warn_if_vcs_dirty : string -> (unit, R.msg) result
+(** [warn_if_vcs_dirty msg] warns with [msg] if the VCS is dirty. *)
 
 val handle_error : (int, R.msg) result -> int
 (** [handle_error r] is [r]'s result or logs [r]'s error and returns [3]. *)

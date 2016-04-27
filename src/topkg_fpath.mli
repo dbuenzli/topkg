@@ -4,13 +4,19 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-(** File system paths. *)
+(** File system paths.
+
+    See {!Topkg.Fpath}. *)
+
+(** {1 File system paths} *)
 
 type t = string
-
 val append : t -> t -> t
 val ( // ) : t -> t -> t
-val ext : t -> string
+val get_ext : t -> string
+val has_ext : string -> t -> bool
+val rem_ext : t -> t
+val basename : t -> string
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

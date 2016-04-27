@@ -18,7 +18,8 @@ val level_to_string : level option -> string
 val level_of_string : string -> (level option, [`Msg of string]) Result.result
 
 type 'a msgf =
-  (('a, Format.formatter, unit) Pervasives.format -> 'a) -> unit
+  (?header:string -> ('a, Format.formatter, unit) Pervasives.format -> 'a) ->
+  unit
 
 val msg : level -> 'a msgf -> unit
 val app : 'a msgf -> unit

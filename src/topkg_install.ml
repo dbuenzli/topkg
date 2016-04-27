@@ -110,6 +110,12 @@ let to_instructions ?header ~bdir c i =
   let targets, moves = List.fold_left add_instruction ([], []) i in
   targets, ((`Header header), moves)
 
+
+let codec : t Topkg_codec.t =
+  let fields = (fun _ -> ()), (fun () -> []) in
+  Topkg_codec.version 0 @@
+  Topkg_codec.(view ~kind:"install" fields unit)
+
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli
 

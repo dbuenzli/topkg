@@ -4,17 +4,15 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-
-open Astring
-open Rresult
-open Bos
+open Bos_setup
 
 let build () pkg_file args =
+  let pkg = Topkg_care.Pkg.v pkg_file in
   let args = "installer" :: "false" :: args in
   let out = OS.Cmd.out_stdout in
   begin
     OS.Dir.current ()
-    >>= fun dir -> Topkg_care.Build.pkg ~pkg_file ~dir ~args ~out
+    >>= fun dir -> Topkg_care.Pkg.build pkg ~dir ~args ~out
     >>= function ((), (_, `Exited 0)) -> Ok 0 | _ -> Ok 1
   end
   |> Cli.handle_error

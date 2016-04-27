@@ -18,7 +18,7 @@ val pp_kind : Format.formatter -> kind -> unit
 type commit_ish = string
 
 type t
-val v : kind -> dir:Topkg_fpath.t -> t
+
 val kind : t -> kind
 val dir : t -> Topkg_fpath.t
 val find : ?dir:Topkg_fpath.t -> unit -> t option result

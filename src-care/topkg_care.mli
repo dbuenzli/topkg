@@ -16,22 +16,20 @@
     may change even between minor versions of [topkg]. Use at your own
     risk.
 
-    {e %%VERSION%% - {{:%%PKG_WWW%% }homepage}} *)
+    {e %%VERSION%% - {{:%%PKG_HOMEPAGE%% }homepage}} *)
 
-open Astring
-open Rresult
-open Bos
+open Bos_setup
 
 (** {1 Helpers} *)
 
-(** Text processing helpers.
-
-    {b Warning.} These functions are not serious and can break on certain
-    valid inputs in all sorts of fashion. To understand breakage bear
-    in mind that they operate line-wise. *)
+(** Text processing helpers. *)
 module Text : sig
 
-  (** {1 Marked-up text files} *)
+  (** {1 Marked-up text files}
+
+      {b Warning.} Some of the following functions are not serious and can
+      break on certain valid inputs in all sorts of fashion. To understand
+      breakage bear in mind that they operate line-wise. *)
 
   type flavour = [ `Markdown | `Asciidoc ]
   (** The type for text document formats. *)
@@ -57,7 +55,23 @@ module Text : sig
 
   val header_title : ?flavour:flavour -> string -> string
   (** [header_title ~flavour text] extract the title of a header [text]
-      of flavour [flavour] (defaults to [`Markdown]. *)
+      of flavour [flavour] (defaults to [`Markdown]). *)
+
+  (** {1 Toy change log parsing} *)
+
+  val change_log_last_entry :
+    ?flavour:flavour -> string -> (string * (string * string)) option
+  (** [change_log_last_version ~flavour text] tries to parse the last
+      change log entry of [text] (i.e. the {!head} of [text]) into
+      [Some (version, (header, text))], where [(header,text)] is the
+      result of {!head} and [version] a version number extracted from
+      [header] (see [topkg-log(2)] for details). *)
+
+  val change_log_file_last_entry :
+    Fpath.t -> ((string * (string * string)), R.msg) result
+  (** [change_log_file_last_entry file] tries to parse the last
+      change log entry of the file [file] using {!flavour_of_fpath} and
+      and {!change_log_last_entry}. *)
 
   (** {1 Toy URI parsing} *)
 
@@ -65,18 +79,43 @@ module Text : sig
   (** [split_uri uri] splits [uri] into a triple [(scheme, host, path)]. If
       [rel] is [true] (defaults to [false]), a leading ["/"] in [path] is
       removed. *)
+
+  (** {1 Edit and page text} *)
+
+  val edit_file : Fpath.t -> (int, R.msg) result
+  (** [edit_file f] invokes the tool mentioned in the [EDITOR]
+      environment variable with [f] and returns the exit code of
+      the program. *)
+
+  val find_pager : don't:bool -> (Cmd.t option, R.msg) result
+  (** [find ~no_pager] is an optional pager command. If [don't] is
+      [true] returns [None]. Otherwise first consults the [PAGER] environment
+      variable, then tries [less] or [more] in that order. If the [TERM]
+      environment variable is ["dumb"] unconditionaly returns [None]. *)
 end
 
-(** Change log helpers. *)
-module Change_log : sig
+(** Pretty printers. *)
+module Pp : sig
 
-  (** {1 Change log} *)
+  (** {1 Pretty printers} *)
 
-  val last_version :
-    ?flavour:Text.flavour -> string -> (string * (string * string)) option
-    (** [last_version ~flavour text] is [Some (version, (header, text))]
-        if a version number and extracts the version number and
-        change log of the last version in [text]. *)
+  val name : string Fmt.t
+  (** [name] formats a package name. *)
+
+  val version : string Fmt.t
+  (** [version] formats a package version. *)
+
+  val commit : string Fmt.t
+  (** [commit] formats a commit-ish. *)
+
+  val dirty : unit Fmt.t
+  (** [dirty] formats a "dirty" string. *)
+
+  val path : Fpath.t Fmt.t
+  (** [path] formats a bold path *)
+
+  val status : [`Ok | `Fail] Fmt.t
+  (** [status] formats a result status. *)
 end
 
 (** [OPAM] helpers. *)
@@ -87,6 +126,16 @@ module Opam : sig
   val cmd : Cmd.t
   (** [cmd] is a command for [opam] looked up using
       {!Topkg.Env.OCaml.tool}[ "opam" `Build_os]. *)
+
+  (** {1:publish Publish} *)
+
+  val ensure_publish : unit -> (unit, R.msg) result
+  (** [ensure_publish ()] makes sure [opam-publish] is in the executable
+      search PATH. *)
+
+  val submit : pkg_dir:Fpath.t -> (unit, R.msg) result
+  (** [submit ~pkg_dir] submits the package [pkg_dir] with [opam-publish]
+      to the OCaml OPAM repository. *)
 
   (** {1:pkgs Packages} *)
 
@@ -111,7 +160,7 @@ module Opam : sig
     (** [fields f] returns a simplified model of the fields of the OPAM
         file [f]. The domain of the result is included in
         {!field_names}. Note that the [depends:] and [depopts:] fields
-        are returned without version contsraints. *)
+        are returned without version constraints. *)
 
     (** {1:deps Dependencies} *)
 
@@ -121,9 +170,7 @@ module Opam : sig
         aswell. *)
   end
 
-  (** {1 Descr} *)
-
-  (** [descr] file. *)
+  (** [descr] files. *)
   module Descr : sig
 
     (** {1:descr Descr file} *)
@@ -132,15 +179,35 @@ module Opam : sig
     (** The type for OPAM [descr] files, the package synopsis and the
         description. *)
 
-    val of_readme_md : string -> (t, R.msg) result
-    (** [of_readme_md f] extracts an OPAM description file from a README.md
-        with a certain structure. *)
-
     val of_string : string -> (t, R.msg) result
     (** [of_string s] is a description from the string [s]. *)
 
     val to_string : t -> string
     (** [to_string d] is [d] as a string. *)
+
+    val of_readme :
+      ?flavour:Topkg_care_text.flavour -> string -> (t, R.msg) result
+    (** [of_readme r] extracts an OPAM description file from a readme [r]
+        with a certain structure. *)
+
+    val of_readme_file : Fpath.t -> (t, R.msg) result
+    (** [of_readme_file f] extracts an OPAM description file from
+        a readme file [f] using {!Text.flavour_of_fpath} and
+        {!of_readme}. *)
+  end
+
+  (** [url] files. *)
+  module Url : sig
+
+    (** {1:url Url file} *)
+
+    val v : uri:string -> checksum:string -> string
+    (** [v ~uri ~checksum] is an URL file for URI [uri] with
+        checksum [checksum]. *)
+
+    val with_distrib_file : uri:string -> Fpath.t -> (string, R.msg) result
+    (** [with_distrib_file ~uri f] is an URL file for URI [uri] with
+        the checksum of file [f]. *)
   end
 end
 
@@ -158,7 +225,7 @@ module OCamlbuild : sig
    val package_tags : ?roots:bool -> Fpath.t -> (String.set, R.msg) result
    (** [packages ~roots f] is the set of packages identifiers
        mentioned by the
-       {{:https://github.com/gasche/manual-ocamlbuild/blob/master/manual.md#intro-ocamlfind}
+       {{:https://github.com/ocaml/ocamlbuild/blob/master/manual/manual.adoc#17-findlib-based-packages}
        package tags} of the [_tags] file [f]. If [roots] is [true]
        (defaults to [false]) only root packages, i.e. the identifier
        before the first ['.'], are in the set.
@@ -243,102 +310,25 @@ module Browser : sig
       focus. *)
 end
 
-(** Command line pager interaction. *)
-module Pager : sig
-
-  (** {1 Pager} *)
-
-  val find : unit -> (Cmd.t option, R.msg) result
-  (** [find ()] is a pager command. First consults the [PAGER] environment
-      variable, then tries [less] or [more] in that order. If the [TERM]
-      environment variable is ["dumb"] unconditionnaly returns [None]. *)
-end
-
-(** Command line editor interaction. *)
-module Editor : sig
-  val edit_file : Fpath.t -> (int, R.msg) result
-end
-
-(** {1 Package care} *)
-
-(** IPC with package description files  *)
-module Ipc : sig
-
-  (** {1 Asking packages} *)
-
-  val ocaml : Cmd.t
-  (** [ocaml] is a command for [ocaml] looked up using
-      {!Topkg.Env.OCaml.tool}[ "ocaml" `Build_os]. *)
-
-  val ask : pkg_file:Fpath.t -> 'a Topkg.Private.Ipc.t -> ('a, R.msg) result
-  (** [ask pkg_file ipc] performs the IPC [ipc] with the package description
-      file [pkg_file] using the interpreter {!ocaml}. *)
-end
-
-(** Package standard files. *)
-module Std_files : sig
-
-  (** {1 Standard files.} *)
-
-  val of_pkg_file :
-    pkg_file:Fpath.t -> (Topkg.Private.Std_files.t, [`Msg of string]) result
-  (** [of_pkg_file ~pkg_file] are the standard files of the package description
-      [pkg_file]. *)
-
-  val change_log :
-    Topkg.Private.Std_files.t -> (Fpath.t, [ `Msg of string ]) Rresult.result
-  (** [change_log std_files] is [std_files]'s change log. *)
-
-  val find_opam_file :
-    Topkg.Private.Std_files.t -> (Fpath.t, [ `Msg of string ]) Rresult.result
-    (** [find_opam_file std_files] is the first file mentioned in
-        {!Topkg.Private.Std_files.opam} or [Fpath.v "opam"]. *)
-end
-
-(** Package linter.
-
-    See also {!Topkg.Pkg.lint}.
-
-    {b Warning.} The following functions log test results with
-    {!Logs.App} level. *)
-module Lint : sig
-
-  (** {1:ldistrib Distribution linting} *)
-
-  val default_package_excludes : String.set
-  (** [default_package_excludes] is the union of
-      {!OCamlfind.base_packages}, {!Opam.ocaml_base_packages},
-      ["ocamlfind"], ["ocamlbuild"] and ["topkg"]. *)
-
-  type t = [ `Custom | `Std_files | `Meta | `Opam | `Deps ]
-  (** The type for lints. *)
-
-  val distrib :
-    ?ignore_pkg:bool -> pkg_file:Fpath.t -> dir:Fpath.t -> skip:(t -> bool) ->
-    (int, R.msg) result
-  (** [distrib ~ignore_pkg ~pkg_file ~dir ~skip] performs all the lints [l]
-      with [skip l = false] on the distribution in [dir] using the package
-      file [pkg_file] (relative to [pkg_file]) except if [ignore_pkg] is
-      [true] (defaults to [false]). *)
-end
-
-(** Distribution creation. *)
-module Distrib : sig
+(** Archive file creation. *)
+module Archive : sig
 
   (** {1 Ustar archives} *)
 
   val tar :
-    Fpath.t -> exclude_paths:Topkg.fpath list -> root:Fpath.t -> mtime:int ->
+    Fpath.t -> exclude_paths:Fpath.set -> root:Fpath.t -> mtime:int ->
     (string, R.msg) result
   (** [tar dir ~exclude_paths ~root ~mtime] is a (us)tar archive that
       contains the file hierarchy [dir] except the relative
       hierarchies present in [exclude_paths]. In the archive, members
-      are rerooted at [root] and sorted according to
+      of [dir] are rerooted at [root] and sorted according to
       {!Fpath.compare}. They have their modification time set to
       [mtime] and file permission mode preserved. No other file
-      metadata is preserved. *)
+      metadata is preserved.
 
-  (** {1 Bzip2 compression} *)
+      {b Note.} This is a pure OCaml implementation, no [tar] tool is needed. *)
+
+  (** {1 Bzip2 compression and unarchiving} *)
 
   val ensure_bzip2 : unit -> (unit, R.msg) result
   (** [ensure_bzip2 ()] makes sure the [bzip2] utility is available. *)
@@ -346,167 +336,179 @@ module Distrib : sig
   val bzip2 : string -> dst:Fpath.t -> (unit, R.msg) result
   (** [bzip2 s dst] compresses [s] to [dst] using bzip2. *)
 
-  (** {1 Distribution} *)
+  val ensure_tar : unit -> (unit, R.msg) result
+  (** [ensure_tar ()] makes sure the [tar] utility is available. *)
 
-  type det
-  (** The type for distribution determination. *)
-
-  val build_dir : det -> Fpath.t
-  (** [build_dir d] is the build directory to use. *)
-
-  val name : det -> string
-  (** [name d] is the package name to use. *)
-
-  val commit_ish : det -> Topkg.Vcs.commit_ish
-  (** [commit_ish d] is the commit-ish to base the distribution on. *)
-
-  val version : det -> string
-  (** [version d] is the version string to use. *)
-
-  val rootname : ?opam:bool -> det -> Fpath.t
-  (** [rootname ~opam d] is the root name for the distribution.
-      It is is made from {!name} and {!version} glued
-      together with a separator that depends on [opam] (defaults
-      to [false]). A leading ['v'] character in the version is chopped
-      before the elements are glued. *)
-
-  val determine :
-    pkg_file:Fpath.t -> build_dir:Topkg.fpath option ->
-    name:string option -> commit_ish:Topkg.Vcs.commit_ish option ->
-    version:string option -> (det, R.msg) Result.result
-  (** [determine pkg_file ~build_dir ~name ~commit_ish ~version]
-      determines a distribution for the package described by [pkg_file].
-      [build_dir], [name], [commit_ish], [version] can be used to
-      override the package description information. *)
-
-  val clone_repo : det -> Topkg.Vcs.t -> (Fpath.t, R.msg) result
-  (** [clone_repo det r] clones the repository [r] according to [det]
-      inside a build directory and returns the directory of the clone. *)
-
-  val prepare_repo :
-    det -> dist_pkg_file:Fpath.t -> dir:Fpath.t ->
-    (int * Topkg.fpath list, R.msg) result
-  (** [prepare_repo det ~dir ~dist_pkg_file] prepares the distribution
-      determined by [det] using the package description file
-      [dist_pkg_file] (relative to [dir]) in an already freshly cloned repo
-      [dir].
-
-      This checkouts in [dir] the commit-ish specified by [det],
-      performs distribution preparation (watermarks and massage hook)
-      and returns the mtime to use for archiving and the list of paths
-      to exclude from the archive expressed relative to [dir]. *)
-
-  val archive_path : det -> Fpath.t
-  (** [archive_path det] is the path to the archive of the distribution
-      determined by [det]. *)
-
-  val archive :
-    det -> keep_dir:bool -> dir:Fpath.t -> exclude_paths:Topkg.fpath list ->
-    mtime:int -> (Fpath.t, R.msg) result
-  (** [archive ~keep_dir ~dir ~exclude_paths ~mtime det] archives the file paths
-      of [dir] according to [det]. The path hierarchies in [exclude_paths]
-      are excluded and [mtime] the POSIX timestamp mtime in seconds used
-      as the modification time for all the archived paths.
-      The resulting path to the archive is returned. If [keep_dir] is
-      [false], [dir] is deleted if the archival is sucessfull. *)
-
-  val unarchive : ?clean:bool -> Fpath.t -> (Fpath.t, R.msg) result
-  (** [unarchive ~clean ar] unarchive [ar] in the same directory and
-      returns the directory of the distribution. If [clean] is [true]
-      (defaults to [false]) first deletes a distribution directory with
-      the same name if it exists. *)
+  val untbz : ?clean:bool -> Fpath.t -> (Fpath.t, R.msg) result
+  (** [untbz ~clean ar] untars the tar bzip2 archive [ar] in the same
+      directory as [ar] and returns a base directory for [ar]. If [clean] is
+      [true] (defaults to [false]) first delete the base directory if it
+      exists. *)
 end
 
-(** Build packages. *)
-module Build : sig
-  val pkg :
-    pkg_file:Fpath.t -> dir:Fpath.t -> args:string list ->
-    out:(OS.Cmd.run_out -> ('a, R.msg) result) -> ('a, R.msg) result
-  (** [pkg ~pkg_file ~dir] builds the package in [dir] using the
-      package file [pkg_file] (realtive to [dir]) and the arguments [args].
-      Returns the exit code of the build. *)
-end
+(** {1 Package care} *)
 
-(** Build and publish package documentation *)
-module Doc : sig
+(** Package description. *)
+module Pkg : sig
 
-  val publish_in_git_branch :
-    branch:string -> name:string -> version:string -> docdir:Fpath.t ->
-    dir:Fpath.t -> (unit, R.msg) result
-    (** [publish_in_git_branch ~branch ~name ~version ~docdir ~dir]
-        publishes the documentation directory [docdir] of a package
-        named [name] at version [version] by replacing the [dir]
-        sub-directory of the branch [branch] of the current working
-        directory git repository (use ["."] to copy the docdir at the
-        root directory of the branch).
-
-        {b Note.} The publication procedure first checkouts the [gh-pages]
-        in a temporary clone located in the {!Fpath.parent} directory
-        of [docdir]. The [branch] branch of this clone is then pushed to
-        the current working git repository, whose [branch] branch is then
-        pushed to the remote repository. *)
-end
-
-(** Package delegate.
-
-    {1 Delegate} *)
-module Delegate : sig
+  (** {1 Packages} *)
 
   type t
-  (** The type for delegates. *)
+  (** The type for package descriptions. *)
 
-  val find :
-    pkg_file:Fpath.t -> opam:Fpath.t option -> del:string option ->
-    (t option, R.msg) result
-  (** [find opam del] looks up a delegate according to the delegate lookup
-      procedure, see [topkg-delegate(7)] for more details. If [del] is
-      [Some d], returns [d] without consulting [pkg_file]. [opam] is
-      the opam file to use for OPAM based delegate discovery, if
-      unspecified looks up using [pkg_file]. *)
+  val v :
+    ?name:string ->
+    ?version:string ->
+    ?delegate:Cmd.t ->
+    ?build_dir:Fpath.t ->
+    ?opam:Fpath.t ->
+    ?opam_descr:Fpath.t ->
+    ?readme:Fpath.t ->
+    ?change_log:Fpath.t ->
+    ?license:Fpath.t ->
+    ?distrib_uri:string ->
+    ?distrib_file:Fpath.t ->
+    ?publish_msg:string ->
+    Fpath.t -> t
+  (** [v pkg_file] is a package from description file [pkg_file] which
+      is loaded only if needed. The optional parameters allow to
+      override [pkg_file]'s definition. *)
 
-  val pp_not_found : unit Fmt.t
-  (** [pp_not_found ppf ()] indicates that the delegate was not found
-      on [ppf]. *)
+  val pkg_file : t -> Fpath.t
+  (** [pkg_file p]  is [p]'s description file. *)
+
+  val name : t -> (string, R.msg) result
+  (** [name p] is [p]'s name. *)
+
+  val version : t -> (string, R.msg) result
+  (** [version p] is [p]'s version string.*)
+
+  val delegate : t -> (Cmd.t, R.msg) result
+  (** [delegate p] is [p]'s delegate. *)
+
+  val build_dir : t -> (Fpath.t, R.msg) result
+  (** [build_dir p] is [p]'s build directory. *)
+
+  val opam : t -> (Fpath.t, R.msg) result
+  (** [opam p] is [p]'s OPAM file. *)
+
+  val opam_descr : t -> (Opam.Descr.t, R.msg) result
+  (** [opam_descr p] is [p]'s OPAM description. *)
+
+  val opam_field : t -> string -> (string list option, R.msg) result
+  (** [opam_field p f] looks up field [f] of [p]'s OPAM file. *)
+
+  val opam_fields : t -> (string list String.map, R.msg) result
+  (** [opam_fields p] are [p]'s OPAM file fields. *)
+
+  val readme : t -> (Fpath.t, R.msg) result
+  (** [readme p] is [p]'s readme file. *)
+
+  val change_log : t -> (Fpath.t, R.msg) result
+  (** [change_log p] is [p]'s change log. *)
+
+  val license : t -> (Fpath.t, R.msg) result
+  (** [license p] is [p]'s license file. *)
+
+  val distrib_uri : ?raw:bool -> t -> (string, R.msg) result
+  (** [distrib_uri p] is [p]'s distribution URI. If [raw] is [true]
+      defaults to [false], [p]'s raw URI distribution pattern is returned. *)
+
+  val distrib_file : t -> (Fpath.t, R.msg) result
+  (** [distrib_file p] is [p]'s distribution archive. *)
+
+  val publish_msg : t -> (string, R.msg) result
+  (** [publish_msg p] is [p]'s distribution publication message. *)
+
+  (** {1 Build} *)
+
+  val build :
+    t -> dir:Fpath.t -> args:string list ->
+    out:(OS.Cmd.run_out -> ('a, R.msg) result) -> ('a, R.msg) result
+
+  (** {1 Distribution} *)
+
+  val distrib_archive : t -> keep_dir:bool -> (Fpath.t, R.msg) result
+  (** [distrib_archive p ~keep_dir] creates a distribution archive
+      for [p] and returns its path. If [keep_dir] is [true] the
+      repository checkout used to create the distribution archive
+      is kept in the build directory. *)
+
+  val distrib_filename : ?opam:bool -> t -> (Fpath.t, R.msg) result
+  (** [distrib_filename ~opam p] is a distribution filename for [p].
+      If [opam] is [true] (defaults to [false]), the name follows
+      OPAM's naming conventions. *)
+
+  (** {1 Lint} *)
+
+  type lint = [ `Custom | `Std_files | `Meta | `Opam | `Deps ]
+  (** The type for lints. *)
+
+  val lint_all : lint list
+  (** [lint_all] is a list with all lint values. *)
+
+  val lint :
+    ?ignore_pkg:bool -> t -> dir:Fpath.t -> lint list ->
+    (int, R.msg) result
+  (** [distrib ~ignore_pkg p ~dir lints] performs the lints
+      mentioned in [lints] in a directory [dir] on the package [p].
+      If [ignore_pkg] is [true] [p]'s definitions are ignored. *)
+end
+
+(** Package delegate. *)
+module Delegate : sig
 
   (** {1 Publish} *)
 
   val publish_distrib :
-    del:t -> name:string -> version:string -> msg:string -> archive:Fpath.t ->
-    (int, R.msg) Result.result
-  (** [publish_distrib ~name ~version ~msg ~archive] publishes the distribution
-      archive [archive] for the package named [name] with version [version]
-      and publication message [msg]. *)
+    Pkg.t -> msg:string -> archive:Fpath.t -> (unit, R.msg) Result.result
+  (** [publish_distrib p ~msg ~archive] publishes the distribution
+      archive [archive] of package [p] with publication message [msg]. *)
 
   val publish_doc :
-    del:t -> name:string -> version:string -> msg:string -> docdir:Fpath.t ->
-    (int, R.msg) Result.result
-  (** [publish_distrib ~name ~version ~msg ~archive] publishes the documentation
-      directory [docdir] for the package named [name] with version [version]
-      and publication message [msg]. *)
+    Pkg.t -> msg:string -> docdir:Fpath.t -> (unit, R.msg) Result.result
+  (** [publish_distrib p ~msg ~docdir] publishes the documentation
+      directory [docdir] of package [p] with publication message [msg]. *)
 
   val publish_alt :
-    del:t -> kind:string -> name:string -> version:string -> msg:string ->
-    archive:Fpath.t -> (int, R.msg) Result.result
-  (** [publish_alt ~kind ~name ~version ~msg ~archive] publishes the
-      artefact [kind] for distribution archive [archive] of the package
-      named [name] with ersion [version] and publication message [msg]. *)
+    Pkg.t -> kind:string -> msg:string -> archive:Fpath.t ->
+    (unit, R.msg) Result.result
+  (** [publish_alt p ~kind ~msg ~archive] publishes the
+      artefact [kind] for distribution archive [archive] of package [p]
+      with publication message [msg]. *)
+
+  (** {2 Helpers} *)
+
+  val publish_in_git_branch :
+    branch:string -> name:string -> version:string -> docdir:Fpath.t ->
+    dir:Fpath.t -> (unit, R.msg) result
+  (** [publish_in_git_branch ~branch ~name ~version ~docdir ~dir]
+      publishes the documentation directory [docdir] of a package
+      named [name] at version [version] by replacing the [dir]
+      sub-directory of the branch [branch] of the current working
+      directory git repository (use ["."] to copy the docdir at the
+      root directory of the branch).
+
+      {b Note.} The publication procedure first checkouts the
+      [gh-pages] in a temporary clone located in the {!Fpath.parent}
+      directory of [docdir]. The [branch] branch of this clone is then
+      pushed to the current working git repository, whose [branch]
+      branch is then pushed to the remote repository. *)
 
   (** {1 Issues} *)
 
-  val issue_list : del:t -> (int, R.msg) result
-  (** [issue_list ~del] outputs the issue list on stdout and returns
-      the delegate's exit code. *)
+  val issue_list : Pkg.t -> (unit, R.msg) result
+  (** [issue_list p] outputs the issue list on stdout. *)
 
-  val issue_show : del:t -> id:string -> (int, R.msg) result
-  (** [issue_show ~del ~id] outputs information about issue [id] on
-      stdout and returns the delegate's exit code. *)
+  val issue_show : Pkg.t -> id:string -> (unit, R.msg) result
+  (** [issue_show p ~id] outputs information about issue [id] on stdout. *)
 
-  val issue_open : del:t -> title:string -> body:string -> (int, R.msg) result
-  (** [issue_open ~del ~title ~body] create a new issue with title [title]
-      and description body [body] and returns the delegate's exit code. *)
+  val issue_open : Pkg.t -> title:string -> body:string -> (unit, R.msg) result
+  (** [issue_open p ~title ~body] create a new issue with title [title]
+      and description body [body]. *)
 
-  val issue_close : del:t -> id:string -> msg:string -> (int, R.msg) result
-  (** [issue_close ~del ~id ~msg] closes issue [id] with message [msg]. *)
+  val issue_close : Pkg.t -> id:string -> msg:string -> (unit, R.msg) result
+  (** [issue_close p ~id ~msg] closes issue [id] with message [msg]. *)
 end
 
 

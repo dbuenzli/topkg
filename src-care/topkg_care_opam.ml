@@ -4,14 +4,21 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-open Astring
-open Rresult
-open Bos
+open Bos_setup
 
 (* Command *)
 
 let cmd =
   Cmd.of_list @@ Topkg.Cmd.to_list @@ Topkg.Env.tool "opam" `Build_os
+
+(* Publish *)
+
+let publish =
+  let absent = Cmd.(v "opam-publish") in
+  OS.Env.(value "TOPKG_OPAM_PUBLISH" cmd ~absent)
+
+let ensure_publish () = OS.Cmd.must_exist publish >>| fun _ -> ()
+let submit ~pkg_dir = OS.Cmd.run Cmd.(publish % "submit" % p pkg_dir)
 
 (* Packages *)
 
@@ -70,7 +77,7 @@ module File = struct
         let add_field acc (_, field) = field acc opam in
         List.fold_left add_field String.Map.empty fields
       in
-      (* TODO add OpamFile.OPAM.extensions when supported *)
+      (* FIXME add OpamFile.OPAM.extensions when supported *)
       known_fields
     in
     Logs.info (fun m -> m "Parsing OPAM file %a" Fpath.pp file);
@@ -95,9 +102,15 @@ end
 module Descr = struct
   type t = string * string
 
-  let of_readme_md r =
+  let of_string s = match String.cuts "\n" s with
+  | [] ->  R.error_msgf "Cannot extract OPAM descr."
+  | synopsis :: descr -> Ok (synopsis, String.concat ~sep:"\n" descr)
+
+  let to_string (synopsis, descr) = strf "%s\n%s" synopsis descr
+
+  let of_readme ?flavour r =
     let parse_synopsis l =
-      let error l = R.error_msgf "%S: can't extract package tag line" l in
+      let error l = R.error_msgf "%S: can't extract OPAM synopsis" l in
       let ok s = Ok String.(Ascii.capitalize @@ String.Sub.to_string s) in
       let not_white c = not (Char.Ascii.is_white c) in
       let skip_non_white l = String.Sub.drop ~sat:not_white l in
@@ -118,32 +131,34 @@ module Descr = struct
       String.is_prefix "Home page:" l ||
       String.is_prefix "Homepage:" l ||
       String.is_prefix "Contact:" l ||
-      String.is_prefix "%%VERSION%" l (* last % ommited to avoid subst *)
+      String.is_prefix "%%VERSION" l
     in
-    let ret_lines acc =
-      let rec drop_blanks = function "" :: ls -> drop_blanks ls | ls -> ls in
-      List.rev (drop_blanks acc)
-    in
-    let rec add_lines acc = function
-    | l :: ls ->
-        if drop_line l then add_lines acc ls else
-        if String.is_prefix "#" (* new section *) l then ret_lines acc else
-        add_lines (l :: acc) ls
-    | [] ->
-        ret_lines acc
-    in
-    match String.cuts ~sep:"\n" r with
-    | synopsis :: sep :: rest ->
-        parse_synopsis synopsis >>= fun synopsis ->
-        Ok (synopsis, String.concat ~sep:"\n" (add_lines [] rest))
-    | _ ->
-        R.error_msgf "Cannot extract OPAM descr."
+    let keep_line l = not (drop_line l) in
+    match Topkg_care_text.head ?flavour r with
+    | None -> R.error_msgf "Could not extract OPAM description."
+    | Some (title, text) ->
+        let sep = "\n" in
+        let title = Topkg_care_text.header_title ?flavour title in
+        parse_synopsis title
+        >>= fun synopsis -> Ok (String.cuts ~sep text)
+        >>= fun text -> Ok (List.filter keep_line text)
+        >>= fun text -> Ok (synopsis, String.concat ~sep text)
 
-  let of_string s = match String.cuts "\n" s with
-  | [] ->  R.error_msgf "Cannot extract OPAM descr."
-  | synopsis :: descr -> Ok (synopsis, String.concat ~sep:"\n" descr)
+  let of_readme_file file =
+    let flavour = Topkg_care_text.flavour_of_fpath file in
+    (OS.File.read file
+     >>= fun text -> of_readme ?flavour text)
+    |> R.reword_error_msg ~replace:true
+      (fun m -> R.msgf "%a: %s" Fpath.pp file m)
+end
 
-  let to_string (synopsis, descr) = strf "%s\n%s" synopsis descr
+module Url = struct
+  let v ~uri ~checksum = strf "archive: \"%s\"\nchecksum: \"%s\"" uri checksum
+  let with_distrib_file ~uri distrib_file =
+    try
+      let checksum = Digest.(to_hex @@ file (Fpath.to_string distrib_file)) in
+      Ok (v ~uri ~checksum)
+    with Failure msg | Sys_error msg -> R.error_msg msg
 end
 
 (*---------------------------------------------------------------------------

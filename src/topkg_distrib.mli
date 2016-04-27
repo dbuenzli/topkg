@@ -4,23 +4,24 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-(** {1 Distribution description} *)
+(** {1 Distribution description}
+
+    See {!section:Topkg.distrib}. *)
+
+(** {1 Distribution} *)
 
 open Topkg_result
 
 (* Watermarks *)
 
-type watermark_def =
-[ `String of string | `Name | `Version | `Vcs of [ `Commit_id ]
-| `Opam of string * string * string ]
-
-type watermark = string * watermark_def
+type watermark =
+  string *
+  [ `String of string | `Name | `Version | `Vcs of [ `Commit_id ]
+  | `Opam of Topkg_fpath.t option * string * string ]
 
 val define_watermarks :
-  name:string -> version:string -> watermark list -> (string * string) list
-
-val default_watermarks : watermark list
-val default_files_to_watermark : unit -> Topkg_fpath.t list result
+  name:string -> version:string -> opam:Topkg_fpath.t ->
+  watermark list -> (string * string) list
 
 val watermark_file : (string * string) list -> Topkg_fpath.t -> unit result
 val watermark_files :
@@ -28,32 +29,30 @@ val watermark_files :
 
 (* Distribution *)
 
-val default_commit_ish : unit -> string result
-val default_version : commit_ish:string -> string result
-val default_exclude_paths : unit -> Topkg_fpath.t list result
-
 type t
 
 val v :
-  ?commit_ish:(unit -> string result) ->
-  ?version:(commit_ish:string -> string result) ->
   ?watermarks:watermark list ->
   ?files_to_watermark:(unit -> Topkg_fpath.t list result) ->
   ?massage:(unit -> unit result) ->
   ?exclude_paths:(unit -> Topkg_fpath.t list result) ->
+  ?uri:string ->
   unit -> t
 
-val commit_ish : t -> string result
-val version : t -> commit_ish:string -> string result
 val watermarks : t -> watermark list
-val files_to_watermark : t -> Topkg_fpath.t list result
-val massage : t -> unit result
-val exclude_paths : t -> Topkg_fpath.t list result
+val files_to_watermark : t -> (unit -> Topkg_fpath.t list result)
+val massage : t -> (unit -> unit result)
+val exclude_paths : t -> (unit -> Topkg_fpath.t list result)
+val uri : t -> string option
 
-val run_prepare :
-  name:string -> version:string -> t -> Topkg_fpath.t list result
+val codec : t Topkg_codec.t
 
-val run_prepare_pin : name:string -> t -> unit result
+(* Defaults *)
+
+val default_watermarks : watermark list
+val default_files_to_watermark : unit -> Topkg_fpath.t list result
+val default_massage : unit -> unit result
+val default_exclude_paths : unit -> Topkg_fpath.t list result
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

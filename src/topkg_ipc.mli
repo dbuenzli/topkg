@@ -18,17 +18,11 @@ val v : Topkg_cmd.t -> 'a Topkg_codec.t -> 'a t
 val cmd : 'a t -> Topkg_cmd.t
 val codec : 'a t -> 'a Topkg_codec.t
 
-val delegate : (string option * Topkg_std_files.t) t
-val std_files : Topkg_std_files.t t
-val lint : custom:bool -> (Topkg_std_files.t * Topkg_lint.t) t
-val distrib_commit_ish : Topkg_vcs.commit_ish result t
-val distrib_determine :
-  build_dir:Topkg_fpath.t option -> name:string option ->
-  commit_ish:Topkg_vcs.commit_ish option -> version:string option ->
-  (Topkg_fpath.t * string * Topkg_vcs.commit_ish * string) result t
-
+val pkg : Topkg_pkg.t t
+val lint_custom : Topkg_result.R.msg Topkg_result.result list option t
 val distrib_prepare :
-  name:string -> version:string -> Topkg_fpath.t list result t
+  dist_build_dir:string -> name:string -> version:string -> opam:string ->
+  Topkg_fpath.t list result t
 
 val answer : Topkg_cmd.t -> Topkg_pkg.t -> int Topkg_result.result
 

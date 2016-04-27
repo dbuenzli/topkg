@@ -30,28 +30,33 @@ let pp_kind ppf = function
 
 let dirtify id = id ^ "-dirty"
 
-type t = kind * Topkg_fpath.t
+type t = kind * Cmd.t * Topkg_fpath.t
 
-let git = Cmd.v (OS.Env.opt_var "TOPKG_GIT" ~absent:"git")
-let hg = Cmd.v (OS.Env.opt_var "TOPKG_HG" ~absent:"hg")
+let git =
+  let git = Cmd.v (OS.Env.opt_var "TOPKG_GIT" ~absent:"git") in
+  lazy (OS.Cmd.exists git >>= fun exists -> Ok (exists, git))
 
-let vcs_cmd kind dir = match kind with
-| `Git -> Cmd.(git % "--git-dir" % dir)
-| `Hg -> Cmd.(hg % "--repository" % dir)
+let hg =
+  let hg = Cmd.v (OS.Env.opt_var "TOPKG_HG" ~absent:"hg") in
+  lazy (OS.Cmd.exists hg >>= fun exists -> Ok (exists, hg))
 
-let v k ~dir = (k, dir)
-let kind r = fst r
-let dir r = snd r
-let cmd (kind, dir) = vcs_cmd kind dir
+let vcs_cmd kind cmd dir = match kind with
+| `Git -> Cmd.(cmd % "--git-dir" % dir)
+| `Hg -> Cmd.(cmd % "--repository" % dir)
+
+let v k cmd ~dir = (k, cmd, dir)
+let kind (k, _, _) = k
+let dir (_, _, dir) = dir
+let cmd (kind, cmd, dir) = vcs_cmd kind cmd dir
 
 (* Git support *)
 
-let find_git () = OS.Cmd.exists git >>= function
-| false -> Ok None
-| true ->
+let find_git () = Lazy.force git >>= function
+| (false, _) -> Ok None
+| (true, git) ->
     let git_dir = Cmd.(git % "rev-parse" % "--git-dir") in
     OS.Cmd.(run_out ~err:OS.File.null git_dir |> out_string) >>= function
-    | (dir, (_, `Exited 0)) -> Ok (Some (v `Git dir))
+    | (dir, (_, `Exited 0)) -> Ok (Some (v `Git git dir))
     | _ -> Ok None
 
 let err_git cmd c = R.error_msgf "%a exited with %d" Cmd.dump cmd c
@@ -120,10 +125,8 @@ let git_tracked_files r ~tree_ish =
   run_git r tracked OS.Cmd.out_lines
 
 let git_clone r ~dir:d =
-  let clone = Cmd.(git % "clone" % "--local" % (dir r) % d) in
-  OS.Cmd.(run_status ~err:OS.File.null clone) >>= function
-  | `Exited 0 -> Ok ()
-  | `Exited c -> err_git clone c
+  let clone = Cmd.(v "clone" % "--local" % (dir r) % d) in
+  run_git r clone OS.Cmd.out_stdout >>= fun _ -> Ok ()
 
 let git_checkout r ~branch ~commit_ish =
   let branch = match branch with
@@ -152,12 +155,12 @@ let git_delete_tag r tag =
 
 let hg_rev commit_ish = match commit_ish with "HEAD" -> "tip" | c -> c
 
-let find_hg () = OS.Cmd.exists hg >>= function
-| false -> Ok None
-| true ->
+let find_hg () = Lazy.force hg >>= function
+| (false, _) -> Ok None
+| (true, hg) ->
     let hg_root = Cmd.(hg % "root") in
     OS.Cmd.(run_out ~err:OS.File.null hg_root |> out_string) >>= function
-    | (dir, (_, `Exited 0)) -> Ok (Some (v `Hg dir))
+    | (dir, (_, `Exited 0)) -> Ok (Some (v `Hg hg dir))
     | _ -> Ok None
 
 let err_hg cmd c = R.error_msgf "%a exited with %d" Cmd.dump cmd c
@@ -236,10 +239,8 @@ let hg_tracked_files r ~rev =
   run_hg r Cmd.(v "manifest" % "--rev" % rev) OS.Cmd.out_lines
 
 let hg_clone r ~dir:d =
-  let clone = Cmd.(hg % "clone" % (dir r) % d) in
-  OS.Cmd.(run_status ~err:OS.File.null clone) >>= function
-  | `Exited 0 -> Ok ()
-  | `Exited c -> err_hg clone c
+  let clone = Cmd.(v "clone" % (dir r) % d) in
+  run_hg r clone OS.Cmd.out_stdout
 
 let hg_checkout r ~branch ~rev =
   run_hg r Cmd.(v "update" % "--rev" % rev) OS.Cmd.out_string
@@ -267,18 +268,23 @@ let hg_delete_tag r tag =
 let find ?dir () = match dir with
 | None ->
     begin find_git () >>= function
-      | Some _ as v -> Ok v
-      | None -> find_hg ()
+    | Some _ as v -> Ok v
+    | None -> find_hg ()
     end
 | Some dir ->
     let git_dir = Topkg_fpath.append dir ".git" in
     OS.Dir.exists git_dir >>= function
-    | true -> Ok (Some (v `Git git_dir))
+    | true ->
+        begin Lazy.force git >>= function
+        | (_, cmd) ->  Ok (Some (v `Git cmd git_dir))
+        end
     | false ->
         let hg_dir = Topkg_fpath.append dir ".hg" in
-         OS.Dir.exists hg_dir >>= function
-         | true -> Ok (Some (v `Hg hg_dir))
-         | false -> Ok None
+        OS.Dir.exists hg_dir >>= function
+        | false -> Ok None
+        | true ->
+            Lazy.force hg >>= function
+            (_, cmd) -> Ok (Some (v `Hg cmd hg_dir))
 
 let get ?dir () = find ?dir () >>= function
 | Some r -> Ok r
@@ -292,67 +298,67 @@ let pp ppf r = Format.fprintf ppf "(%a, %s)" pp_kind (kind r) (dir r)
 (* Repository state *)
 
 let is_dirty = function
-| (`Git, _  as r) -> git_is_dirty r
-| (`Hg, _ as r ) -> hg_is_dirty r
+| (`Git, _, _  as r) -> git_is_dirty r
+| (`Hg, _ , _ as r ) -> hg_is_dirty r
 
 let not_dirty r = is_dirty r >>= function
 | false -> Ok ()
 | true -> R.error_msgf "The VCS repo is dirty, commit or stash your changes."
 
 let file_is_dirty r file = match r with
-| (`Git, _  as r) -> git_file_is_dirty r file
-| (`Hg, _ as r ) -> hg_file_is_dirty r file
+| (`Git, _, _  as r) -> git_file_is_dirty r file
+| (`Hg, _, _ as r ) -> hg_file_is_dirty r file
 
 let head ?(dirty = true) = function
-| (`Git, _ as r) -> git_head ~dirty r
-| (`Hg, _ as r) -> hg_head ~dirty r
+| (`Git, _, _ as r) -> git_head ~dirty r
+| (`Hg, _, _ as r) -> hg_head ~dirty r
 
 let commit_id ?(dirty = true) ?(commit_ish = "HEAD") = function
-| (`Git, _ as r) -> git_commit_id ~dirty r commit_ish
-| (`Hg, _ as r) -> hg_commit_id ~dirty r ~rev:(hg_rev commit_ish)
+| (`Git, _, _ as r) -> git_commit_id ~dirty r commit_ish
+| (`Hg, _, _ as r) -> hg_commit_id ~dirty r ~rev:(hg_rev commit_ish)
 
 let commit_ptime_s ?(commit_ish = "HEAD") = function
-| (`Git, _ as r) -> git_commit_ptime_s r commit_ish
-| (`Hg, _ as r) -> hg_commit_ptime_s r ~rev:(hg_rev commit_ish)
+| (`Git, _, _ as r) -> git_commit_ptime_s r commit_ish
+| (`Hg, _, _ as r) -> hg_commit_ptime_s r ~rev:(hg_rev commit_ish)
 
 let describe ?(dirty = true) ?(commit_ish = "HEAD") = function
-| (`Git, _ as r) -> git_describe ~dirty r commit_ish
-| (`Hg, _ as r) -> hg_describe ~dirty r ~rev:(hg_rev commit_ish)
+| (`Git, _, _ as r) -> git_describe ~dirty r commit_ish
+| (`Hg, _, _ as r) -> hg_describe ~dirty r ~rev:(hg_rev commit_ish)
 
 let tags = function
-| (`Git, _ as r) -> git_tags r
-| (`Hg, _ as r) -> hg_tags r
+| (`Git, _, _ as r) -> git_tags r
+| (`Hg, _, _ as r) -> hg_tags r
 
 let changes ?(until = "HEAD") r ~after = match r with
-| (`Git, _ as r) -> git_changes r ~after ~until
-| (`Hg, _ as r) -> hg_changes r ~after:(hg_rev after) ~until:(hg_rev until)
+| (`Git, _, _ as r) -> git_changes r ~after ~until
+| (`Hg, _, _ as r) -> hg_changes r ~after:(hg_rev after) ~until:(hg_rev until)
 
 let tracked_files ?(tree_ish = "HEAD") = function
-| (`Git, _ as r) -> git_tracked_files r ~tree_ish
-| (`Hg, _ as r) -> hg_tracked_files r ~rev:(hg_rev tree_ish)
+| (`Git, _, _ as r) -> git_tracked_files r ~tree_ish
+| (`Hg, _, _ as r) -> hg_tracked_files r ~rev:(hg_rev tree_ish)
 
 (* Operations *)
 
 let clone r ~dir = match r with
-| (`Git, _ as r) -> git_clone r ~dir
-| (`Hg, _ as r) -> hg_clone r ~dir
+| (`Git, _, _ as r) -> git_clone r ~dir
+| (`Hg, _, _ as r) -> hg_clone r ~dir
 
 let checkout ?branch r ~commit_ish = match r with
-| (`Git, _ as r) -> git_checkout r ~branch ~commit_ish
-| (`Hg, _ as r) -> hg_checkout r ~branch ~rev:(hg_rev commit_ish)
+| (`Git, _, _ as r) -> git_checkout r ~branch ~commit_ish
+| (`Hg, _, _ as r) -> hg_checkout r ~branch ~rev:(hg_rev commit_ish)
 
 let commit_files ?msg r files = match r with
-| (`Git, _ as r) -> git_commit_files r ~msg files
-| (`Hg, _ as r) -> hg_commit_files r ~msg files
+| (`Git, _, _ as r) -> git_commit_files r ~msg files
+| (`Hg, _, _ as r) -> hg_commit_files r ~msg files
 
 let tag ?(force = false) ?(sign = false) ?msg ?(commit_ish = "HEAD") r tag =
   match r with
-  | (`Git, _ as r) -> git_tag r ~force ~sign ~msg ~commit_ish tag
-  | (`Hg, _ as r) -> hg_tag r ~force ~sign ~msg ~rev:(hg_rev commit_ish) tag
+  | (`Git, _, _ as r) -> git_tag r ~force ~sign ~msg ~commit_ish tag
+  | (`Hg, _, _ as r) -> hg_tag r ~force ~sign ~msg ~rev:(hg_rev commit_ish) tag
 
 let delete_tag r tag = match r with
-| (`Git, _ as r) -> git_delete_tag r tag
-| (`Hg, _ as r) -> hg_delete_tag r tag
+| (`Git, _, _ as r) -> git_delete_tag r tag
+| (`Hg, _, _ as r) -> hg_delete_tag r tag
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

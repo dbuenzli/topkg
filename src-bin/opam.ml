@@ -4,108 +4,94 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-open Astring
-open Rresult
-open Bos
+open Bos_setup
 
-let find_descr std_files opam_file descr_file = match descr_file with
-| Some d -> OS.File.read d >>= fun c -> Topkg_care.Opam.Descr.of_string c
+let get_pkg_dir p opam_pkg_dir = match opam_pkg_dir with
+| Some d -> Ok d
 | None ->
-    let descr_file = Fpath.(parent opam_file / "descr") in
-    OS.File.exists descr_file >>= function
-    | true ->
-        Logs.info (fun m -> m "Found OPAM descr file %a" Fpath.pp descr_file);
-        OS.File.read descr_file >>= fun c -> Topkg_care.Opam.Descr.of_string c
-    | false ->
-        Fpath.of_string (fst (Topkg.Private.Std_files.readme std_files))
-        >>= fun readme ->
-        Logs.info (fun m -> m "Extracting OPAM descr from %a" Fpath.pp readme);
-        OS.File.read readme
-        >>= fun c -> Topkg_care.Opam.Descr.of_readme_md c
+    Topkg_care.Pkg.build_dir p
+    >>= fun bdir -> Topkg_care.Pkg.distrib_filename ~opam:true p
+    >>= fun fname -> Ok Fpath.(bdir // fname)
 
-let descr ~pkg_file opam_file descr_file =
-  Topkg_care.Std_files.of_pkg_file ~pkg_file
-  >>= fun std_files -> Topkg_care.Std_files.find_opam_file std_files
-  >>= fun opam_file -> find_descr std_files opam_file descr_file
-  >>= fun descr ->
+let descr pkg =
+  Topkg_care.Pkg.opam_descr pkg >>= fun descr ->
   Logs.app (fun m -> m "%s" (Topkg_care.Opam.Descr.to_string descr));
   Ok 0
 
-let pkg_dir det opam_pkg_dir = match opam_pkg_dir with
-| Some d -> d
-| None ->
-      Fpath.(Topkg_care.Distrib.(build_dir det // rootname ~opam:true det))
-
-let pkg_url dist_file uri =
-  try
-    let checksum = Digest.(to_hex @@ file (Fpath.to_string dist_file)) in
-    Ok (strf "archive: \"%s\"\nchecksum: \"%s\"" uri checksum)
-  with Failure msg | Sys_error msg -> R.error_msg msg
-
-
-
-let pkg ~pkg_file det opam_pkg_dir opam_file descr_file dist_file =
-  failwith "TODO"
-(*
-  det ~pkg_file
-  >>= fun det -> Ok (pkg_dir det opam_pkg_dir)
-  >>= fun dir -> Topkg_care.Std_files.of_pkg_files ~pkg_file
-  >>= fun std_files -> Cli.find_opam_file std_files opam_file
-  >>= fun opam_file -> OS.File.read opam_file
-  >>= fun opam -> find_descr std_files opam_file descr_file
-  >>= fun descr -> Cli.find_dist_file det dist_file
-  >>= fun dist_file -> pkg_url dist_file "TODO"
-  >>= fun url -> OS.Dir.create dir
-  >>= fun _ ->
-  OS.File.write Fpath.(dir / "descr") (Topkg_care.Opam.Descr.to_string descr)
+let pkg pkg dist_pkg opam_pkg_dir =
+  let log_pkg dir =
+    Logs.app (fun m -> m "Wrote OPAM package %a" Topkg_care.Pp.path dir)
+  in
+  let warn_if_vcs_dirty () =
+    Cli.warn_if_vcs_dirty "The OPAM package may be inconsistent with the \
+    distribution."
+  in
+  get_pkg_dir pkg opam_pkg_dir
+  >>= fun dir -> Topkg_care.Pkg.opam pkg
+  >>= fun opam -> OS.File.read opam
+  >>= fun opam -> Topkg_care.Pkg.opam_descr pkg
+  >>= fun descr -> Ok (Topkg_care.Opam.Descr.to_string descr)
+  >>= fun descr -> Topkg_care.Pkg.distrib_file dist_pkg
+  >>= fun distrib_file -> Topkg_care.Pkg.distrib_uri dist_pkg
+  >>= fun uri -> Topkg_care.Opam.Url.with_distrib_file ~uri distrib_file
+  >>= fun url -> OS.Dir.exists dir
+  >>= fun exists -> (if exists then OS.Dir.delete ~recurse:true dir else Ok ())
+  >>= fun () -> OS.Dir.create dir
+  >>= fun _ -> OS.File.write Fpath.(dir / "descr") descr
   >>= fun () -> OS.File.write Fpath.(dir / "opam") opam
   >>= fun () -> OS.File.write Fpath.(dir / "url") url
+  >>= fun () -> log_pkg dir; warn_if_vcs_dirty ()
   >>= fun () ->
-  Logs.app (fun m -> m "Wrote OPAM package %a" Fmt.(styled `Bold Fpath.pp) dir);
   Ok 0
-*)
 
-let ensure_opam_publish () =
-  let opam_publish =
-    OS.Env.(value "TOPKG_OPAM_PUBLISH" cmd ~absent:(Cmd.v "opam-publish"))
-  in
-  OS.Cmd.must_exist opam_publish
-
-let submit ~pkg_file det opam_pkg_dir =
-  ensure_opam_publish ()
-  >>= fun opam_publish -> det ~pkg_file
-  >>= fun det -> Ok (pkg_dir det opam_pkg_dir)
-  >>= fun dir -> OS.Dir.exists dir
+let submit pkg opam_pkg_dir =
+  Topkg_care.Opam.ensure_publish ()
+  >>= fun () -> get_pkg_dir pkg opam_pkg_dir
+  >>= fun pkg_dir -> OS.Dir.exists pkg_dir
   >>= function
   | false ->
       Logs.err (fun m -> m "Package@ %a@ does@ not@ exist. Did@ you@ forget@ \
-                            to@ invoke $(topkg opam pkg) ?" Fpath.pp dir);
+                            to@ invoke 'topkg opam pkg' ?" Fpath.pp pkg_dir);
       Ok 1
   | true ->
-      Logs.app (fun m -> m "Submitting %a" Fmt.(styled `Bold Fpath.pp) dir);
-      OS.Cmd.run Cmd.(opam_publish % "submit" % p dir) >>= fun () -> Ok 0
+      Logs.app (fun m -> m "Submitting %a" Topkg_care.Pp.path pkg_dir);
+      Topkg_care.Opam.submit ~pkg_dir >>= fun () -> Ok 0
 
-let field ~pkg_file opam_file field = match field with
+let field pkg field = match field with
 | None -> Logs.err (fun m -> m "Missing FIELD positional argument"); Ok 1
 | Some field ->
-    failwith "TODO"
-(*
-    Topkg_care.Std_files.of_pkg_file ~pkg_file
-    >>= fun std_files -> Cli.find_opam_file std_files opam_file
-    >>= fun opam_file -> Topkg_care.Opam.File.fields opam_file
-    >>= fun fields -> match String.Map.find field fields with
+    Topkg_care.Pkg.opam_field pkg field
+    >>= function
     | Some v -> Logs.app (fun m -> m "%s" (String.concat ~sep:" " v)); Ok 0
     | None ->
-        Logs.err (fun m ->
-            m "%a: field %s is undefined" Fpath.pp opam_file field); Ok 1
-*)
+        Topkg_care.Pkg.opam pkg >>= fun opam ->
+        Logs.err (fun m -> m "%a: field %s is undefined" Fpath.pp opam field);
+        Ok 1
 
-let opam () pkg_file cmd det opam_pkg_dir opam_file descr_file dist_file fname =
-  begin match cmd with
-  | `Descr -> descr ~pkg_file opam_file descr_file
-  | `Pkg -> pkg ~pkg_file det opam_pkg_dir opam_file descr_file dist_file
-  | `Submit -> submit ~pkg_file det opam_pkg_dir
-  | `Field -> field ~pkg_file opam_file fname
+(* Command *)
+
+let opam () pkg_file build_dir
+    dist_name dist_version dist_opam dist_uri dist_file
+    pkg_opam_dir pkg_name pkg_version pkg_opam pkg_descr
+    readme change_log publish_msg action field_name
+  =
+  let p =
+    Topkg_care.Pkg.v
+      ?build_dir ?name:pkg_name ?version:pkg_version ?opam:pkg_opam
+      ?opam_descr:pkg_descr ?readme ?change_log ?publish_msg pkg_file
+  in
+  begin match action with
+  | `Descr -> descr p
+  | `Pkg ->
+      let dist_p =
+        Topkg_care.Pkg.v
+          ?build_dir ?name:dist_name ?version:dist_version ?opam:dist_opam
+          ?distrib_uri:dist_uri ?distrib_file:dist_file ?readme ?change_log
+          ?publish_msg pkg_file
+      in
+      pkg p dist_p pkg_opam_dir
+  | `Submit -> submit p pkg_opam_dir
+  | `Field -> field p field_name
   end
   |> Cli.handle_error
 
@@ -113,68 +99,91 @@ let opam () pkg_file cmd det opam_pkg_dir opam_file descr_file dist_file fname =
 
 open Cmdliner
 
-let cmd =
-  let cmd = [ "descr", `Descr; "pkg", `Pkg; "submit", `Submit;
-              "field", `Field ] in
-  let doc = strf "The command to perform. $(docv) must be one of %s."
-      (Arg.doc_alts_enum cmd)
+let action =
+  let action = [ "descr", `Descr; "pkg", `Pkg; "submit", `Submit;
+                 "field", `Field ]
   in
-  let cmd = Arg.enum cmd in
-  Arg.(required & pos 0 (some cmd) None & info [] ~doc ~docv:"COMMAND")
+  let doc = strf "The action to perform. $(docv) must be one of %s."
+      (Arg.doc_alts_enum action)
+  in
+  let action = Arg.enum action in
+  Arg.(required & pos 0 (some action) None & info [] ~doc ~docv:"ACTION")
 
 let field =
-  let doc = "the field to output ($(b,field) sub-command)" in
+  let doc = "the field to output ($(b,field) action)" in
   Arg.(value & pos 1 (some string) None & info [] ~doc ~docv:"FIELD")
 
-let opam_pkg_dir =
+let pkg_opam_dir =
   let doc = "Directory to use to write the OPAM package. If absent the
-             sub-directory $NAME.$VERSION of the build directory (see
-             option $(b,--build-dir) is used with $NAME and $VERSION
-             respectively determined as mentioned in $(b,--pkg-name) and
-             $(b,pkg-version)."
+             directory $(i,BUILD_DIR)/$(i,PKG_NAME).$(i,PKG_VERSION) of the
+             build directory is used (see options $(b,--build-dir),
+             $(b,--pkg-name) and $(b,--pkg-version))"
   in
   let docv = "DIR" in
-  Arg.(value & opt (some Cli.path_arg) None & info ["opam-pkg-dir"] ~doc ~docv)
+  Arg.(value & opt (some Cli.path_arg) None & info ["pkg-opam-dir"] ~doc ~docv)
 
-let descr_file =
-  let doc = "OPAM descr file to use. If absent uses an existing
-             'descr' file in the directory of the opam file (see
-             $(b,--opam-file)).  If there is no such file a descr is
-             extracted from the README as follows: the package
-             synopsis is extracted from the README's first line by
-             parsing the pattern '$(NAME) $(SEP) $(SYNOPSIS)', the
-             next line is skipped, all the lines until the next one
-             that start with a '#' (markdown section) are the long
-             description. A few lines are filtered out: lines that
-             start with either 'Home page:', 'Contact:' or
-             '%%VERSION%'."
+let pkg_name =
+  let doc = "The name $(docv) of the OPAM package. If absent provided
+             by the package description."
+  in
+  let docv = "PKG_NAME" in
+  Arg.(value & opt (some string) None & info ["pkg-name"] ~doc ~docv)
+
+let pkg_version =
+  let doc = "The version string $(docv) of the OPAM package. If absent provided
+             provided by the VCS tag description of the HEAD commit."
+  in
+  let docv = "PKG_NAME" in
+  Arg.(value & opt (some string) None & info ["pkg-version"] ~doc ~docv)
+
+let pkg_opam =
+  let doc = "The OPAM file to use for the OPAM package. If absent uses the
+             OPAM file mentioned in the package description that corresponds
+             to the OPAM package name $(i,PKG_NAME) (see option
+             $(b,--pkg-name))"
   in
   let docv = "FILE" in
-  Arg.(value & opt (some Cli.path_arg) None & info ["descr-file"] ~doc ~docv)
+  Arg.(value & opt (some Cli.path_arg) None & info ["pkg-opam"] ~doc ~docv)
+
+let pkg_descr =
+  let doc = "The OPAM descr file to use for the OPAM package. If absent and
+             the OPAM file name (see $(b,--pkg-opam)) has a `.opam`
+             extension, uses an existing file with the same path but a `.descr`
+             extension. If the OPAM file name is `opam` uses a `descr`
+             file in the same directory. If these files are not found
+             a description is extracted from the the readme (see
+             option $(b,--readme)) as follow: the first marked up
+             section of the readme is extracted, its title is parsed
+             according to the pattern '$(NAME) $(SEP) $(SYNOPSIS)',
+             the body of the section is the long description. A few
+             lines are filtered out: lines that start with either
+             'Home page:', 'Contact:' or '%%VERSION'."
+  in
+  let docv = "FILE" in
+  Arg.(value & opt (some Cli.path_arg) None & info ["pkg-descr"] ~doc ~docv)
 
 let doc = "interaction with OPAM and the OCaml OPAM repository"
 let man =
   [
     `S "SYNOPSIS";
-    `P "$(b,$(mname)) $(b,$(tname)) [$(i,OPTION)]... $(i,COMMAND)";
+    `P "$(b,$(mname)) $(b,$(tname)) [$(i,OPTION)]... $(i,ACTION)";
     `S "DESCRIPTION";
-    `P "The $(b,$(tname)) command provides a few sub-commands to interact with
+    `P "The $(b,$(tname)) command provides a few actions to interact with
         OPAM and the OCaml OPAM repository.";
-    `S "SUB-COMMANDS";
+    `S "ACTIONS";
     `I ("$(b,descr)",
-        "extract and print an OPAM descr file. This is used by the $(b,pkg)
-         sub-command. See the $(b,--descr-file) option for details.");
+        "extract and print an OPAM descr file. This is used by the
+         $(b,pkg) action. See the $(b,--descr) option for details.");
     `I ("$(b,pkg)",
         "create an OPAM package description for a distribution.
-         The sub-command needs a distribution archive to operate, see
+         The action needs a distribution archive to operate, see
          topkg-distrib(1) or the $(b,--dist-file) option.");
     `I ("$(b,submit)",
-        "submits a package created with the sub-command $(b,pkg) the OCaml
+        "submits a package created with the action $(b,pkg) the OCaml
          OPAM repository. Requires the $(b,opam-publish) tool to be
          installed.");
     `I ("$(b,field) $(i,FIELD)",
-        "outputs the field $(i,FIELD) of the opam file specified by
-         $(b,--opam-file)$.");
+        "outputs the field $(i,FIELD) of the package's OPAM file.");
     `S "ARGUMENTS";
     `S "OPTIONS";
   ] @ Cli.common_opts_man @ [
@@ -185,9 +194,11 @@ let man =
 
 let cmd =
   let info = Term.info "opam" ~sdocs:Cli.common_opts ~doc ~man in
-  let t = Term.(pure opam $ Cli.setup $ Cli.pkg_file $ cmd $
-                Cli.distrib_determine $ opam_pkg_dir $ Cli.opam_file $
-                descr_file $ Cli.dist_file $ field)
+  let t = Term.(pure opam $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $
+                Cli.dist_name $ Cli.dist_version $ Cli.dist_opam $
+                Cli.dist_uri $ Cli.dist_file $
+                pkg_opam_dir $ pkg_name $ pkg_version $ pkg_opam $ pkg_descr $
+                Cli.readme $ Cli.change_log $ Cli.publish_msg $ action $ field)
   in
   (t, info)
 

@@ -18,7 +18,7 @@ let pp_error ppf = function
 
 exception Error of error
 
-let err kind v = raise (Error (Corrupted (kind, v)))
+let err ~kind v = raise (Error (Corrupted (kind, v)))
 let err_version ~exp ~fnd = raise (Error (Version (exp, fnd)))
 
 (* Codecs *)
@@ -51,16 +51,22 @@ let read file c =
 
 let tail s = Topkg_string.with_index_range ~first:1 s
 
+let unit =
+  let kind = "unit" in
+  let enc = function () -> "\x00" in
+  let dec = function "\x00" -> () | s -> err ~kind s in
+  v ~kind ~enc ~dec
+
 let bool =
   let kind = "bool" in
   let enc = function false -> "\x00" | true -> "\x01" in
-  let dec = function "\x00" -> false | "\x01" -> true |  s -> err kind s in
+  let dec = function "\x00" -> false | "\x01" -> true |  s -> err ~kind s in
   v ~kind ~enc ~dec
 
 let int =
   let kind = "int" in
   let enc = string_of_int (* will do for now *) in
-  let dec s = try int_of_string s with Failure _ -> err kind s in
+  let dec s = try int_of_string s with Failure _ -> err ~kind s in
   v ~kind ~enc ~dec
 
 let string =
@@ -75,7 +81,7 @@ let option some =
   let dec s = match Topkg_string.head s with
   | Some '\x00' -> None
   | Some '\x01' -> Some (dec some (tail s))
-  | _ -> err kind s
+  | _ -> err ~kind s
   in
   v ~kind ~enc ~dec
 
@@ -88,7 +94,7 @@ let result ~ok ~error =
   let dec s = match Topkg_string.head s with
   | Some '\x00' -> Ok (dec ok (tail s))
   | Some '\x01' -> Error (dec error (tail s))
-  | _ -> err kind s
+  | _ -> err ~kind s
   in
   v ~kind ~enc ~dec
 
@@ -114,7 +120,7 @@ let list el =
     | Some '\x00' -> acc
     | Some '\x01' ->
       begin match Topkg_string.find_byte ~start:1 '\x01' s with
-      | None -> err kind s
+      | None -> err ~kind s
       | Some one ->
           try
             let last = one - 1 in
@@ -125,9 +131,9 @@ let list el =
             let venc = Topkg_string.with_index_range ~first ~last s in
             let rest = Topkg_string.with_index_range ~first:(last + 1) s in
             loop ((dec el venc) :: acc) rest
-          with Failure _ (* of int_of_string *) -> err kind s
+          with Failure _ (* of int_of_string *) -> err ~kind s
       end
-    | _ -> err kind s
+    | _ -> err ~kind s
     in
     List.rev (loop [] s)
   in
@@ -140,7 +146,7 @@ let pair c0 c1 =
   let enc (v0, v1) = enc seq [enc c0 v0; enc c1 v1] in
   let dec s = match dec seq s with
   | [lenc; renc] -> (dec c0 lenc), (dec c1 renc)
-  | _ -> err kind s
+  | _ -> err ~kind s
   in
   v ~kind ~enc ~dec
 
@@ -150,7 +156,7 @@ let t3 c0 c1 c2 =
   let enc (v0, v1, v2) = enc seq [enc c0 v0; enc c1 v1; enc c2 v2] in
   let dec s = match (dec seq) s with
   | [v0; v1; v2] -> (dec c0 v0), (dec c1 v1), (dec c2 v2)
-  | _ -> err kind s
+  | _ -> err ~kind s
   in
   v ~kind ~enc ~dec
 
@@ -164,7 +170,7 @@ let t4 c0 c1 c2 c3 =
   in
   let dec s = match (dec seq) s with
   | [v0; v1; v2; v3] -> (dec c0 v0), (dec c1 v1), (dec c2 v2), (dec c3 v3)
-  | _ -> err kind s
+  | _ -> err ~kind s
   in
   v ~kind ~enc ~dec
 
@@ -180,7 +186,7 @@ let t5 c0 c1 c2 c3 c4 =
   let dec s = match (dec seq) s with
   | [v0; v1; v2; v3; v4] ->
       (dec c0 v0), (dec c1 v1), (dec c2 v2), (dec c3 v3), (dec c4 v4)
-  | _ -> err kind s
+  | _ -> err ~kind s
   in
   v ~kind ~enc ~dec
 
@@ -190,14 +196,14 @@ let version version =
      let kind = Printf.sprintf "(%s) v%s" (kind c) enc_version in
      let enc v = String.concat "\x00" [enc_version; enc c v] in
      let dec s = match Topkg_string.cut ~sep:'\x00' s with
-     | None -> err kind s
+     | None -> err ~kind s
      | Some (fnd_version, s) ->
          try
            let fnd = int_of_string fnd_version in
            if fnd <> version then err_version ~exp:version ~fnd else
            dec c s
          with
-         | Failure _ (* of int_of_string *) -> err kind s
+         | Failure _ (* of int_of_string *) -> err ~kind s
      in
      v ~kind ~enc ~dec
 
@@ -213,6 +219,14 @@ let msg =
 
 let result_error_msg ok =
   result ~ok ~error:msg
+
+let fpath = string
+let cmd =
+  let cmd =
+    (fun cmd -> Topkg_cmd.to_list cmd),
+    (fun l -> Topkg_cmd.of_list l)
+  in
+  view cmd (list string)
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

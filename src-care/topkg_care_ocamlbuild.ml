@@ -4,9 +4,7 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-open Astring
-open Rresult
-open Bos
+open Bos_setup
 
 let cmd =
   Cmd.of_list @@ Topkg.Cmd.to_list @@ Topkg.Env.tool "ocamlbuild" `Build_os

@@ -10,20 +10,50 @@ open Topkg_result
 
 type t
 
+val empty : t
 val v :
-  ?delegate:string -> ?std_files:Topkg_std_files.t -> ?lint:Topkg_lint.t ->
-  ?distrib:Topkg_distrib.t -> ?build:Topkg_build.t -> string ->
+  ?delegate:Topkg_cmd.t ->
+  ?std_files:Topkg_std_files.t ->
+  ?lint:Topkg_lint.t ->
+  ?distrib:Topkg_distrib.t ->
+  ?build:Topkg_build.t -> string ->
   Topkg_install.t list -> t
 
 val name : t -> string
-val delegate : t -> string option
+val delegate : t -> Topkg_cmd.t option
 val std_files : t -> Topkg_std_files.t
-val lint : t -> Topkg_lint.t
 val distrib : t -> Topkg_distrib.t
 val build : t -> Topkg_build.t
 val install : t -> Topkg_install.t
 
+val codec : t Topkg_codec.t
+
+(* Derived accessors *)
+
+val build_dir : t -> Topkg_fpath.t
+val readme : t -> Topkg_fpath.t
+val change_log : t -> Topkg_fpath.t
+val license : t -> Topkg_fpath.t
+val opam : name:string -> t -> Topkg_fpath.t
+
+(* Distrib *)
+
+val distrib_uri : t -> string option
+val distrib_prepare_pin : t -> unit result
+val distrib_prepare :
+  t -> dist_build_dir:Topkg_fpath.t -> name:string -> version:string ->
+  opam:Topkg_fpath.t -> Topkg_fpath.t list result
+
+(* Build *)
+
 val run_build : t -> int result
+
+(* Lint *)
+
+val lint_custom : t -> (unit -> R.msg result list) option
+val lint_files : t -> Topkg_fpath.t list option
+val lint_metas : t -> Topkg_fpath.t list option
+val lint_opams : t -> (Topkg_fpath.t * string list option) list option
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

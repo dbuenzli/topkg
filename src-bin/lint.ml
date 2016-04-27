@@ -4,15 +4,13 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-open Astring
-open Rresult
-open Bos
+open Bos_setup
 
-let lint () pkg_file ignore_pkg tests =
+let lint () pkg_file ignore_pkg lints =
   begin
-    let skip t = not (tests = [] || List.mem t tests) in
+    let pkg = Topkg_care.Pkg.v pkg_file in
     OS.Dir.current ()
-    >>= fun dir -> Topkg_care.Lint.distrib ~ignore_pkg ~pkg_file ~dir ~skip
+    >>= fun dir -> Topkg_care.Pkg.lint ~ignore_pkg pkg ~dir lints
   end
   |> Cli.handle_error
 
@@ -20,7 +18,7 @@ let lint () pkg_file ignore_pkg tests =
 
 open Cmdliner
 
-let test =
+let lints =
   let test = [ "custom", `Custom;
                "std-files", `Std_files;
                "meta", `Meta;
@@ -31,9 +29,14 @@ let test =
                   all tests are performed." (Arg.doc_alts_enum test)
   in
   let test = Arg.enum test in
-  Arg.(value & pos_all test [] & info [] ~doc ~docv:"TEST")
+  let docv = "TEST" in
+  Arg.(value & pos_all test Topkg_care.Pkg.lint_all & info [] ~doc ~docv)
 
-let doc = "checks package distribution consistency and conventions"
+let ignore_pkg =
+  let doc = "Ignore package description file." in
+  Arg.(value & flag & info ["i"; "ignore-pkg" ] ~doc)
+
+let doc = "check package distribution consistency and conventions"
 let man =
   [ `S "DESCRIPTION";
     `P "The $(b,$(tname)) command makes tests on a package distribution or
@@ -54,7 +57,7 @@ let man =
 
 let cmd =
   let info = Term.info "lint" ~sdocs:Cli.common_opts ~doc ~man in
-  let t = Term.(pure lint $ Cli.setup $ Cli.pkg_file $ Cli.ignore_pkg $ test) in
+  let t = Term.(pure lint $ Cli.setup $ Cli.pkg_file $ ignore_pkg $ lints) in
   (t, info)
 
 (*---------------------------------------------------------------------------

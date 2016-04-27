@@ -10,7 +10,10 @@
 
     {e %%VERSION%% - {{:%%PKG_HOMEPAGE%% }homepage}} *)
 
-(** {1:res Results} *)
+(** {1 Preliminaries}
+
+    In most cases you won't need this, jump directly
+    to {{!Pkg}package description API}. *)
 
 val ( >>= ) :
   ('a, 'b) Result.result -> ('a -> ('c, 'b) Result.result) ->
@@ -56,10 +59,8 @@ module R : sig
       concatened, on a new line to the old message. *)
 end
 
-(** {1 Strings} *)
-
 val strf : ('a, Format.formatter, unit, string) format4 -> 'a
-(** [strf] is [Printf.sprintf]. *)
+(** [strf] is [Printf.asprintf]. *)
 
 (** Strings. *)
 module String : sig
@@ -128,10 +129,39 @@ module String : sig
       into [(major, minor, patch, additiona_info)] tuples. *)
 end
 
-(** {1 OS interaction} *)
-
 type fpath = string
 (** The type for file system paths. *)
+
+(** File system paths *)
+module Fpath : sig
+
+  (** {1 File system paths} *)
+
+  type t = fpath
+  (** The type for file system paths. *)
+
+  val append : t -> t -> t
+  (** [append p q] appends [q] to [p] as follows:
+      {ul
+      {- If [q] is absolute then [q] is returned}
+      {- Otherwise appends [q]'s segments to [p] using {!Filename.dir_sep}}} *)
+
+  val ( // ) : t -> t -> t
+  (** [p // q] is [append p q]. *)
+
+  val get_ext : t -> string
+  (** [get_ext p] is [p]'s filename extension (including the ['.']) or
+      the empty string if there is no extension *)
+
+  val has_ext : string -> t -> bool
+  (** [has_ext e p] is [true] iff [e] is a suffix of [p]. *)
+
+  val rem_ext : t -> t
+  (** [rem_ext p] is [p] without its filename extension. *)
+
+  val basename : t -> string
+  (** [basename p] is [p] basename, the last non empty segment of [p]. *)
+end
 
 (** Command lines.
 
@@ -226,7 +256,9 @@ module Log : sig
 
   (** {1 Log functions} *)
 
-  type 'a msgf = (('a, Format.formatter, unit) Pervasives.format -> 'a) -> unit
+  type 'a msgf =
+    (?header:string ->
+     ('a, Format.formatter, unit) Pervasives.format -> 'a) -> unit
 
   val msg : level -> 'a msgf -> unit
   (** [msg l (fun m -> m fmt ...)] logs with level [l] a message formatted
@@ -308,6 +340,16 @@ module OS : sig
         is [true] (defaults to [false]) an error is returned if [file]
         doesn't exist. *)
 
+    (** {1:fold Folding over file hierarchies} *)
+
+    val fold :
+      ?skip:(fpath -> bool) -> (fpath -> 'a -> 'a) -> 'a ->
+      fpath list -> 'a result
+    (** [fold_files skip f acc paths] folds [f] over the {e files}
+        found in the file hierarchies starting at [paths].  Files
+        and directories [p] for which [skip p] is [true] are skipped.
+        [skip] defaults to [(fun _ -> false)]. *)
+
     (** {1:rw Reading and writing} *)
 
     val read : fpath -> string result
@@ -330,7 +372,7 @@ module OS : sig
   (** Directory operations. *)
   module Dir : sig
 
-    (** {1:exists Existence} *)
+    (** {1:exists Existence and contents} *)
 
     val exists : fpath -> bool result
     (** [exists dir] is [true] if directory [dir] exists in the file
@@ -340,6 +382,13 @@ module OS : sig
     (** [must_exist dir] is [dir] if [file] is a regular file in the
         file system and an error otherwise. Symbolic links are followed. *)
 
+    val contents : ?dotfiles:bool -> ?rel:bool -> fpath -> fpath list result
+    (** [contents ~dotfiles ~rel dir] is the list of directories and filse
+        in [dir]. If [rel] is [true] (defaults to [false]) the resulting
+        paths are relative to [dir], otherwise they have [dir] prepended.
+        If [dotfiles] is [false] (default) elements that start with a [.]
+        are omitted. *)
+
     (** {1:current Current working directory} *)
 
     val current : unit -> fpath result
@@ -347,22 +396,9 @@ module OS : sig
 
     val set_current : fpath -> unit result
     (** [set_current dir] sets the current working directory to [dir]. *)
-
-    (** {1:fold Folding over files} *)
-
-    val fold_files :
-      ?skip:(fpath -> bool) -> (fpath -> 'a -> 'a result) -> 'a ->
-      fpath list -> 'a result
-    (** [fold_files skip f acc paths] folds [f] over the {e files}
-        found in the file hierarchies starting at [paths].  Files
-        and directories [p] for which [skip p] is [true] are skipped.
-        [skip] defaults to [(fun _ -> false)]. *)
   end
 
-  (** Running commands.
-
-      {b Warning.} All the following function raise [Invalid_argument]
-      on {!Cmd.empty} commands. *)
+  (** Running commands. *)
   module Cmd : sig
 
     (** {1:exists Command existence} *)
@@ -434,14 +470,14 @@ module OS : sig
         If [err] is specified [stderr] is redirected to the given file. *)
   end
 
+(*
   val exit : 'a result -> unit
   (** [exit r] is
       {ul
       {- [exit 0] if [r = Ok _]}
       {- Prints [m] on stderr and [exit 1] if [r = Error (`Msg m)].}} *)
+*)
 end
-
-(** {1 VCS repositories} *)
 
 (** Version control system repositories. *)
 module Vcs : sig
@@ -461,10 +497,6 @@ module Vcs : sig
 
   type t
   (** The type for version control systems repositories. *)
-
-  val v : kind -> dir:fpath -> t
-  (** [v k ~dir] is a VCS repository of kind [k] with repository directory [dir]
-      (for git this is the [.git] directory, not the VCS working directory). *)
 
   val kind : t -> kind
   (** [kind r] is [r]'s VCS kind. *)
@@ -752,7 +784,7 @@ end
 (** Package description. *)
 module Pkg : sig
 
-  (** {1:build Package build description} *)
+  (** {1:build Build description} *)
 
   type build
   (** The type for package build description. *)
@@ -794,7 +826,7 @@ fun _ os ~build_dir ->
       {- [post] is a hook that is invoked after the build command
          with the build context. Default is a nop.}} *)
 
-  (** {1:install Package install fields}
+  (** {1:install Installation description}
 
       Package install field function generate OPAM install file moves
       from the build directory to the install directories. In turns
@@ -863,11 +895,11 @@ fun _ os ~build_dir ->
       see the {{:https://opam.ocaml.org/doc/manual/dev-manual.html#sec25}
       OPAM manual} for details. *)
 
-  (** {1 Package distribution archive creation} *)
+  (** {1:distrib Distribution description} *)
 
   type watermark = string * [ `String of string | `Version | `Name
                             | `Vcs of [`Commit_id]
-                            | `Opam of string * string * string]
+                            | `Opam of fpath option * string * string]
   (** The type for watermarks. A watermark identifier, e.g. ["ID"] and its
       definition:
       {ul
@@ -875,113 +907,115 @@ fun _ os ~build_dir ->
       {- [`Name], is the name of package.}
       {- [`Version], is the version of the distribution.}
       {- [`Vcs `Commit_id], is the commit identifier (hash) of the
-         distribution.}
-      {- [`Opam (file, field, sep)], is the values of the field [field]
-         concatenated with separator [sep] of the OPAM file [file], expressed
-         relative to the root of the source repository. Not all fields are
-         supported see the value of {!Topkg_care.Opam.field_names}.
-         {b Warning.} In [`Pin] {!Env.build}s, [`Opam] watermarks will
-         only get substituted if the package [topkg-care] is installed.}}
+         distribution. May be post-fixed by ["dirty"] in {!Env.build}
+         pin builds.}
+      {- [`Opam (file, field, sep)], is the values of the field
+         [field] concatenated with separator [sep] of the OPAM file
+         [file], expressed relative to the source repository, if
+         [file] is [None] this is the current package's OPAM file. Not
+         all fields are supported see the value of
+         {!Topkg_care.Opam.File.field_names}.  {b Warning.} In [`Pin]
+         {!Env.build}s, [`Opam] watermarks will only get substituted
+         if the package [topkg-care] is installed.}}
 
       When a file is watermarked with an identifier ["ID"], any occurence of
       the sequence [%%ID%%] in its content is substituted by its definition. *)
 
-  val watermarks : watermark list
-  (** [watermarks] is the default list of watermarks. It has the following
-      elements:
-      {ul
-      {- [("NAME", `Name)]}
-      {- [("VERSION", `Version)]}
-      {- [("VCS_COMMIT_ID", `Vcs [`Commit_id])]}
-      {- [("PKG_MAINTAINER", `Opam ("opam", "maintainer", ", "))]}
-      {- [("PKG_AUTHORS", `Opam ("opam", "authors", ", ")]}
-      {- [("PKG_HOMEPAGE", `Opam ("opam", "homepage", " ")]}
-      {- [("PKG_ISSUES", `Opam ("opam", "bug-reports", " ")]}
-      {- [("PKG_DOC", `Opam ("opam", "doc", " "))]}
-      {- [("PKG_LICENSE", `Opam ("opam", "license", ", ")]}
-      {- [("PKG_REPO", `Opam ("opam", "dev-repo", " "))]}}
-      Prepending to the list will override default definitions. *)
-
-  val files_to_watermark : unit -> fpath list result
-  (** [files_to_watermark ()] is the default list of files to watermark.
-      Obtained by {{!Vcs.get}getting} the VCS repo of the distribution checkout
-      to get the set of {{!Vcs.tracked_files}tracked files} from which files
-      with the following extensions are removed, [.flv], [.gif], [.ico],
-      [.jpeg], [.jpg], [.mov], [.mp3], [.mp4], [.otf], [.pdf], [.png], [.ttf],
-      [.woff]. *)
-
-
-  val commit_ish : unit -> string result
-  (** [commit_ish] is the default distribution commit determination function
-      it defaults to {!Vcs.head}. *)
-
-  val version : commit_ish:string -> string result
-  (** [version] is the default version string generation function
-      it defaults to {!Vcs.describe}. *)
-
-  val exclude_paths : unit -> fpath list result
-  (** [paths_to_remove ()] is the default list of paths to remove once
-      the repository has been checked out to create a distribution.
-      The default is:
-{[
-fun () -> Ok [".git"; ".gitignore"; ".hg"; ".hgignore";
-              "build"; "Makefile"; "_build"]]} *)
-
   type distrib
-  (** The type for specifying the distribution creation. *)
+  (** The type for describing distribution creation. *)
 
   val distrib :
-    ?commit_ish:(unit -> string result) ->
-    ?version:(commit_ish:string -> string result) ->
     ?watermarks:watermark list ->
     ?files_to_watermark:(unit -> fpath list result) ->
     ?massage:(unit -> unit result) ->
     ?exclude_paths:(unit -> fpath list result) ->
-(*
-    ?lint:bool ->
-    ?test_build:bool ->
-*)
+    ?uri:string ->
     unit -> distrib
-  (** [distrib ~commit_ish ~version ~watermarks ~files_to_watermark
-      ~massage ~paths_to_remove ()] describes the distribution
-      creation process as it will be performed by the [topkg] tool.
+  (** [distrib ~watermarks ~files_to_watermark ~massage
+      ~exclude_paths ~uri ()] influencs the distribution creation
+      process performed by the [topkg] tool. See below for the exact
+      details.
 
-      Note that the [topkg] tool allows to override (e.g. the
-      version string) or disable (e.g. skip linting) part of the of
-      the process via command line arguments; see [topkg distrib
-      --help] for more information.
+      In the following the {e distribution build directory} is a
+      private clone of the package's source repository's [HEAD] when
+      [topkg distrib] is invoked.
 
-      In a repository checkout [HEAD] for a package {{!describe}named}
-      [$NAME], with [$BUILD] the build directory specified by the
-      {{!builder}package builder}, the [topkg] tool will construct the
-      distribution as described below.
+      {ul
+      {- [watermarks] defines the source watermarks for the distribution,
+         defaults to {!watermarks}.}
+      {- [files_to_watermark] is invoked in the distribution build
+         directory to determine the files to watermark, defaults
+         to {!files_to_watermark}.}
+      {- [massage] is invoked in the distribution build directory,
+         after watermarking, but before archiving. It can be used to
+         generate distribution time build artefacts. Defaults to {!massage}.}
+      {- [exclude_paths ()] is invoked in the distribution build
+         directory, after massaging, to determine the paths that are
+         excluded from being added to the distribution archive. Defaults to
+         {!exclude_paths}.}
+      {- [uri] is an URI pattern that specifies the location of the
+         distribution on the WWW. In this string any sub-string
+         ["$(NAME)"] is replaced by the package name, ["$(VERSION)"] is replaced
+         by the distribution version string and ["$(VERSION_NUM)"] by
+         distribution version string, chopping an initial
+         ['v'] or ['V'] character if present. This argument is used to
+         generate the [url] file of an OPAM package for the distribution;
+         it will be deprecated in the future in favour of a [x-distrib-uri]
+         field in the OPAM file. If the value is unspecified it defaults to:
+{[PKG_HOMEPAGE/releases/$(NAME)-$(VERSION_NUM).tbz]]}
+         where PKG_HOMEPAGE is the package's OPAM file [homepage] field.
+         As a special case if the
+         hostname of PKG_HOMEPAGE is [github] the following is used:
+{[PKG_DEV_REPO/releases/download/$(VERSION)/$(NAME)-$(VERSION_NUM).tbz]}
+         where PKG_DEV_REPO is the package's OPAM file [dev-repo] field
+         without the [.git] suffix.}}
+
+      {b Distribution creation details.} The following describes the
+      exact steps performed by [topkg distrib] to create the
+      distribution archive. Note that [topkg] allows to override or
+      disable part of the process via command line arguments, e.g. to
+      specify the version string manually or skip linting. See [topkg
+      distrib --help] for more information.
+
+      The distribution process assumes that the source repository
+      working directory is clean so that its definitions are consistent
+      with those of the distribution build directory. A warning is
+      generated if this is the case as it may end up in inconsistent
+      distribution archives (but which may be fine to only publish
+      a documentation update).
+
+      Let [$NAME] be the name of the package, [$BUILD] be its
+      {{!build}build directory}, [$VERSION] be the VCS tag description
+      (e.g.  [git-describe(1)] if you are using [git]) of the source
+      repository HEAD commit and [distrib] the distribution
+      description found in the source's repository [pkg/pkg.ml] file.
       {ol
-      {- Invoke the [commit_ish] function (defaults to {!commit_ish}) of
-         [HEAD]'s [pkg/pkg.ml] to determine the commit_ish
-         [$COMMIT] to checkout to make the distribution.}
-      {- Invoke the [version] function (defaults to {!version}) of
-         [HEAD]'s [pkg/pkg.ml] to determine the version string [$VERSION].}
-      {- Make a private repo checkout of [$COMMIT] in
-         [$BUILD/$NAME-$VERSION.build].}
-      {- {b From now on we use the definitions of the description
-         [$BUILD/$NAME-$VERSION.build/pkg/pkg.ml] of this checkout as it has
-         the correct description for this state of the package.}}
+      {- Clone the source repository at [HEAD] as the distribution build
+         directory [$BUILD/$NAME-$VERSION.build].}
       {- Prepare the distribution:
         {ol
-         {- Watermark the files mentioned in [files_to_watermark ()] with
-            [watermarks] (respectively default to {!files_to_watermark} and
-            {!watermarks}.)}
-         {- Run the [massage] hook (default is a nop) with the current
-            directory set at the root of the distribution. This can be used
-            to create distribution time build artefacts.}}}
+         {- Invoke the [files_to_watermark] function of [distrib] in the
+            distribution build directory to determine the files to watermark
+            with [watermarks] and perform the watermarking process.}
+         {- Run the [massage] function of [distrib] in the distribution
+            build directory. This can be used to create distribution time
+            build artefacts.}}}
+      {- Invoke the [exclude_paths] function of [distrib] in the
+         distribution build directory to determine the paths to exclude
+         from the archive.}
       {- Create a distribution tarball [$BUILD/$NAME-$VERSION.tbz] with the
-         resulting file hierarchy in [$BUILD/$NAME-$VERSION.build],
-         excluding the
-         paths returned by the [exclude_paths] (defaults to {!exclude_paths})
-         and delete the private repo checkout [$BUILD/$NAME-$VERSION.build].}
-      {- Test the distribution. Unpack it,
-         {!lint} the distribution, build the package by invoking
-         [pkg/pkg.ml build], try to build the tests}}
+         file hierarchy in [$BUILD/$NAME-$VERSION.build],
+         excluding the paths determined at the preceeding point and delete the
+         clone [$BUILD/$NAME-$VERSION.build]. File modifications times in
+         the archive are set to [HEAD]'s commit time and file
+         permissions are preserved. Any other form of file metadata is
+         discarded in the archive.}
+      {- Test the distribution. Unpack it in directory [$BUILD/$NAME-$VERSION],
+         {!lint} the distribution, build the package in the current
+         build environment, on success delete [$BUILD/$NAME-$VERSION].
+         Note that this uses the archive's [pkg/pkg.ml] file, which
+         should not be different from the source's repository file
+         if the latter was clean when [topkg distrib] was invoked.}}
 
       {b Note on watermarking.} It is right to doubt the beauty and be
       concerned about the watermarking process. However experience
@@ -996,10 +1030,46 @@ fun () -> Ok [".git"; ".gitignore"; ".hg"; ".hgignore";
       contexts (this occurence was not subsituted because a ZERO
       WIDTH NON-JOINER U+200C was introduced between the first
       two percent characters). If this scheme poses a problem for certain
-      files simply filter out the result of {!files_to_watermark} or
+      files simply filter the result of {!files_to_watermark} or
       replace it by the exact files you'd like to watermark. *)
 
-  (** {1:stdfiles Package standard files} *)
+  val watermarks : watermark list
+  (** [watermarks] is the default list of watermarks. It has the following
+      elements:
+      {ul
+      {- [("NAME", `Name)]}
+      {- [("VERSION", `Version)]}
+      {- [("VCS_COMMIT_ID", `Vcs [`Commit_id])]}
+      {- [("PKG_MAINTAINER", `Opam (None, "maintainer", ", "))]}
+      {- [("PKG_AUTHORS", `Opam (None, "authors", ", ")]}
+      {- [("PKG_HOMEPAGE", `Opam (None, "homepage", " ")]}
+      {- [("PKG_ISSUES", `Opam (None, "bug-reports", " ")]}
+      {- [("PKG_DOC", `Opam (None, "doc", " "))]}
+      {- [("PKG_LICENSE", `Opam (None, "license", ", ")]}
+      {- [("PKG_REPO", `Opam (None, "dev-repo", " "))]}}
+      Prepending to the list will override default definitions. *)
+
+  val files_to_watermark : unit -> fpath list result
+  (** [files_to_watermark ()] is the default list of files to
+      watermark.  It is invoked in the distribution build directory
+      and gets the set of {{!Vcs.tracked_files}tracked files} of this
+      directory from which it removes the files that end with [.flv],
+      [.gif], [.ico], [.jpeg], [.jpg], [.mov], [.mp3], [.mp4], [.otf],
+      [.pdf], [.png], [.ttf], [.woff]. *)
+
+  val massage : unit -> unit result
+  (** [massage] is the default distribution massaging function. It is
+      invoked in the distribution build directory and does nothing. *)
+
+  val exclude_paths : unit -> fpath list result
+  (** [exclude_paths ()] is the default list of paths to exclude
+      from the distribution archive. It is invoked in the distribution build
+      directory and returns the following static set of files.
+{[
+fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
+              "build"; "Makefile"; "_build"]]} *)
+
+  (** {1:std_files Standard files description} *)
 
   type std_files
   (** The type for specifying the location of standard package files. *)
@@ -1031,13 +1101,13 @@ fun () -> Ok [".git"; ".gitignore"; ".hg"; ".hgignore";
          Automatic install is in the {!lib} field. All the files
          mentioned here will be OPAM and dependency {!lint}ed.}} *)
 
-  (** {1:pkglint Package distribution linting} *)
+  (** {1:lint Distribution linting description} *)
 
   type lint
   (** The type for specifying distribution linting.  *)
 
   val lint :
-    ?custom:(unit -> R.msg result list) option ->
+    ?custom:(unit -> R.msg result list) ->
     ?files:fpath list option ->
     ?meta:bool ->
     ?opam:bool ->
@@ -1072,7 +1142,7 @@ fun () -> Ok [".git"; ".gitignore"; ".hg"; ".hgignore";
   (** {1 Package description} *)
 
   val describe :
-    ?delegate:string ->
+    ?delegate:Cmd.t ->
     ?std_files:std_files ->
     ?lint:lint ->
     ?distrib:distrib ->
@@ -1081,7 +1151,7 @@ fun () -> Ok [".git"; ".gitignore"; ".hg"; ".hgignore";
   (** [describe name ~delegate ~std_files ~lint ~distrib ~builder installs]
       describes a package named [name] with:
       {ul
-      {- [delegate], specify a package delegate to use. If unspecfied
+      {- [delegate], specify a package delegate command to use. If unspecfied
          determined by the delegate lookup procedure, see [topkg-delegate(7)]
          for more information.}
       {- [std_files], specifies the standard files of the package.}
@@ -1092,20 +1162,24 @@ fun () -> Ok [".git"; ".gitignore"; ".hg"; ".hgignore";
       {- [installs] specifies the install moves. Note that some of
          standard files of [std_files] are automatically installed and
          don't need to be specified; see {!stdfiles}.}} *)
-
-  (**/**)
-  val prevent_standalone_main : unit -> unit
-  (**/**)
 end
+
+(** {1 Private} *)
 
 (** Private definitions.
 
-    {b Warning.} [Topkg] users {b must not} use these definitions
-    to describe their package. They are subject to change even
-    between minor versions of the library. *)
+    {b Warning.} The following definitions are subject to change even
+    between minor versions of the library. [Topkg] users {b must not}
+    use these definitions to describe their package. *)
 module Private : sig
 
   (** {1 Private} *)
+
+  val disable_auto_main : unit -> unit
+  (** [disable_auto_main ()] disables [Topkg]'s automatic main
+      function used by package descriptions. Invoke this function
+      in your main function if you are not using [Topkg] in a description
+      file but as as a library. *)
 
   (** Topkg interprocess communication codec.
 
@@ -1164,6 +1238,9 @@ module Private : sig
 
     (** {1 Base type codecs} *)
 
+    val unit : unit t
+    (** [unit] codecs a [()]. *)
+
     val bool : bool t
     (** [bool] codecs booleans. *)
 
@@ -1203,77 +1280,82 @@ module Private : sig
     val view : ?kind:string -> ('a -> 'b) * ('b -> 'a) -> 'b t -> 'a t
     (** [view kind t c] views [t] as [c] for codecing. *)
 
-    (** {1 Results with error message} *)
+    (** {1 Topkg types} *)
 
     val msg : [`Msg of string ] t
     (** [msg] codecs error messages. *)
 
     val result_error_msg : 'a t -> 'a result t
     (** [result_error_msg ok] codecs [ok] or error message results. *)
+
+    val fpath : Topkg_fpath.t t
+    (** [fpath] codecs files paths. *)
+
+    val cmd : Topkg_cmd.t t
+    (** [cmd] codecs command line fragments. *)
   end
 
-  (** Package distribution standard files. *)
-  module Std_files : sig
-
-    (** {1 Standard files} *)
-
-    type t = Pkg.std_files
-
-    val readme : t -> Pkg.std_file
-    (** [readme std] is [std]'s readme file. *)
-
-    val license : t -> Pkg.std_file
-    (** [license std] is [std]'s license file. *)
-
-    val change_log : t -> Pkg.std_file
-    (** [change_log std] is [std]'s change log file. *)
-
-    val meta : t -> Pkg.std_file list
-    (** [meta std] is [std]'s META files. *)
-
-    val opam : t -> Pkg.std_file list
-    (** [opam std] is [std]'s OPAM files. *)
-
-    val files : t -> fpath list
-    (** [files std] are all the files mentioned in [std]. *)
-
-    val codec : t Codec.t
-    (** [codec] is a codec for standard files description. *)
-  end
-
-  (** Package distribution linting. *)
-  module Lint : sig
-
-    (** {1 Linting} *)
-
-    type t = Pkg.lint
-    (** The type for package distribution linting descriptions. *)
-
-    val custom : t -> R.msg result list option option
-    (** [custom_outcome l] is [l]'s custom linting process outcome (if run). *)
-
-    val files : t -> fpath list option
-    (** [files l] is [l]'s file existence linting descriptions.
-        See {!Pkg.lint}. *)
-
-    val meta : t -> bool
-    (** [meta l] is [l] 's ocamlfind META linting description. See
-        {!val:Pkg.lint}. *)
-
-    val opam : t -> bool
-    (** [opam l] is [l]'s OPAM file linting description.
-        See {!val:Pkg.lint}. *)
-
-    val deps_excluding : t -> string list option
-    (** [deps_excluding l] is [l]'s dependency linting description.
-        See {!val:Pkg.lint}. *)
-
-    val codec : t Codec.t
-    (** [codec] is a codec for linting descriptions. *)
-  end
-
+  (** Package description. *)
   module Pkg : sig
+
     type t
+    (** The type for package descriptions. *)
+
+    val empty : t
+    (** [empty] is an empty package description. *)
+
+    val name : t -> string
+    (** [name p] is [p]'s name. *)
+
+    val delegate : t -> Cmd.t option
+    (** [delegate p]is [p]'s delegate. *)
+
+    val build_dir : t -> fpath
+    (** [build_dir p] is [p]'s build directory. *)
+
+    val readme : t -> fpath
+    (** [readme p] is [p]'s readme file. *)
+
+    val change_log : t -> fpath
+    (** [change_log p] is [p]'s change log file. *)
+
+    val license : t -> fpath
+    (** [license p] is [p]'s license file. *)
+
+    val opam : name:string -> t -> fpath
+    (** [opam name p] is [p]'s OPAM file for OPAM package [name]. *)
+
+    (** {1:distrib Distrib} *)
+
+    val distrib_uri : t -> string option
+    (** [distrib_uri p] is [p]'s distribution location URI pattern.
+        See {!Pkg.distrib}. *)
+
+    (** {1:lints Lints}
+
+        {b Note.} In the following [None] values mean that
+        the lint is disabled by the package description. *)
+
+    val lint_custom : t -> (unit -> R.msg result list) option
+    (** [lint_custom p] is [p]'s custom linting function (if any).
+
+        {b Note.} Use {!Ipc.lint_custom} to run the function
+        from another program. *)
+
+    val lint_files : t -> fpath list option
+    (** [lint_files p] are [p]'s files to check for existence. *)
+
+    val lint_metas : t -> fpath list option
+    (** [lint_metas p] are [p]'s META file to [ocamlfind lint]. *)
+
+    val lint_opams : t -> (fpath * string list option) list option
+    (** [lint_opams p] are [p]'s OPAM file [opam lint] tupled with
+        dependency exclusion to perform dependency linting. *)
+
+    (** {1:codec Codec} *)
+
+    val codec : t Codec.t
+    (** [codec] is a codec for package descriptions. *)
   end
 
   (** Topkg interprocess communication. *)
@@ -1294,35 +1376,22 @@ module Private : sig
 
     (** {1 Requests} *)
 
-    val delegate : (string option * Std_files.t) t
-    (** [delegate] is an IPC to get the package's delegate and
-        the package's standard files. *)
+    val pkg : Pkg.t t
+    (** [pkg] is an IPC to get the package description. *)
 
-    val std_files : Std_files.t t
-    (** [std_files] is an IPC to get the standard files description. *)
-
-    val lint : custom:bool -> (Std_files.t * Lint.t) t
-    (** [lint] is an IPC to get the data for performing linting. If [custom]
-        is [true] the custom linting is performed by the IPC. *)
-
-    val distrib_commit_ish : Vcs.commit_ish result t
-    (** [distrib_commit_ish] is an IPC to get the VCS commit-ish that
-        determines the next distribution. *)
-
-    val distrib_determine :
-      build_dir:fpath option -> name:string option ->
-      commit_ish:Vcs.commit_ish option -> version:string option ->
-      (fpath * string * Vcs.commit_ish * string) result t
-    (** [distrib_determine] is an IPC request get the data needed to create
-        a distribution archive: the build directory, the package name,
-        the commit_ish for the repo checkout and the version string.
-        Any non-[None] value given to the IPC request overrides the
-        package description value and is returned by the IPC as is. *)
+    val lint_custom : R.msg result list option t
+    (** [lint_custom] is an IPC to run the custom linting. *)
 
     val distrib_prepare :
-      name:string -> version:string -> fpath list result t
-    (** [distrib_prepare] is an IPC request to prepare the distribution.
-        It returns the list of paths to exclude from the archive. *)
+      dist_build_dir:fpath -> name:string -> version:string -> opam:fpath ->
+      fpath list result t
+    (** [distrib_prepare dist_build_dir name version opam] is an IPC to
+        prepare a distribution in directory [dist_build_dir]. This
+        sets the cwd to [dist_build_dir], performs the distribution
+        watermarking process with [name] used for [`Name], [version] used
+        for [`Version] and [opam] as the default file for OPAM watermarks.
+        It then performs distribution massaging and returns the file paths
+        to exclude from the distribution archive. *)
   end
 
   (** OPAM helpers. *)
@@ -1359,59 +1428,9 @@ module Private : sig
       val codec : t Codec.t
       (** [codec] is a codec for OPAM file fields. *)
 
-      val ipc_cmd : fpath -> Cmd.t
-      (** [ipc_cmd file] are the command line arguments to give to
-          [topkg] to run and get the fields of the OPAM file [file]
-          encoded on [stdout]. *)
-
       val fields : fpath -> ((string * string list) list) result
       (** [fields file] are the fields of the OPAM file [file] which
-          are obtained by calling [topkg] with [ipc_cmd file]. *)
-    end
-
-    (** OPAM install file.
-
-        A module to generate OPAM install files.
-
-        {b Reference}.
-        {{:http://opam.ocaml.org/doc/manual/dev-manual.html#sec25}
-        Syntax and semantics} of OPAM install files. *)
-    module Install : sig
-
-      (** {1 OPAM install files} *)
-
-      type field =
-      [ `Bin
-      | `Doc
-      | `Etc
-      | `Lib
-      | `Libexec
-      | `Man
-      | `Misc
-      | `Sbin
-      | `Share
-      | `Share_root
-      | `Stublibs
-      | `Toplevel
-      | `Unknown of string ]
-      (** The type for OPAM install file fields. *)
-
-      type move
-      (** The type for file moves. *)
-
-      val move : ?maybe:bool -> ?dst:fpath -> fpath -> move
-      (** [move ~maybe ~dst src] moves [src] to [dst], where [dst] is
-          a path relative to the directory corresponding to the
-          {{!field}field}.  If [maybe] is [true] (defaults to
-          [false]), then [src] may not exist, otherwise an install
-          error will occur if the file doesn't exist. *)
-
-      type t = [ `Header of string option ] * (field * move) list
-      (** The type for opam install files. An optional starting header
-          comment and a list of field moves. *)
-
-      val to_string : t -> string
-      (** [to_string t] is [t] as syntactically valid OPAM install file. *)
+          are obtained by calling the [topkg] topkg executable. *)
     end
   end
 end
@@ -1780,27 +1799,6 @@ build:
            "etc-dir" "%{mypkg:etc}%" ]]
 v}
 
-{1:trouble Troubleshooting}
-
-More information run with TOPKG_VERBOSITY=debug, if you are troubleshooting
-a pin build dont forget to add [--verbose] to [opam] itself.
-
-*)
-
-(** {1 Releasing}
-
-{v
-# Check your issue tracker about outsanding issues.
-$BROWSER $(topkg opam field bug-reports)
-topkg status       # Review the changes since last version
-topkg log edit     # Write your release notes and commit them
-topkg log commit
-topkg tag          # Tag the release
-topkg distrib      # Create the distribution archive
-topkg publish      # Publish it on the www along with the documentation
-topkg opam pkg     # Create OPAM package
-topkg opam submit  # Submit it to OCaml's OPAM repository
-v}
 *)
 
 (*---------------------------------------------------------------------------

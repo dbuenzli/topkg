@@ -43,6 +43,31 @@ module File = struct
       Ok (Sys.remove f)
     with Sys_error e -> R.error_msg e
 
+  (* Folding over files *)
+
+  let fold ?(skip = fun _ -> false) f acc paths =
+    let is_dir d = try Sys.is_directory d with Sys_error _ -> false in
+    let readdir d =
+      try Array.to_list (Sys.readdir d) with Sys_error _ -> []
+    in
+    let keep p = not (skip p) in
+    let process acc file = f file acc in
+    let rec aux f acc = function
+    | (d :: ds) :: up ->
+        let paths = List.rev_map (Filename.concat d) (readdir d) in
+        let paths = List.find_all keep paths in
+        let dirs, files = List.partition is_dir paths in
+        let acc = List.fold_left process acc files in
+        aux f acc (dirs :: ds :: up)
+    | [] :: [] -> acc
+    | [] :: up -> aux f acc up
+    | _ -> assert false
+    in
+    let paths = List.find_all keep paths in
+    let dirs, files = List.partition is_dir paths in
+    let acc = List.fold_left process acc files in
+    Ok (aux f acc (dirs :: []))
+
   (* Reading and writing *)
 
   let read file =
@@ -133,45 +158,33 @@ module Dir = struct
   let current () = try Ok (Sys.getcwd ()) with Sys_error e -> R.error_msg e
   let set_current d = try Ok (Sys.chdir d) with Sys_error e -> R.error_msg e
 
-  (* Folding over files *)
+  (* Directory contents *)
 
-  let fold_files ?(skip = fun _ -> false) f acc paths =
-    let is_dir d = try Sys.is_directory d with Sys_error _ -> false in
-    let readdir d =
-      try Array.to_list (Sys.readdir d) with Sys_error _ -> []
-    in
-    let keep p = not (skip p) in
-    let process acc file = match acc with
-    | Error _ as e -> e
-    | Ok acc -> f file acc
-    in
-    let rec aux f acc = function
-    | (d :: ds) :: up ->
-        let paths = List.rev_map (Filename.concat d) (readdir d) in
-        let paths = List.find_all keep paths in
-        let dirs, files = List.partition is_dir paths in
-        begin match List.fold_left process acc files with
-        | Error _ as e -> e
-        | Ok _ as acc -> aux f acc (dirs :: ds :: up)
-        end
-    | [] :: [] -> acc
-    | [] :: up -> aux f acc up
-    | _ -> assert false
-    in
-    let paths = List.find_all keep paths in
-    let dirs, files = List.partition is_dir paths in
-    let acc = List.fold_left process (Ok acc) files in
-    aux f acc (dirs :: [])
+  let contents ?(dotfiles = false) ?(rel = false) p =
+    try
+      let files = Array.to_list @@ Sys.readdir p in
+      if rel && dotfiles then Ok files else
+      let rec loop acc = function
+      | [] -> List.rev acc
+      | f :: fs ->
+          let acc =
+            if not dotfiles && Topkg_string.is_prefix "." f then acc else
+            if rel then f :: acc else Topkg_fpath.append p f :: acc
+          in
+          loop acc fs
+      in
+      Ok (loop [] files)
+    with Sys_error e -> R.error_msg e
 end
 
 (* Running commands *)
 
 module Cmd = struct
 
-  let err_empty_cmd () = invalid_arg "empty command"
+  let err_empty_line = "no command, empty command line"
 
-  let cmdline ?stdout ?stderr cmd =
-    if Topkg_cmd.is_empty cmd then err_empty_cmd () else
+  let line ?stdout ?stderr cmd =
+    if Topkg_cmd.is_empty cmd then failwith err_empty_line else
     let cmd = List.rev_map Filename.quote (Topkg_cmd.to_rev_list cmd) in
     let cmd = String.concat " " cmd in
     let stdout = match stdout with None -> "" | Some f -> strf " 1>%s" f in
@@ -179,10 +192,11 @@ module Cmd = struct
     strf "%s%s%s" cmd stdout stderr
 
   let exec ?stdout ?stderr cmd =
-    let line = cmdline ?stdout ?stderr cmd in
-    Topkg_log.debug (fun m -> m "[EXEC] %S" line);
-    try Ok ((), (cmd, `Exited (Sys.command line)))
-    with Sys_error e -> R.error_msg e
+    try
+      let line = line ?stdout ?stderr cmd in
+      Topkg_log.debug (fun m -> m ~header:"EXEC" "%S" line);
+      Ok ((), (cmd, `Exited (Sys.command line)))
+    with Sys_error e | Failure e -> R.error_msg e
 
   (* Command existence *)
 
@@ -190,17 +204,20 @@ module Cmd = struct
     | "Win32" -> Topkg_cmd.v "where"
     | _ -> Topkg_cmd.v "type"
 
-  let cmd_bin cmd = (* assert (cmd non empty) *)
-    try List.hd (Topkg_cmd.to_list cmd) with Failure _ -> assert false
+  let cmd_bin cmd =
+    try List.hd (Topkg_cmd.to_list cmd) with
+    | Failure _ -> failwith err_empty_line
 
   let exists cmd =
-    if Topkg_cmd.is_empty cmd then err_empty_cmd () else
-    let bin = cmd_bin cmd in
-    let cmd = Topkg_cmd.(test_cmd % bin) in
-    match exec ~stdout:File.null ~stderr:File.null cmd with
-    | Ok (_, (_, `Exited 0)) -> Ok true
-    | Ok _ -> Ok false
-    | Error _ as e -> e
+    try
+      let bin = cmd_bin cmd in
+      let cmd = Topkg_cmd.(test_cmd % bin) in
+      match exec ~stdout:File.null ~stderr:File.null cmd with
+      | Ok (_, (_, `Exited 0)) -> Ok true
+      | Ok _ -> Ok false
+      | Error _ as e -> e
+    with
+    Failure e -> R.error_msg e
 
   let must_exist cmd = exists cmd >>= function
   | false -> R.error_msgf "%s: no such command" (cmd_bin cmd)

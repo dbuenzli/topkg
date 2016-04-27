@@ -4,14 +4,14 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-open Astring
-open Rresult
-open Bos
+open Bos_setup
 
-let ocamlbuild = Cmd.(v "ocamlbuild" % "-classic-display" % "-use-ocamlfind"
-                      % "-no-links")
+let ocamlbuild build_dir =
+  let ocamlbuild = Topkg_care.OCamlbuild.cmd in
+  Cmd.(ocamlbuild % "-classic-display" % "-use-ocamlfind" % "-no-links" %
+       "-build-dir" % p build_dir)
+
 let docflags = Cmd.(v "-docflags" % "-colorize-code,-charset,utf-8")
-let build_dir = Fpath.v "_build" (* TODO *)
 
 let copy_assets src_dir dst_dir =
   let copy_asset dst_dir file = match Fpath.get_ext file with
@@ -29,31 +29,37 @@ let copy_assets src_dir dst_dir =
   OS.Dir.contents src_dir
   >>= fun files -> List.iter (copy_asset dst_dir) files; Ok ()
 
-let do_doc dev build_dir =
+let build_doc dev build_dir =
   let doc_dir = Fpath.v "doc" in
   let odocl = Fpath.(doc_dir / (if dev then "dev.odocl" else "api.odocl")) in
-  OS.File.must_exist odocl
+  let ocamlbuild = ocamlbuild build_dir in
+  OS.Cmd.must_exist ocamlbuild
+  >>= fun _ -> OS.File.must_exist odocl
   >>= fun _ -> Ok Fpath.(set_ext ".docdir" odocl / "index.html")
   >>= fun target -> OS.Cmd.run Cmd.(ocamlbuild %% docflags % p target)
   >>= fun () -> Ok Fpath.(build_dir // parent target)
   >>= fun dst_dir -> copy_assets doc_dir dst_dir
   >>= fun () -> Ok dst_dir
 
-let do_browser_reload reload ~background ~browser dir =
-  if not (reload || background) then Ok () else
-  let prefix = true in
+let browser_reload reload ~background ~browser dir =
   OS.Dir.current ()
-  >>= fun cwd -> Ok (strf "file://%s" Fpath.(to_string @@ cwd // dir))
-  >>= fun uri -> Topkg_care.Browser.reload ~background ~prefix ?browser ~uri
+  >>= fun cwd -> Ok Fpath.(cwd // dir)
+  >>= fun abs_dir -> match not (reload || background) with
+  | true -> Ok abs_dir
+  | false ->
+      let uri = strf "file://%s" Fpath.(to_string abs_dir) in
+      Topkg_care.Browser.reload ~background ~prefix:true ?browser ~uri
+      >>= fun () -> Ok abs_dir
 
-let doc_cmd () pkg_file dev reload background browser =
+let doc_cmd () pkg_file build_dir dev reload background browser =
   begin
-    do_doc dev build_dir
-    >>= fun docdir -> do_browser_reload reload ~background ~browser docdir
-    >>= fun () ->
+    let pkg = Topkg_care.Pkg.v ?build_dir pkg_file in
+    Topkg_care.Pkg.build_dir pkg
+    >>= fun build_dir -> build_doc dev build_dir
+    >>= fun docdir -> browser_reload reload ~background ~browser docdir
+    >>= fun abs_docdir ->
     Logs.app (fun m -> m "Generated %s doc in %a"
-                 (if dev then "dev" else "API")
-                 (Fmt.styled `Bold Fpath.pp) docdir);
+                 (if dev then "dev" else "API") Topkg_care.Pp.path abs_docdir);
     Ok 0
   end
   |> Cli.handle_error
@@ -92,8 +98,8 @@ let man =
 
 let cmd =
   let info = Term.info "doc" ~sdocs:Cli.common_opts ~doc ~man in
-  let t = Term.(pure doc_cmd $ Cli.setup $ Cli.pkg_file $ dev $
-                reload_browser $ Topkg_care.Browser.Cli.background $
+  let t = Term.(pure doc_cmd $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $
+                dev $ reload_browser $ Topkg_care.Browser.Cli.background $
                 Topkg_care.Browser.Cli.browser)
   in
   (t, info)

@@ -11,15 +11,10 @@ available: [ ocaml-version >= "4.01.0"]
 depends: [
   "ocamlfind" {build & >= "1.6.1"}
   "ocamlbuild" {build}
+  "topkg"
   "result"
-  "rresult"
-  "astring"
-  "fmt"
-  "fpath"
-  "logs"
   "bos"
   "cmdliner"
-  "topkg"
   "opam-lib" {>= "1.2.2"}
 ]
 build:[[

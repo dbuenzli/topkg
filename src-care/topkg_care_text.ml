@@ -4,9 +4,7 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-open Rresult
-open Astring
-open Bos
+open Bos_setup
 
 type flavour = [ `Markdown | `Asciidoc ]
 
@@ -96,16 +94,79 @@ let header_title ?(flavour = `Markdown) h = match String.cuts ~sep:"\n" h with
 | h :: _  -> h (* underline headers *)
 | [] -> assert false
 
+(* Toy change log parsing *)
+
+let change_log_last_entry ?flavour text = match head ?flavour text with
+| None -> None
+| Some (h, changes) ->
+    let title = header_title ?flavour h in
+    match String.take ~sat:Char.Ascii.is_graphic title with
+    | "" -> Logs.app (fun m -> m "%S %S" h changes);   None
+    | version -> Some (version, (h, changes))
+
+let change_log_file_last_entry file =
+  let flavour = flavour_of_fpath file in
+  OS.File.read file
+  >>= fun text -> match change_log_last_entry ?flavour text with
+  | None -> R.error_msgf "%a: Could not parse change log." Fpath.pp file
+  | Some (version, (header, changes)) -> Ok (version, (header, changes))
+
 (* Toy URI parsing *)
 
 let split_uri ?(rel = false) uri = match String.(cut ~sep:"//" (trim uri)) with
-    | None -> None
-    | Some (scheme, rest) ->
-        match String.cut ~sep:"/" rest with
-        | None -> Some (scheme, rest, "")
-        | Some (host, path) ->
-            let path = if rel then path else "/" ^ path in
-            Some (scheme, host, path)
+| None -> None
+| Some (scheme, rest) ->
+    match String.cut ~sep:"/" rest with
+    | None -> Some (scheme, rest, "")
+    | Some (host, path) ->
+        let path = if rel then path else "/" ^ path in
+        Some (scheme, host, path)
+
+(* Edit and page text *)
+
+let find_pager ~don't =
+  if don't then Ok None else
+  match OS.Env.var "TERM" with
+  | Some "dumb" -> Ok None
+  | _ ->
+      let add_env v cmds = match OS.Env.(value v (some cmd) ~absent:None) with
+      | None -> cmds
+      | Some cmd -> cmd :: cmds
+      in
+      let cmds = [Cmd.v "less"; Cmd.v "more" ] in
+      let cmds = add_env "PAGER" cmds in
+      let rec loop = function
+      | [] -> Ok None
+      | cmd :: cmds ->
+          OS.Cmd.exists cmd >>= function
+          | true -> Ok (Some cmd)
+          | false -> loop cmds
+      in
+      loop cmds
+
+let edit_file f = match OS.Env.(value "EDITOR" (some cmd) ~absent:None) with
+| None -> R.error_msg "EDITOR environment variable undefined."
+| Some editor ->
+    OS.Cmd.exists editor >>= function
+    | false -> R.error_msgf "Editor %a not in search path" Cmd.pp editor
+    | true ->
+        OS.Cmd.(run_status Cmd.(editor % p f)) >>= function
+        | `Exited n | `Signaled n -> Ok n
+
+(* Pretty-printers. *)
+
+module Pp = struct
+  let name = Fmt.(styled `Bold string)
+  let version = Fmt.(styled `Cyan string)
+  let commit = Fmt.(styled `Yellow string)
+  let dirty = Fmt.(styled_unit `Red "dirty")
+  let path = Fmt.(styled `Bold Fpath.pp)
+  let status ppf = function
+  | `Ok -> Fmt.(brackets @@ styled_unit `Green " OK ") ppf ()
+  | `Fail -> Fmt.(brackets @@ styled_unit `Red "FAIL") ppf ()
+end
+
+
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

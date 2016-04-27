@@ -23,6 +23,10 @@ module File : sig
     val must_exist : Topkg_fpath.t -> Topkg_fpath.t result
     val delete : ?must_exist:bool -> Topkg_fpath.t -> unit result
 
+    val fold :
+      ?skip:(Topkg_fpath.t -> bool) -> (Topkg_fpath.t -> 'a -> 'a) ->
+      'a -> Topkg_fpath.t list -> 'a result
+
     val read : Topkg_fpath.t -> string result
     val write : Topkg_fpath.t -> string -> unit result
     val write_subst :
@@ -38,9 +42,8 @@ module Dir : sig
   val current : unit -> Topkg_fpath.t result
   val set_current : Topkg_fpath.t -> unit result
 
-  val fold_files :
-    ?skip:(Topkg_fpath.t -> bool) -> (Topkg_fpath.t -> 'a -> 'a result) ->
-    'a -> Topkg_fpath.t list -> 'a result
+  val contents :
+    ?dotfiles:bool -> ?rel:bool -> Topkg_fpath.t -> Topkg_fpath.t list result
 end
 
 module Cmd : sig

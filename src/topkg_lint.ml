@@ -7,19 +7,17 @@
 open Topkg_result
 
 type t =
-  { custom_fun : (unit -> R.msg result list) option;
-    custom : (* result of [custom_fun] *) R.msg result list option option;
+  { custom : (unit -> R.msg result list) option;
     files : string list option;
     meta : bool;
     opam : bool;
     deps_excluding : string list option; }
 
 let v
-    ?custom:(custom_fun = None) ?(files = Some []) ?(meta = true) ?(opam = true)
+    ?custom ?(files = Some []) ?(meta = true) ?(opam = true)
     ?(deps_excluding = Some []) ()
   =
-  let custom = match custom_fun with None -> None | Some _ -> Some None in
-  { custom_fun; custom; files; meta; opam; deps_excluding; }
+  { custom; files; meta; opam; deps_excluding; }
 
 let custom l = l.custom
 let files l = l.files
@@ -27,27 +25,26 @@ let meta l = l.meta
 let opam l = l.opam
 let deps_excluding l = l.deps_excluding
 
-let run_custom l =
-  let custom = match l.custom_fun with
-  | None -> None
-  | Some tests -> Some (Some (tests ()))
-  in
-  { l with custom }
-
 (* Codec *)
 
 let codec =
-  let custom = Topkg_codec.(option @@ option @@ list @@ result_error_msg msg) in
   let string_list_option = Topkg_codec.(option @@ list string) in
-  let custom = Topkg_codec.(with_kind "custom" @@ custom) in
+  let custom =
+    let stub () = invalid_arg "not executable outside package definition" in
+    let kind = "custom" in
+    let enc = function None -> "\x00" | Some _ -> "\x01" in
+    let dec = function
+    | "\x00" -> None | "\x01" -> Some stub | s -> Topkg_codec.err ~kind s in
+    Topkg_codec.v ~kind ~enc ~dec
+  in
   let files = Topkg_codec.(with_kind "files" @@ string_list_option) in
   let meta = Topkg_codec.(with_kind "meta" @@ bool) in
   let opam = Topkg_codec.(with_kind "opam" @@ bool) in
   let deps = Topkg_codec.(with_kind "deps_excluding" @@ string_list_option) in
   let fields =
-    (fun t -> t.custom, t.files, t.meta, t.opam, t.deps_excluding),
+    (fun l -> l.custom, l.files, l.meta, l.opam, l.deps_excluding),
     (fun (custom, files, meta, opam, deps_excluding) ->
-      { custom; custom_fun = None; files; meta; opam; deps_excluding; })
+       { custom; files; meta; opam; deps_excluding; })
   in
   Topkg_codec.version 0 @@
   Topkg_codec.(view ~kind:"package lint" fields

@@ -15,14 +15,11 @@ type t =
     opam : file list; }
 
 let v
-  ?(readme = ("README.md", true))
-  ?(license = ("LICENSE.md", true))
-  ?(change_log = ("CHANGES.md", true))
-  ?(meta = [("pkg/META", true)])
-  ?(opam = [("opam", true)])
-  ()
-    =
-    { readme; license; change_log; meta; opam }
+  ?(readme = ("README.md", true)) ?(license = ("LICENSE.md", true))
+  ?(change_log = ("CHANGES.md", true)) ?(meta = [("pkg/META", true)])
+  ?(opam = [("opam", true)]) ()
+  =
+  { readme; license; change_log; meta; opam }
 
 let readme std = std.readme
 let license std = std.license

@@ -4,29 +4,42 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-(** Package standard files.
-
-    See {!Topkg.Private.Std_files} for documentation. *)
+(** Package standard files. *)
 
 open Topkg_result
 
 type t
-type file = Topkg_fpath.t * bool;;
+(** The type for standard files. *)
+
+type file = Topkg_fpath.t * bool
+(** A file and whether it should be installed or not. *)
 
 val v :
   ?readme:file -> ?license:file -> ?change_log:file -> ?meta:file list ->
   ?opam:file list -> unit -> t
 
 val readme : t -> file
+(** [readme std] is [std]'s readme file. *)
+
 val license : t -> file
+(** [license std] is [std]'s license file. *)
+
 val change_log : t -> file
+(** [change_log std] is [std]'s change log file. *)
+
 val meta : t -> file list
+(** [meta std] is [std]'s META files. *)
+
 val opam : t -> file list
+(** [opam std] is [std]'s OPAM files. *)
 
 val files : t -> Topkg_fpath.t list
+(** [files std] are all the files mentioned in [std]. *)
+
 val install : t -> Topkg_install.t list
 
 val codec : t Topkg_codec.t
+(** [codec] is a codec for standard files description. *)
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

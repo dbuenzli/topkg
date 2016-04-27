@@ -6,47 +6,34 @@
 
 open Result
 
-(* Results *)
-
 include Topkg_result
-
-(* Strings *)
 
 let strf = Topkg_string.strf
 module String = Topkg_string
 
-(* Log *)
-
-module Log = Topkg_log
-
-(* OS interaction *)
-
 type fpath = string
-
 module Fpath = Topkg_fpath
 module Cmd = Topkg_cmd
+module Log = Topkg_log
 module OS = Topkg_os
 module Vcs = Topkg_vcs
 
 (* Package description *)
 
 module Env = Topkg_conf
-
 module Exts = Topkg_fexts
-
 module Pkg = struct
 
   (* Distrib *)
 
   type watermark = Topkg_distrib.watermark
+  type distrib = Topkg_distrib.t
+
+  let distrib = Topkg_distrib.v
   let watermarks = Topkg_distrib.default_watermarks
   let files_to_watermark = Topkg_distrib.default_files_to_watermark
-
-  type distrib = Topkg_distrib.t
-  let commit_ish = Topkg_distrib.default_commit_ish
-  let version = Topkg_distrib.default_version
+  let massage = Topkg_distrib.default_massage
   let exclude_paths = Topkg_distrib.default_exclude_paths
-  let distrib = Topkg_distrib.v
 
   (* Standard files *)
 
@@ -96,13 +83,13 @@ module Pkg = struct
     pr "@.";
     Ok 0
 
-  let do_standalone_main = ref true
-  let prevent_standalone_main () = do_standalone_main := false
+  let do_auto_main = ref true
+  let disable_auto_main () = do_auto_main := false
 
-  let standalone_main pkg =
+  let auto_main pkg =
     begin
-      prevent_standalone_main ();
-      Log.info (fun m -> m "topkg %%VERSION%% standalone main running");
+      disable_auto_main ();
+      Log.info (fun m -> m "topkg %%VERSION%% auto main running");
       match Topkg_conf.cmd with
       | `Help -> pr_help ()
       | `Build -> Topkg_conf.warn_unused (); Topkg_pkg.run_build pkg
@@ -124,10 +111,10 @@ module Pkg = struct
           Topkg_pkg.v ?delegate ?std_files ?lint ?distrib ?build name installs
         in
         pkg := Some p;
-        if !do_standalone_main then exit (standalone_main p) else ()
+        if !do_auto_main then exit (auto_main p) else ()
 
   let err_no_main () =
-    if !do_standalone_main && !pkg = None then
+    if !do_auto_main && !pkg = None then
       Log.err begin fun m ->
         m "No@ package@ description@ found.@ A@ syntax@ error@ may@ have@ \
            occured@ or@ did@ you@ forget@ to@ call@ Topkg.Pkg.describe@ ?"
@@ -137,14 +124,10 @@ module Pkg = struct
 end
 
 module Private = struct
+  let disable_auto_main = Pkg.disable_auto_main
   module Codec = Topkg_codec
-  module Ipc = Topkg_ipc
-  module Lint = Topkg_lint
-  module Std_files = Topkg_std_files
-  module Distrib = Topkg_distrib
-  module Build = Topkg_build
-  module Install = Topkg_install
   module Pkg = Topkg_pkg
+  module Ipc = Topkg_ipc
   module Opam = Topkg_opam
 end
 

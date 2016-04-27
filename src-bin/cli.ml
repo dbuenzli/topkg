@@ -4,9 +4,7 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-open Astring
-open Rresult
-open Bos
+open Bos_setup
 open Cmdliner
 
 (* Manual *)
@@ -36,62 +34,88 @@ let pkg_file =
   Arg.(value & opt path_arg (Fpath.v "pkg/pkg.ml") &
        info ["pkg-file"] ~docs:common_opts ~doc ~docv)
 
-let ignore_pkg =
-  let doc = "Ignore package description file." in
-  Arg.(value & flag & info ["i"; "ignore-pkg" ] ~doc)
-
-let dist_pkg_file =
-  let doc = "Use $(docv) as the package description file in the
-             distribution. Expressed relative to the distribution
-             directory."
+let opam =
+  let doc = "The OPAM file to use. If absent uses the default OPAM file
+             mentioned in the package description."
   in
   let docv = "FILE" in
-  Arg.(value & opt path_arg (Fpath.v "pkg/pkg.ml") & info ["dist-pkg-file"]
-         ~doc ~docv)
+  Arg.(value & opt (some path_arg) None & info ["opam"] ~doc ~docv)
 
-let opam_file =
-  let doc = "OPAM file to use. If absent uses the first OPAM file mentioned
-             in the package description file or ./opam, if there is no
-             such file."
+let dist_name =
+  let doc = "The name $(docv) of the package to use for the package
+             distribution. If absent, provided by the package description."
   in
-  let docv = "FILE" in
-  Arg.(value & opt (some path_arg) None & info ["opam-file"] ~doc ~docv)
+  let docv = "NAME" in
+  Arg.(value & opt (some string) None & info ["dist-name"] ~doc ~docv)
+
+let dist_version =
+  let doc = "The version string to use for the package distribution.
+             If absent, provided by the VCS tag description of the
+             HEAD commit."
+  in
+  let docv = "VERSION" in
+  Arg.(value & opt (some string) None & info ["dist-version"] ~doc ~docv)
 
 let dist_file =
   let doc = "The package distribution archive. If absent the file
-             $(NAME)-$(VERSION).tbz of the build directory (see option
-             $(b,--build-dir)) is used with $NAME and $VERSION respectively
-             determined as mentioned in $(b,--pkg-name) and $(b,pkg-version)."
+             $(i,BUILD_DIR)/$(i,NAME)-$(i,VERSION).tbz (see options
+             $(b,--build-dir), $(b,--dist-name) and $(b,--dist-version))."
   in
   let docv = "FILE" in
   Arg.(value & opt (some path_arg) None & info ["dist-file"] ~doc ~docv)
 
-let change_log =
-  let doc = "The change log to use. If absent determined from the
+let dist_opam =
+  let doc = "OPAM file to use for the distribution. If absent uses the OPAM
+             file mentioned in the package description that corresponds to
+             the distribution package name $(i,NAME) (see option
+             $(b,--dist-name))."
+  in
+  let docv = "FILE" in
+  Arg.(value & opt (some path_arg) None & info ["dist-opam"] ~doc ~docv)
+
+let dist_uri =
+  let doc = "The distribution archive URI on the WWW. If absent, provided by the
              package description."
+  in
+  let docv = "URI" in
+  Arg.(value & opt (some string) None & info ["dist-uri"] ~doc ~docv)
+
+let readme =
+  let doc = "The readme to use. If absent, provided by the package
+             description."
+  in
+  let docv = "FILE" in
+  Arg.(value & opt (some path_arg) None & info ["readme"] ~doc ~docv)
+
+let change_log =
+  let doc = "The change log to use. If absent, provided by the package
+             description."
   in
   let docv = "FILE" in
   Arg.(value & opt (some path_arg) None & info ["change-log"] ~doc ~docv)
 
 let delegate =
-  let doc = "The delegate tool to use. If absent, see topkg-delegate(7)
+  let doc = "The delegate tool $(docv) to use. If absent, see topkg-delegate(7)
              for the lookup procedure."
   in
   let docv = "TOOL" in
-  Arg.(value & opt (some string) None & info ["delegate"] ~doc ~docv)
+  let to_cmd = function None -> None | Some s -> Some (Cmd.v s) in
+  Term.(const to_cmd $
+        Arg.(value & opt (some string) None & info ["delegate"] ~doc ~docv))
 
-(* Lookups *)
-
-let find_dist_file det dist_file =
-  let dist = match dist_file with
-  | Some d -> d
-  | None -> Topkg_care.Distrib.archive_path det
+let build_dir =
+  let doc = "Specifies the build directory $(docv). If absent, provided by the
+             package description."
   in
-  OS.File.exists dist >>= function
-  | true -> Ok dist
-  | false ->
-      R.error_msgf "%a: No such file. Did you forget to invoke \
-                    $(topkg distrib) ?" Fpath.pp dist
+  let docv = "BUILD_DIR" in
+  Arg.(value & opt (some path_arg) None & info ["build-dir"] ~doc ~docv)
+
+let publish_msg =
+  let doc = "The publication message $(docv). Defaults to the change
+             log of the last version (see $(b,topkg log -l))."
+  in
+  let docv = "MSG" in
+  Arg.(value & opt (some string) None & info ["m"; "message"] ~doc ~docv)
 
 (* Terms *)
 
@@ -133,42 +157,17 @@ let setup =
   in
   Term.(ret (const setup $ style_renderer $ log_level $ cwd))
 
-let distrib_determine =
-  let build_dir =
-    let doc = "Specifies the build directory. If absent, provided by
-               the package description."
-    in
-    let docv = "DIR" in
-    Arg.(value & opt (some string) None & info ["build-dir"] ~doc ~docv)
-  in
-  let pname =
-    let doc = "The name of the package to use for the package distribution.
-               If absent, provided by the package description."
-    in
-    let docv = "NAME" in
-    Arg.(value & opt (some string) None & info ["name"] ~doc ~docv)
-  in
-  let commit_ish =
-    let doc = "The VCS commit-ish to base the package distribution on.
-               If absent, provided by the package description."
-    in
-    let docv = "COMMIT-ISH" in
-    Arg.(value & opt (some string) None & info ["commit"] ~doc ~docv)
-  in
-  let pkg_version =
-    let doc = "The version string to use for the package distribution.
-               If absent, provided by the package description."
-    in
-    let docv = "VERSION" in
-    Arg.(value & opt (some string) None & info ["pkg-version"] ~doc ~docv)
-  in
-  let det build_dir name commit_ish version ~pkg_file =
-    Topkg_care.Distrib.determine
-      ~pkg_file ~build_dir ~name ~commit_ish ~version
-  in
-  Term.(const det $ build_dir $ pname $ commit_ish $ pkg_version)
-
 (* Error handling *)
+
+let warn_if_vcs_dirty msg =
+  Topkg.Vcs.get ()
+  >>= fun repo -> Topkg.Vcs.is_dirty repo
+  >>= function
+  | false -> Ok ()
+  | true ->
+      Logs.warn
+        (fun m -> m "The repo is %a. %a" Topkg_care.Pp.dirty () Fmt.text msg);
+      Ok ()
 
 let handle_error r = Logs.on_error_msg ~use:(fun _ -> 3) r
 

@@ -4,59 +4,41 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-open Astring
-open Rresult
-open Bos
+open Bos_setup
 
 (* Actions *)
 
 let show change_log last last_version no_pager =
   let text =
-    OS.File.read change_log >>= fun text ->
-    if not (last || last_version) then Ok text else
-    let flavour = Topkg_care.Text.flavour_of_fpath change_log in
-    match Topkg_care.Change_log.last_version ?flavour text with
-    | None -> R.error_msgf "%a: Could not parse change log." Fpath.pp change_log
-    | Some (version, (header, changes)) ->
-        Ok (if last_version then version else strf "%s\n%s" header changes)
-  in
-  let pager = match no_pager || last_version with
-  | true -> Ok None
-  | false -> Topkg_care.Pager.find ()
+    if not (last || last_version) then OS.File.read change_log else
+    (Topkg_care.Text.change_log_file_last_entry change_log
+     >>= fun (v, (h, t)) -> Ok (if last_version then v else strf "%s\n%s" h t))
   in
   text
-  >>= fun text -> pager
+  >>= fun text -> Topkg_care.Text.find_pager ~don't:(no_pager || last_version)
   >>= function
-  | None -> Logs.app (fun m -> m "%s" text); Ok 0
-  | Some pager -> OS.Cmd.(in_string text |> run_in pager) >>= fun () -> Ok 0
+  | None -> Logs.app (fun m -> m "%s" text); Ok ()
+  | Some pager -> OS.Cmd.(in_string text |> run_in pager)
 
 let commit change_log =
   let change_log = Fpath.to_string change_log in
   Topkg.Vcs.get ()
-  >>= fun r -> Topkg.Vcs.file_is_dirty r change_log
+  >>= fun repo -> Topkg.Vcs.file_is_dirty repo change_log
   >>= function
+  | true -> Topkg.Vcs.commit_files repo ~msg:"Update change log." [change_log]
   | false ->
-      Logs.app (fun m -> m "No changes to commit in %s" change_log);
-      Ok 0
-  | true ->
-      Topkg.Vcs.commit_files r ~msg:"Update change log." [change_log]
-      >>= fun () -> Ok 0
+      Logs.app (fun m -> m "No changes to commit in %s" change_log); Ok ()
 
 (* Command *)
 
-let log () pkg_file action change_log last last_version no_pager =
+let log () pkg_file change_log action last last_version no_pager =
   begin
-    let change_log = match change_log with
-    | Some change_log -> Ok change_log
-    | None ->
-        Topkg_care.Std_files.of_pkg_file ~pkg_file
-        >>= fun std_files -> Topkg_care.Std_files.change_log std_files
-    in
-    change_log
+    let pkg = Topkg_care.Pkg.v ?change_log pkg_file in
+    Topkg_care.Pkg.change_log pkg
     >>= fun change_log -> match action with
-    | `Show -> show change_log last last_version no_pager
-    | `Edit -> Topkg_care.Editor.edit_file change_log
-    | `Commit -> commit change_log
+    | `Show -> show change_log last last_version no_pager >>= fun () -> Ok 0
+    | `Edit -> Topkg_care.Text.edit_file change_log
+    | `Commit -> commit change_log >>= fun () -> Ok 0
   end
   |> Cli.handle_error
 
@@ -121,7 +103,7 @@ etc.";
         change log for the last distribution; use $(b,topkg log -l)
         to check that it is parsed correctly. This is used by topkg-publish(1)
         and topkg-opam(1) to enrich distribution publication.";
-    `P "The first token of a section's header title is taken as being the
+    `P "The first token of the first section header title is taken as being the
         version string of the distribution; use $(b,topkg log -t) to check
         that it is parsed correctly. It is used by topkg-tag(1) to tag the
         source repository.";
@@ -141,7 +123,7 @@ etc.";
 
 let cmd =
   let info = Term.info "log" ~sdocs:Cli.common_opts ~doc ~man in
-  let t = Term.(pure log $ Cli.setup $ Cli.pkg_file $ action $ Cli.change_log $
+  let t = Term.(pure log $ Cli.setup $ Cli.pkg_file $ Cli.change_log $ action $
                 last $ last_version $ no_pager)
   in
   (t, info)

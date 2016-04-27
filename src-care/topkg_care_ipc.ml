@@ -4,9 +4,7 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-open Astring
-open Rresult
-open Bos
+open Bos_setup
 
 let ocaml =
   Cmd.of_list @@ Topkg.Cmd.to_list @@ Topkg.Env.tool "ocaml" `Build_os
@@ -23,11 +21,11 @@ let pkg_must_exist pkg_file = match OS.File.must_exist pkg_file with
 let ask ~pkg_file ipc =
   let codec = Topkg.Private.Ipc.codec ipc in
   let verbosity = Logs.(level_to_string (level ())) in
-  let ipc_cmd = Topkg.Cmd.to_list @@ Topkg.Private.Ipc.cmd ipc in
-  let cmd = Cmd.(v (p pkg_file) % "ipc" % verbosity %% of_list ipc_cmd) in
+  let ipc_cmd = Cmd.of_list @@ Topkg.Cmd.to_list @@ Topkg.Private.Ipc.cmd ipc in
+  let cmd = Cmd.(ocaml % p pkg_file % "ipc" % verbosity %% ipc_cmd) in
   pkg_must_exist pkg_file >>= fun pkg_file ->
   begin
-    OS.Cmd.(run_out Cmd.(ocaml %% cmd) |> to_string)
+    OS.Cmd.(run_out cmd |> to_string)
     >>= fun data -> Topkg.Private.Codec.dec_result codec data
   end
   |> R.reword_error_msg

@@ -15,6 +15,7 @@ open Topkg_result
 type error = Corrupted of (string * string) | Version of int * int
 val pp_error : Format.formatter -> error -> unit
 exception Error of error
+val err : kind:string -> string -> 'a
 
 type 'a t
 
@@ -27,6 +28,7 @@ val with_kind : string -> 'a t -> 'a t
 val write : Topkg_fpath.t -> 'a t -> 'a -> unit result
 val read : Topkg_fpath.t -> 'a t -> 'a result
 
+val unit : unit t
 val bool : bool t
 val int : int t
 val string : string t
@@ -42,6 +44,9 @@ val view : ?kind:string -> ('a -> 'b) * ('b -> 'a) -> 'b t -> 'a t
 
 val msg : [`Msg of string ] t
 val result_error_msg : 'a t -> 'a result t
+
+val fpath : Topkg_fpath.t t
+val cmd : Topkg_cmd.t t
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

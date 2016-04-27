@@ -38,6 +38,7 @@ val to_instructions :
   Topkg_conf.OCaml.t -> t ->
   (Topkg_fpath.t list * Topkg_opam.Install.t)
 
+val codec : t Topkg_codec.t
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

@@ -12,7 +12,7 @@ let version = "%%VERSION%%"
 let release =
   ("TOPKG-RELEASE", 7, "", version, topkg_manual),
   [ `S "NAME";
-    `P "topkg-release - How to release a topkg package";
+    `P "topkg-release - How to release a (topkg) package";
     `S "DESCRIPTION";
     `P "The basic release script is the following. Each step is
         refined and explained with more details below.";
@@ -21,11 +21,13 @@ topkg browse issues # Review remaining outstanding issues
 topkg status        # Review the changes since last version
 topkg log edit      # Write the release notes
 topkg log commit    # Commit the release notes
-topkg tag           # Tag the release
+topkg tag           # Tag the distribution with a version
 topkg distrib       # Create the distribution archive
 topkg publish       # Publish it on the WWW with its documentation
 topkg opam pkg      # Create an OPAM package
 topkg opam submit   # Submit it to OCaml's OPAM repository";
+    `P "The last four steps can be performed via a single invocation
+        to topkg-bistro(1).";
     `S "BASIC CHECKS";
     `P "First have a look at the outstanding issues the package may have
         by checking the issue tracker.";
@@ -40,8 +42,7 @@ topkg opam submit   # Submit it to OCaml's OPAM repository";
         environment. You may want to run your test suite too.";
     `Pre "\
 topkg lint
-topkg build # Check out the generated OPAM install file too
-            # Run your test suite";
+topkg build # Check out the generated OPAM install file too";
     `S "WRITE THE RELEASE NOTES";
     `P "Carefully write the release notes in the package's change log, these
         are essential time savers for users of the package. It may help to
@@ -54,7 +55,7 @@ topkg log edit
 topkg log commit";
     `P "The next step is simplified if the change log follows a certain
         format, see topkg-log(1) for details.";
-    `P "The two last commands mentioned perform no magic, it is entirely up
+    `P "The last two commands mentioned perform no magic, it is entirely up
         to you to use them or not. The first one simply opens the change log
         of the package in your $$$$EDITOR and the second one commits it to
         your VCS with a dull, canned, commit message.";
@@ -76,14 +77,11 @@ topkg log commit";
     `P "Now that the release is tagged in your VCS, generate a distribution
         archive for it in the build directory with:";
     `Pre "topkg distrib";
-    `P "The commit selected for creating the distribution and the
-        derived version string are specified by the package description.
-        By default this is HEAD and a tag VCS description (e.g.
-        git-describe(1)) of the source repository; these values can also
-        be specified on the command line. To implement more
-        sophisticated commit selection and version derivation behaviour or
-        for more details on how the archive is generated, consult the
-        topkg API documentation.";
+    `P "This uses the source tree of the HEAD commit for creating a
+        distribution in the build directory. The distribution version
+        string is the VCS tag description (e.g.  git-describe(1)) of
+        the HEAD commit. Alternatively it can be specified on the command
+        line.";
     `P "If everything went well you can now publish the distribution and
         its documentation on the WWW. The exact actions that happen here
         depend on the package's delegate, see topkg-delegate(7) for more
@@ -102,13 +100,12 @@ topkg log commit";
         the preceeding step to be in the build directory. If that's no
         longer the case but nothing moved in your VCS, you can simply
         invoke $(b,topkg distrib), it should produce a bit-wise identical
-        archive. If the VCS moved consult the options of topkg-distrib(1) to
-        generate the right archive or provide, in the subsequent commands,
+        archive. If the VCS moved checkout the distribution commit to
+        regenerate the archive or provide, in the subsequent commands,
         the archive manually via the $(b,--dist-file) option, see
         topkg-opam(1) for details.";
-    `P "To add the package to OCaml's OPAM repository,
-        start by creating an OPAM package description in the build directory
-        with:";
+    `P "To add the package to OCaml's OPAM repository, start by creating an
+        OPAM package description in the build directory with:";
     `Pre "topkg opam pkg";
     `P "then simply submit it to the OPAM repository with:";
     `Pre "topkg opam publish";
@@ -135,7 +132,7 @@ topkg log commit";
          try to correct it manually from the OPAM package description found
          in the build directory and reinvoke $(b,topkg opam submit) or edit
          the opam file of the source repository and regenerate the OPAM Package
-         description with $(b,topkg opam pkg) and the $(b,--opam-file)
+         description with $(b,topkg opam pkg) and the $(b,--pkg-opam)
          option. Note that if the VCS moved meanwhile you may have to use
          the various command line options of topkg-opam(1) to make sure
          you point to the right package version and distribution archive.
@@ -212,19 +209,18 @@ let delegate =
     `P "Publish delegation requests have the form:";
     `P "publish $(i,ACTION) $(i,ARG)...";
     `P "The following actions are currently defined.";
-    `I ("publish distrib $(i,RELEASES_URI) $(i,NAME) $(i,VERSION)
+    `I ("publish distrib $(i,DISTRIB_URI) $(i,NAME) $(i,VERSION)
          $(i,MSG) $(i,ARCHIVE)",
         "Publish the distribution archive file $(i,ARCHIVE) for the package
          named $(i,NAME) at version $(i,VERSION) with publication
-         message $(i,MSG). For now $(i,RELEASES_URI) has the value of the
-         dev-repo field of the package's OPAM file; when OPAM 2.0 is out
-         we may pass the value of an x-releases field instead.");
+         message $(i,MSG). See topkg API's documentation
+         for information about the value of $(i,DISTRIB_URI).");
     `I ("publish doc $(i,DOC_URI) $(i,NAME) $(i,VERSION) $(i,MSG) $(i,DOCDIR)",
         "Publish the documentation directory $(i,DOCDIR) for the package
          named $(i,NAME) at version $(i,VERSION) with publication message
          $(i,MSG). $(i,DOC_URI) has the value of the doc field of the
          package's OPAM file.");
-    `I ("publish alt $(i,RELEASES_URI) $(i,KIND) $(i,NAME) $(i,VERSION)
+    `I ("publish alt $(i,DISTRIB_URI) $(i,KIND) $(i,NAME) $(i,VERSION)
          $(i,MSG) $(i,ARCHIVE)",
         "Alternative publication artefact named $(i,KIND). The semantics
          of the action is left to the delegate. The request arguments
@@ -233,7 +229,7 @@ let delegate =
     `P "Issue delegation requests have the form:";
     `P "issue $(i,ACTION) $(i,ISSUES_URI) $(i,ARG) ...";
     `P "with $(i,ISSUES_URI) the value of the bug-reports field of the
-        package's OPAM file.";
+        package's OPAM file or \"\" if there is no such field.";
     `P "The following actions are currently defined.";
     `I ("issue list $(i,ISSUES_URI)",
         "List open issues on standard output. Each issue should be on its
@@ -303,7 +299,7 @@ let troubleshoot =
     `P "topkg-troubleshoot - A few troubleshooting tips";
     `S "DESCRIPTION";
     `P "If you get into trouble try the following to get a better undersanding
-        of what is happening";
+        of what is happening.";
     `S "ASK FOR MORE LOGGING";
     `P "Invoke $(b,topkg) with $(b,-v) or $(b,-v -v), see the $(b,--verbosity)
         option.";

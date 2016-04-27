@@ -4,65 +4,61 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-open Astring
-open Rresult
-open Bos
+open Bos_setup
 
-let find_repo () =
-  Topkg.Vcs.get ()
-  >>= fun r -> Topkg.Vcs.is_dirty r
-  >>= fun dirty ->
-  if dirty then Logs.warn (fun m -> m "The source repository is dirty");
-  Ok r
+let lint_distrib pkg ~dir =
+  Logs.app (fun m -> m "@.Linting distrib in %a" Fpath.pp dir);
+  Topkg_care.Pkg.lint pkg ~dir Topkg_care.Pkg.lint_all
 
-let lint_distrib ~dist_pkg_file ~dir =
-  let skip _ = false in
-  Logs.app (fun m -> m "Linting distrib in %a" Fpath.pp dir);
-  Topkg_care.Lint.distrib ~ignore_pkg:false ~pkg_file:dist_pkg_file ~dir ~skip
-
-let build_distrib ~dist_pkg_file ~dir =
-  let pp_status ppf = function
-  | `Ok -> Fmt.(brackets @@ styled_unit `Green " OK ") ppf ()
-  | `Fail -> Fmt.(brackets @@ styled_unit `Red "FAIL") ppf ()
-  in
-  Logs.app (fun m -> m "Building distrib in %a" Fpath.pp dir);
+let build_distrib pkg ~dir =
+  Logs.app (fun m -> m "@.Building distrib in %a" Fpath.pp dir);
   let args = [ "installer"; "false"; "vcs"; "false" ] in
   let out = OS.Cmd.out_string in
-  Topkg_care.Build.pkg ~pkg_file:dist_pkg_file ~dir ~args ~out >>= function
+  Topkg_care.Pkg.build pkg ~dir ~args ~out >>= function
   | (_, (_, `Exited 0)) ->
-      Logs.app (fun m -> m "%a distrib builds" pp_status `Ok); Ok 0
+      Logs.app (fun m -> m "%a distrib builds" Topkg_care.Pp.status `Ok); Ok 0
   | (stdout, _) ->
-      Logs.app (fun m -> m "%s@\n%a distrib builds" stdout pp_status `Fail);
+      Logs.app (fun m -> m "%s@\n%a distrib builds"
+                   stdout Topkg_care.Pp.status `Fail);
       Ok 1
 
-let check_archive ar ~dist_pkg_file ~skip_lint ~skip_build =
-  Topkg_care.Distrib.unarchive ~clean:true ar
-  >>= fun dir -> (if skip_lint then Ok 0 else lint_distrib ~dist_pkg_file ~dir)
-  >>= fun c0 -> (if skip_build then Ok 0 else build_distrib ~dist_pkg_file ~dir)
+let check_archive pkg ar ~skip_lint ~skip_build =
+  Topkg_care.Archive.untbz ~clean:true ar
+  >>= fun dir -> (if skip_lint then Ok 0 else lint_distrib pkg ~dir)
+  >>= fun c0 -> (if skip_build then Ok 0 else build_distrib pkg ~dir)
   >>= fun c1 -> match c0 + c1 with
   | 0 -> OS.Dir.delete ~recurse:true dir >>= fun () -> Ok 0
   | n -> Ok 1
 
-let log_det d =
-  Logs.app @@ fun m ->
-    m "@[<v>@[Distribution for %a@ %a@]@, commit %a@]@]"
-      Fmt.(styled `Bold string) (Topkg_care.Distrib.name d)
-      Fmt.(styled `Cyan string) (Topkg_care.Distrib.version d)
-      Fmt.(styled `Yellow string) (Topkg_care.Distrib.commit_ish d)
+let warn_if_vcs_dirty ()=
+  Cli.warn_if_vcs_dirty "The distribution archive may be inconsistent."
 
-let distrib () pkg_file det dist_pkg_file keep_dir skip_lint skip_build =
+let log_footprint pkg archive =
+  Topkg_care.Pkg.name pkg
+  >>= fun name -> Topkg_care.Pkg.version pkg
+  >>= fun version -> Topkg.Vcs.get ()
+  >>= fun repo -> Topkg.Vcs.commit_id repo ~dirty:false ~commit_ish:"HEAD"
+  >>= fun commit_ish ->
+  Logs.app
+    (fun m -> m "@.@[<v>@[Distribution for %a@ %a@]@,@[Commit %a@]@,\
+                 @[Archive %a@]@]"
+        Topkg_care.Pp.name name Topkg_care.Pp.version version
+        Topkg_care.Pp.commit commit_ish Topkg_care.Pp.path archive);
+  Ok ()
+
+let log_wrote_archive ar =
+  Logs.app (fun m -> m "Wrote archive %a" Topkg_care.Pp.path ar); Ok ()
+
+let distrib
+    () pkg_file opam build_dir name version keep_dir skip_lint skip_build =
   begin
-    Topkg_care.Distrib.ensure_bzip2 ()
-    >>= fun () -> det ~pkg_file
-    >>= fun det -> log_det det; find_repo ()
-    >>= fun repo -> Topkg_care.Distrib.clone_repo det repo
-    >>= fun dir -> Topkg_care.Distrib.prepare_repo det ~dir ~dist_pkg_file
-    >>= fun (mtime, exclude_paths) ->
-    Topkg_care.Distrib.archive det ~keep_dir ~dir ~exclude_paths ~mtime
-    >>= fun archive ->
-    Logs.app (fun m -> m "Wrote archive %a"
-                 Fmt.(styled `Bold Fpath.pp) archive);
-    check_archive archive ~dist_pkg_file ~skip_lint ~skip_build
+    let pkg = Topkg_care.Pkg.v ?name ?version ?build_dir ?opam pkg_file in
+    Topkg_care.Pkg.distrib_archive pkg ~keep_dir
+    >>= fun ar -> log_wrote_archive ar
+    >>= fun () -> check_archive pkg ar ~skip_lint ~skip_build
+    >>= fun errs -> log_footprint pkg ar
+    >>= fun () -> warn_if_vcs_dirty ()
+    >>= fun () -> Ok errs
   end
   |> Cli.handle_error
 
@@ -90,6 +86,8 @@ let man =
         archive in the build directory of the package.  The generated
         archive should be bit-wise reproducible. There are however a few
         caveats, see the section about this further down.";
+    `P "More detailed information about the archive creation process and its
+        customization can be found in topkg's API documentation.";
     `P "Once the archive is created it is unpacked in the build directory,
         linted and the package is built using the package description
         contained in the archive. The build will use the default package
@@ -100,28 +98,16 @@ let man =
         $(b,--skip-build) options.";
     `S "OPTIONS";
   ] @ Cli.common_opts_man @ [
-    `S "PACKAGE DESCRIPTION FILE CIRCUS";
-    `P "The current package description, the one specified with the
-        $(b,--pkg-file) option, is only used to determine
-        the build directory, the package name, the commit-ish and version
-        string to base the distribution on. All these tidbits
-        can be overriden on the command line if needed.";
-    `P "After this, the package description file present in the checkout of
-        the commit-ish and specified with the $(b,--dist-pkg-file) option
-        is used to prepare the distribution. It is this package description
-        that will define the watermarks, massaging hook and paths to exclude
-        from the archive.";
-    `P "More detailed information about the archive creation process and its
-        customization can be found in topkg's API documentation.";
     `S "REPRODUCIBLE DISTRIBUTION ARCHIVES";
-    `P "Given the package name, the commit-ish and the version string,
-        the $(b,$(tname)) command should always generate the same archive.";
-    `P "More precisely, files are added to the archive using a well defined
-        order on path names. Their file permissions are those determined by the
-        commit-ish repository checkout and their modification times are set
-        to the commit date of the commit-ish (note that git-log(1) shows
-        the author date which may not coincide). No other file metadata is
-        recorded.";
+    `P "Given the package name, the HEAD commit identifier
+        and the version string, the $(b,$(tname)) command should always
+        generate the same archive.";
+    `P "More precisely, files are added to the archive using a well
+        defined order on path names. Their file permissions are those
+        determined by the HEAD repository checkout and their modification
+        times are set to the commit date (note that if git is used,
+        git-log(1) shows the author date which may not coincide). No other
+        file metadata is recorded.";
     `P "This should ensure that the resulting archive is bit-wise
         identical regardless of the context in which it is
         created. However this may fail for one or more of the
@@ -152,8 +138,8 @@ let man =
 let cmd =
   let info = Term.info "distrib" ~sdocs:Cli.common_opts ~doc ~man in
   let t = Term.(pure distrib $ Cli.setup $ Cli.pkg_file $
-                Cli.distrib_determine $ Cli.dist_pkg_file $
-                keep_build_dir $ skip_lint $ skip_build)
+                Cli.dist_opam $ Cli.build_dir $ Cli.dist_name $
+                Cli.dist_version $ keep_build_dir $ skip_lint $ skip_build)
   in
   (t, info)
 

@@ -4,36 +4,25 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-open Astring
-open Rresult
-open Bos
+open Bos_setup
 
-let extract_version ~pkg_file change_log =
-  let change_log = match change_log with
-  | Some f -> Ok f
-  | None ->
-      Topkg_care.Std_files.of_pkg_file ~pkg_file
-      >>= fun std_files -> Topkg_care.Std_files.change_log std_files
-  in
-  change_log
-  >>= fun change_log -> Ok (Topkg_care.Text.flavour_of_fpath change_log)
-  >>= fun flavour -> OS.File.read change_log
-  >>= fun text -> match Topkg_care.Change_log.last_version ?flavour text with
-  | None -> R.error_msgf "%a: Could not parse change log." Fpath.pp change_log
-  | Some (version, _) -> Ok version
+let extract_version change_log =
+  Topkg_care.Text.change_log_file_last_entry change_log
+  >>= fun (version, _) -> Ok version
 
 let vcs_tag tag ~commit_ish ~force ~sign ~delete ~msg =
   let msg = match msg with None -> strf "Distribution %s" tag | Some m -> m in
   Topkg.Vcs.get ()
-  >>= fun r -> match delete with
-  | true -> Topkg.Vcs.delete_tag r tag
-  | false -> Topkg.Vcs.tag r ~force ~sign ~msg ~commit_ish tag
+  >>= fun repo -> match delete with
+  | true -> Topkg.Vcs.delete_tag repo tag
+  | false -> Topkg.Vcs.tag repo ~force ~sign ~msg ~commit_ish tag
 
 let tag () pkg_file change_log tag commit_ish force sign delete msg =
   begin
+    let pkg = Topkg_care.Pkg.v ?change_log pkg_file in
     let tag = match tag with
     | Some t -> Ok t
-    | None -> extract_version ~pkg_file change_log
+    | None -> Topkg_care.Pkg.change_log pkg >>= fun cl -> extract_version cl
     in
     tag
     >>= fun tag -> vcs_tag tag ~commit_ish ~force ~sign ~delete ~msg

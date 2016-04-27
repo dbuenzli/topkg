@@ -4,18 +4,19 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-(** IPC with package description files
-
-    See {!Topkg_care.Ipc}. *)
+(** IPC with package description files *)
 
 (** {1 Asking packages} *)
 
-open Rresult
-open Bos
+open Bos_setup
 
 val ocaml : Cmd.t
-val ask : pkg_file:Fpath.t -> 'a Topkg.Private.Ipc.t -> ('a, R.msg) result
+(** [ocaml] is a command for [ocaml] looked up using
+      {!Topkg.Env.OCaml.tool}[ "ocaml" `Build_os]. *)
 
+val ask : pkg_file:Fpath.t -> 'a Topkg.Private.Ipc.t -> ('a, R.msg) result
+(** [ask pkg_file ipc] performs the IPC [ipc] with the package description
+    file [pkg_file] using the interpreter {!ocaml}. *)
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

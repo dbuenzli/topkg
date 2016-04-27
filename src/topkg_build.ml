@@ -32,6 +32,18 @@ let pre b = b.pre
 let cmd b = b.cmd
 let post b = b.post
 
+let codec =
+  let prepare_on_pin = Topkg_codec.(with_kind "prepare_on_pin" @@ bool) in
+  let dir = Topkg_codec.(with_kind "dir" @@ string) in
+  let fields =
+    let stub _ = invalid_arg "not executable outside package definition" in
+    (fun b -> b.prepare_on_pin, b.dir),
+    (fun (prepare_on_pin, dir)  ->
+       { prepare_on_pin; dir; pre = stub; cmd = stub; post = stub })
+  in
+  Topkg_codec.version 0 @@
+  Topkg_codec.(view ~kind:"build" fields (pair prepare_on_pin dir))
+
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli
 

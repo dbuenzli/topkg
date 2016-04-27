@@ -4,14 +4,9 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-(** Cli pager interaction.
+(** The [bistro] command. *)
 
-    See {!Topkg_care.Pager}. *)
-
-open Rresult
-open Bos
-
-val find : unit -> (Cmd.t option, R.msg) result
+val cmd : int Cmdliner.Term.t * Cmdliner.Term.info
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

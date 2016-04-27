@@ -4,9 +4,7 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-open Astring
-open Rresult
-open Bos
+open Bos_setup
 
 (* Targets *)
 
@@ -22,9 +20,8 @@ let opam_issues_field =
 let opam_repo_field =
   "repo", `Opam "dev-repo", "dev-repo OPAM file field"
 
-let caml_list =
-  "caml-list", `Uri "http://news.gmane.org/gmane.comp.lang.caml.inria",
-  "Main OCaml mailing list"
+let topkg_api =
+  "topkg-api", `Uri "%%PKG_DOC%%", "topkg's API docs"
 
 let ocaml_man =
   "ocaml-man", `Uri "http://caml.inria.fr/pub/docs/manual-ocaml/",
@@ -35,7 +32,7 @@ let ocaml_issues =
 
 let ocamlbuild_man =
   "ocamlbuild-man",
-  `Uri "https://github.com/gasche/manual-ocamlbuild/blob/master/manual.md",
+  `Uri "https://github.com/ocaml/ocamlbuild/blob/master/manual/manual.adoc",
   "OCamlbuild manual"
 
 let opam_man =
@@ -51,16 +48,17 @@ let temptation =
   "temptation",
   `Uri "https://www.\x2568\x2561\x2573\x256B\x2565\x256C\x256C.org", ""
 
-let topkg_api =
-  "topkg-api", `Uri "%%PKG_DOC%%", "topkg's API docs"
+let caml_list =
+  "caml-list", `Uri "http://news.gmane.org/gmane.comp.lang.caml.inria",
+  "Main OCaml mailing list"
 
 let weekly_news =
   "weekly-news", `Uri "http://alan.petitepomme.net/cwn/", "OCaml Weekly News"
 
 let targets =
   [ opam_doc_field; opam_homepage_field; opam_issues_field; opam_repo_field;
-    caml_list; ocaml_man; ocaml_issues; ocamlbuild_man; opam_man; packages;
-    planet; temptation; topkg_api; weekly_news; ]
+    topkg_api; ocaml_man; ocaml_issues; ocamlbuild_man; opam_man; packages;
+    planet; temptation; caml_list; weekly_news; ]
 
 let parse_target, max_target_len =
   let add (acc, len) (t, v, _) = (t, v) :: acc, max len (String.length t) in
@@ -69,27 +67,22 @@ let parse_target, max_target_len =
 
 (* OPAM field uris *)
 
-let opam_field_uri pkg_file opam_file field =
-  let opam_file = match opam_file with
-  | Some opam -> Ok opam
-  | None ->
-      Topkg_care.Std_files.of_pkg_file ~pkg_file
-      >>= fun std_files -> Topkg_care.Std_files.find_opam_file std_files
-  in
-  opam_file
-  >>= fun opam_file -> Topkg_care.Opam.File.fields opam_file
+let opam_field_uri opam field =
+  Topkg_care.Opam.File.fields opam
   >>= fun fields -> match String.Map.find field fields with
   | Some (uri :: _) -> Ok uri
-  | Some [] -> R.error_msgf "%a: field %s is empty" Fpath.pp opam_file field
-  | None -> R.error_msgf "%a: field %s is undefined" Fpath.pp opam_file field
+  | Some [] -> R.error_msgf "%a: field %s is empty" Fpath.pp opam field
+  | None -> R.error_msgf "%a: field %s is undefined" Fpath.pp opam field
 
 (* Browse command *)
 
-let browse () pkg_file opam_file browser prefix background target =
+let browse () pkg_file opam browser prefix background target =
   begin
     let uri = match parse_target target with
     | `Ok (`Uri uri) -> Ok uri
-    | `Ok (`Opam field) -> opam_field_uri pkg_file opam_file field
+    | `Ok (`Opam field) ->
+        let pkg = Topkg_care.Pkg.v ?opam pkg_file in
+        Topkg_care.Pkg.opam pkg >>= fun opam -> opam_field_uri opam field
     | `Error msg ->
         let uri_prefixes = ["http://"; "https://"; "file://"] in
         if List.exists (fun p -> String.is_prefix p target) uri_prefixes
@@ -112,29 +105,26 @@ let target =
 
 let doc = "browse the package's WWW links"
 let man =
-  let item acc (t, _, doc) =
+  let target acc (t, _, doc) =
     if doc = "" then acc else
     let pad = String.v ~len:(max_target_len - String.length t) (fun _ -> ' ') in
     `Pre (strf "%s$(b,%s) %s" pad t doc) :: `Noblank :: acc
   in
   [ `S "DESCRIPTION";
     `P "The $(b,$(tname)) command opens or reloads URIs mentioned in the
-        OPAM file in a WWW browser (see option $(b,--browser)). A few
-        other useful logical target are provided."; ]
-  @ List.(tl @@ rev @@ fold_left item [] targets) @ [
-    `P "An arbitrary file, http or https schemed URI can also be specified
-        as the target.";
+        OPAM file in a WWW browser. A few other useful logical target are
+        provided and arbitrary file, http or https schemed URIs can also
+        be specified as the target."; ]
+  @ List.(tl @@ rev @@ fold_left target [] targets) @ [
   ] @ Cli.common_opts_man @ [
     `S "ENVIRONMENT VARIABLES";
   ] @ Cli.see_also ~cmds:[]
 
 let cmd =
   let info = Term.info "browse" ~sdocs:Cli.common_opts ~doc ~man in
-  let t = Term.(pure browse $ Cli.setup $ Cli.pkg_file $ Cli.opam_file $
-                Topkg_care.Browser.Cli.browser $
-                Topkg_care.Browser.Cli.prefix $
-                Topkg_care.Browser.Cli.background $
-                target)
+  let t = Term.(pure browse $ Cli.setup $ Cli.pkg_file $ Cli.opam $
+                Topkg_care.Browser.Cli.browser $ Topkg_care.Browser.Cli.prefix $
+                Topkg_care.Browser.Cli.background $ target)
   in
   (t, info)
 

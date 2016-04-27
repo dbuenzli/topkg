@@ -29,6 +29,8 @@ val cmd :
 
 val post : t -> (context -> unit result)
 
+val codec : t Topkg_codec.t
+
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli
 

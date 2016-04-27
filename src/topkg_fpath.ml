@@ -27,14 +27,18 @@ let append =
 
 let ( // ) = append
 
-let ext s =
-  let max = String.length s - 1 in
-  let rec loop s i =
-    if i < 0 then "" else
-    if s.[i] = '.' then Topkg_string.with_index_range ~first:i s else
-    loop s (i - 1)
-  in
-  loop s max
+let last_dot_index s = try Some (String.rindex s '.') with Not_found -> None
+let get_ext s = match last_dot_index s with
+| None -> ""
+| Some i -> Topkg_string.with_index_range ~first:i s
+
+let has_ext e p = Topkg_string.is_suffix ~affix:e p
+
+let rem_ext s = match last_dot_index s with
+| None -> s
+| Some i -> Topkg_string.with_index_range ~last:(i - 1) s
+
+let basename s = Filename.basename s
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

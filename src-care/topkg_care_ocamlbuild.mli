@@ -8,9 +8,9 @@
 
     See {!Topkg_care.OCamlbuild}. *)
 
-open Astring
-open Rresult
-open Bos
+(** {1 OCamlbuild} *)
+
+open Bos_setup
 
 val cmd : Cmd.t
 val package_tags : ?roots:bool -> Fpath.t -> (String.set, R.msg) result

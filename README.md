@@ -3,9 +3,9 @@ Topkg — The transitory OCaml software packager
 %%VERSION%%
 
 Topkg is a packager for distributing OCaml software. It provides an
-API to describe the files that a package installs according the build
-environment and specify information about its distribution and
-publication procedures.
+API to describe the files a package installs in a given environment
+and allows to encode information about its distribution and
+online publication procedures.
 
 The optional topkg-care package provides a command line tool that
 helps with various aspects of a package's life cycle: creating and
@@ -17,14 +17,8 @@ dependencies. This is what your packages will need as a *build*
 dependency.
 
 Topkg-care is distributed under the ISC license it depends on
-[rresult][rresult], [astring][astring], [fmt][fmt], [fpath][fpath],
-[logs][logs], [bos][bos], [cmdliner][cmdliner] and [`opam-lib`].
+[bos][bos], [cmdliner][cmdliner] and `opam-lib`.
 
-[rresult]: http://erratique.ch/software/rresult
-[astring]: http://erratique.ch/software/astring
-[fmt]: http://erratique.ch/software/fmt
-[fpath]: http://erratique.ch/software/fpath
-[logs]: http://erratique.ch/software/logs
 [bos]: http://erratique.ch/software/bos
 [cmdliner]: http://erratique.ch/software/cmdliner
 
@@ -38,8 +32,8 @@ Topkg and topkg-care can be installed with `opam`:
     opam install topkg       # All you need for your packages
     opam install topkg-care  # Tools to take care of your packages
     
-If you don't use `opam` consult the [`opam`](opam) file for build
-instructions.
+If you don't use `opam` consult the [`topkg.opam`](topkg.opam) and
+[`topkg-care.opam`](topkg-care.opam) files for build instructions.
 
 ## Documentation
 

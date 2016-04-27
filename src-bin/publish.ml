@@ -4,9 +4,7 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-open Rresult
-open Astring
-open Bos
+open Bos_setup
 
 let absolute path = OS.Dir.current () >>| fun cwd -> Fpath.(cwd // path)
 
@@ -14,78 +12,50 @@ let get_kind = function
 | Some k -> Ok k
 | None -> R.error_msgf "No alternate artefact KIND specified"
 
-let get_dist_file det = function
-| Some f -> f
-| None -> Topkg_care.Distrib.archive_path det
-
-let get_msg = function
-| Some msg -> Ok msg
-| None ->
-    let change_log = Fpath.v "CHANGES.md" (* FIXME lookup *) in
-    OS.File.read change_log >>= fun text ->
-    let flavour = Topkg_care.Text.flavour_of_fpath change_log in
-    match Topkg_care.Change_log.last_version ?flavour text with
-    | None -> R.error_msgf "%a: Could not parse change log." Fpath.pp change_log
-    | Some (_, (header, changes)) -> Ok (strf "%s\n%s" header changes)
-
 let gen_doc dir =
   let do_doc () =
     OS.Cmd.run Cmd.(v "topkg" % "doc")
     >>| fun () -> Fpath.(dir / "_build" / "doc" / "api.docdir")
   in
-  OS.Dir.with_current dir do_doc ()
+  R.join @@ OS.Dir.with_current dir do_doc ()
 
-let publish_doc ~del det dist_file msg =
-  let name = Topkg_care.Distrib.name det in
-  let version = Topkg_care.Distrib.version det in
-  let dist_file = get_dist_file det dist_file in
-  OS.File.must_exist dist_file
-  >>= fun _ -> get_msg msg
-  >>= fun msg -> Topkg_care.Distrib.unarchive ~clean:true dist_file
+let publish_doc pkg =
+  Topkg_care.Pkg.distrib_file pkg
+  >>= fun distrib_file -> Topkg_care.Pkg.publish_msg pkg
+  >>= fun msg -> Topkg_care.Archive.untbz ~clean:true distrib_file
   >>= fun dir -> gen_doc dir
   >>= fun docdir -> absolute docdir
-  >>= fun docdir ->
-  Topkg_care.Delegate.publish_doc ~del ~name ~version ~msg ~docdir
+  >>= fun docdir -> Topkg_care.Delegate.publish_doc pkg ~msg ~docdir
 
-let publish_distrib ~del det dist_file msg =
-  let name = Topkg_care.Distrib.name det in
-  let version = Topkg_care.Distrib.version det in
-  let dist_file = get_dist_file det dist_file in
-  OS.File.must_exist dist_file
-  >>= fun _ -> get_msg msg
-  >>= fun msg -> absolute dist_file
-  >>= fun archive ->
-  Topkg_care.Delegate.publish_distrib ~del ~name ~version ~msg ~archive
+let publish_distrib pkg =
+  Topkg_care.Pkg.distrib_file pkg
+  >>= fun distrib_file -> Topkg_care.Pkg.publish_msg pkg
+  >>= fun msg -> absolute distrib_file
+  >>= fun archive -> Topkg_care.Delegate.publish_distrib pkg ~msg ~archive
 
-let publish_alt ~del det dist_file kind msg =
-  let name = Topkg_care.Distrib.name det in
-  let version = Topkg_care.Distrib.version det in
-  let dist_file = get_dist_file det dist_file in
-  OS.File.must_exist dist_file
-  >>= fun _ -> get_msg msg
-  >>= fun msg -> absolute dist_file
-  >>= fun archive -> get_kind kind
-  >>= fun kind ->
-  Topkg_care.Delegate.publish_alt ~del ~kind ~name ~version ~msg ~archive
+let publish_alt pkg kind =
+  get_kind kind
+  >>= fun kind -> Topkg_care.Pkg.distrib_file pkg
+  >>= fun distrib_file -> Topkg_care.Pkg.publish_msg pkg
+  >>= fun msg -> absolute distrib_file
+  >>= fun archive -> Topkg_care.Delegate.publish_alt pkg ~kind ~msg ~archive
 
-let publish () pkg_file det opam_file del artefact msg dist_file kind =
+let publish ()
+    pkg_file build_dir name version opam delegate change_log distrib_uri
+    distrib_file publish_msg artefact kind
+  =
   begin
+    let pkg = Topkg_care.Pkg.v ?name ?version ?build_dir ?opam ?delegate
+        ?change_log ?distrib_uri ?distrib_file ?publish_msg pkg_file
+    in
     let todo = match artefact with None -> [`Doc; `Distrib] | Some a -> [a] in
-    det ~pkg_file
-    >>= fun det -> Topkg_care.Delegate.find ~pkg_file ~opam:opam_file ~del
-    >>= function
-    | None ->
-        Logs.err (fun m -> m "%a" Topkg_care.Delegate.pp_not_found ()); Ok 1
-    | Some del ->
-        let do_doc = List.mem `Doc todo in
-        let do_distrib = List.mem `Distrib todo in
-        let do_alt = List.mem `Alt todo in
-        (if do_doc then publish_doc ~del det dist_file msg else Ok 0)
-        >>= fun ret ->
-        (if do_distrib then publish_distrib ~del det dist_file msg else Ok 0)
-        >>= fun ret ->
-        (if do_alt then publish_alt ~del det dist_file kind msg else Ok 0)
-
+    let publish_artefact acc artefact =
+      acc >>= fun acc -> match artefact with
+      | `Doc -> publish_doc pkg
+      | `Distrib -> publish_distrib pkg
+      | `Alt -> publish_alt pkg kind
+    in
+    List.fold_left publish_artefact (Ok ()) todo >>= fun () -> Ok 0
   end
   |> Cli.handle_error
 
@@ -101,13 +71,6 @@ let artefact =
   in
   let artefact = Arg.enum artefact in
   Arg.(value & pos 0 (some artefact) None & info [] ~doc ~docv:"ARTEFACT")
-
-let msg =
-  let doc = "The publication message $(docv). Defaults to the change log
-             of the last version found in the distribution archive."
-  in
-  let docv = "MSG" in
-  Arg.(value & opt (some string) None & info ["m"; "message"] ~doc ~docv)
 
 let kind =
   let doc = "For $(b,alt) artefacts, the artefact kind $(docv). The
@@ -147,9 +110,10 @@ let man =
 
 let cmd =
   let info = Term.info "publish" ~sdocs:Cli.common_opts ~doc ~man in
-  let t = Term.(pure publish $ Cli.setup $ Cli.pkg_file $
-                Cli.distrib_determine $ Cli.opam_file $ Cli.delegate $
-                artefact $ msg $ Cli.dist_file $ kind)
+  let t = Term.(pure publish $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $
+                Cli.dist_name $ Cli.dist_version $ Cli.dist_opam $
+                Cli.delegate $ Cli.change_log $ Cli.dist_uri $ Cli.dist_file $
+                Cli.publish_msg $ artefact $ kind)
   in
   (t, info)
 

@@ -8,10 +8,12 @@
 
     See {!Topkg_care.OCamlfind}. *)
 
-open Bos
+(** {1 OCamlfind} *)
+
+open Bos_setup
 
 val cmd : Cmd.t
-val base_packages : Astring.String.set
+val base_packages : String.set
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli
