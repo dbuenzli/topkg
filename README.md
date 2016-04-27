@@ -38,8 +38,8 @@ Topkg and topkg-care can be installed with `opam`:
     opam install topkg       # All you need for your packages
     opam install topkg-care  # Tools to take care of your packages
     
-If you don't use `opam` consult the [`opam`](opam) file for build
-instructions.
+If you don't use `opam` consult the [`topkg.opam`](topkg.opam) and
+[`topkg-care.opam`](topkg-care.opam) filse for build instructions.
 
 ## Documentation
 
