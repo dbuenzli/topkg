@@ -24,16 +24,6 @@ let error_args args =
 let pkg = v Topkg_cmd.(v "pkg") Topkg_pkg.codec
 let answer_pkg p = Topkg_codec.write Topkg_os.File.dash Topkg_pkg.codec p
 
-(* Standard files IPC *)
-
-let std_files =
-  let cmd = Topkg_cmd.(v "std-files") in
-  v cmd Topkg_std_files.codec
-
-let answer_std_files p =
-  let std = Topkg_pkg.std_files p in
-  Topkg_codec.write Topkg_os.File.dash Topkg_std_files.codec std
-
 (* Run custom lint IPC *)
 
 let lint_custom_codec = Topkg_codec.(option @@ list @@ result_error_msg @@ msg)

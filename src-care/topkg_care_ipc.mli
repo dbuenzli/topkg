@@ -12,7 +12,7 @@ open Bos_setup
 
 val ocaml : Cmd.t
 (** [ocaml] is a command for [ocaml] looked up using
-      {!Topkg.Env.OCaml.tool}[ "ocaml" `Build_os]. *)
+      {!Topkg.Env.tool}[ "ocaml" `Build_os]. *)
 
 val ask : pkg_file:Fpath.t -> 'a Topkg.Private.Ipc.t -> ('a, R.msg) result
 (** [ask pkg_file ipc] performs the IPC [ipc] with the package description

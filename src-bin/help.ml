@@ -160,10 +160,10 @@ let delegate =
     `I ("1. Command line", "Specified with the $(b,--delegate) option on
          the command line.");
     `I ("2. Package description.", "Specified in the package description file,
-         see the topkg API documentation.");
+         see topkg's API documentation.");
     `I ("3. Environment variable.", "Specified in the TOPKG_DELEGATE
          environment variable.");
-    `I ("4. Homepage derived discovery.", "Consults the homepage: field of the
+    `I ("4. Homepage derived discovery.", "Consult the 'homepage' field of the
         package's OPAM file, extract the second-level domain of the URI as
         $$$$NAME and uses the tool $(b,$$NAME-topkg-delegate) iff it exists
         in the executable search path. For example if the homepage is
@@ -173,7 +173,8 @@ let delegate =
          $(b,github-topkg-delegate) but that it doesn't exist in the
          executable search path. The $(b,toy-github-topkg-delegate) tool
          distributed with topkg-care is used. This tool will disappear in
-         the future whenever a good github delegate emerges.");
+         the future whenever a good github delegate emerges. Consult
+         $(b,toy-github-topkg-delegate --help) for more information.");
     `S "DELEGATE PROTOCOL";
     `P "The delegate is invoked by $(b,topkg) with a request in order to
         finish its own execution. This means that the delegate takes over

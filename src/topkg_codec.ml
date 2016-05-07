@@ -35,7 +35,8 @@ let dec c = c.dec
 let with_kind kind c = { c with kind }
 
 let dec_result c s = try Ok (dec c s) with
-| Error err -> R.error_msgf "Decode %s: %a" (kind c) pp_error err
+| Error err ->
+    R.error_msgf "Decode %s: %a Input data: %S" (kind c) pp_error err s
 
 let write file c v =
   Topkg_os.File.write file (enc c v)
@@ -149,6 +150,8 @@ let pair c0 c1 =
   | _ -> err ~kind s
   in
   v ~kind ~enc ~dec
+
+let t2 = pair
 
 let t3 c0 c1 c2 =
   let kind = Printf.sprintf "%s * %s * %s" (kind c0) (kind c1) (kind c2) in

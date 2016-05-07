@@ -13,6 +13,8 @@ depends: [
   "ocamlbuild" {build}
   "topkg"
   "result"
+  "fmt"
+  "logs"
   "bos"
   "cmdliner"
   "opam-lib" {>= "1.2.2"}

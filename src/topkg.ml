@@ -4,7 +4,7 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-open Result
+(* Preliminaries *)
 
 include Topkg_result
 
@@ -35,17 +35,6 @@ module Pkg = struct
   let massage = Topkg_distrib.default_massage
   let exclude_paths = Topkg_distrib.default_exclude_paths
 
-  (* Standard files *)
-
-  type std_files = Topkg_std_files.t
-  type std_file = Topkg_std_files.file
-  let std_files = Topkg_std_files.v
-
-  (* Linting *)
-
-  type lint = Topkg_lint.t
-  let lint = Topkg_lint.v
-
   (* Build *)
 
   type build = Topkg_build.t
@@ -71,6 +60,15 @@ module Pkg = struct
   let man = Topkg_install.man
 
   (* Package *)
+
+  type std_file = Topkg_pkg.std_file
+  let std_file = Topkg_pkg.std_file
+
+  type meta_file = Topkg_pkg.meta_file
+  let meta_file = Topkg_pkg.meta_file
+
+  type opam_file = Topkg_pkg.opam_file
+  let opam_file = Topkg_pkg.opam_file
 
   type t = Topkg_pkg.t
 
@@ -103,12 +101,15 @@ module Pkg = struct
 
   let pkg = ref None
 
-  let describe ?delegate ?std_files ?lint ?distrib ?build name installs =
+  let describe
+      ?delegate ?readme ?license ?change_log ?metas ?opams ?lint_files
+      ?lint_custom ?distrib ?build name installs =
     match !pkg with
     | Some _ -> invalid_arg "Topkg.Pkg.describe already called"
     | None ->
         let p =
-          Topkg_pkg.v ?delegate ?std_files ?lint ?distrib ?build name installs
+          Topkg_pkg.v ?delegate ?readme ?license ?change_log ?metas ?opams
+            ?lint_files ?lint_custom ?distrib ?build name installs
         in
         pkg := Some p;
         if !do_auto_main then exit (auto_main p) else ()

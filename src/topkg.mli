@@ -284,7 +284,7 @@ module Log : sig
       {ul
       {- [v] if [r = Ok v]}
       {- [use e] if [r = Error (`Msg e)]. As a side effect [e] is logged
-         with level [level] (defaults to {!Error}).}} *)
+         with level [level] (defaults to {!Log.Error}).}} *)
 
   (** {1 Monitoring} *)
 
@@ -758,11 +758,11 @@ module Exts : sig
 
   val c_library : ext list
   (** [c_library] is the extension for C libraries. This is determined
-      from {!Env.OCaml.host}. *)
+      from {!Env.OCaml.v} [`Host]'s configuration. *)
 
   val c_dll_library : ext list
   (** [c_dll_library] is the extension for C dynamic libraries. This
-      is determined from {!Env.OCaml.host}. *)
+      is determined from OCaml's {!Env.OCaml.v} [`Host]'s configuration. *)
 
   val library : ext list
   (** [library] is [[".cma"; ".cmxa"; ".cmxs"] @ c_library] *)
@@ -772,7 +772,7 @@ module Exts : sig
 
   val exe : ext list
   (** [exe] is the extension for executables. This is determined from
-      {!Env.OCaml.host}. *)
+      OCaml's {!Env.OCaml.v} [`Host]'s configuration. *)
 
   val exts : string list -> ext list
   (** [exts sl] is [sl] as a list of extensions. *)
@@ -1011,7 +1011,7 @@ fun _ os ~build_dir ->
          permissions are preserved. Any other form of file metadata is
          discarded in the archive.}
       {- Test the distribution. Unpack it in directory [$BUILD/$NAME-$VERSION],
-         {!lint} the distribution, build the package in the current
+         lint the distribution, build the package in the current
          build environment, on success delete [$BUILD/$NAME-$VERSION].
          Note that this uses the archive's [pkg/pkg.ml] file, which
          should not be different from the source's repository file
@@ -1069,99 +1069,90 @@ fun _ os ~build_dir ->
 fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
               "build"; "Makefile"; "_build"]]} *)
 
-  (** {1:std_files Standard files description} *)
-
-  type std_files
-  (** The type for specifying the location of standard package files. *)
-
-  type std_file = fpath * bool
-  (** The type for specifying a standard file. A file path and a boolean
-      that indicates whether the file should be automatically installed. *)
-
-  val std_files :
-    ?readme:std_file ->
-    ?license:std_file ->
-    ?change_log:std_file ->
-    ?meta:std_file list ->
-    ?opam:std_file list ->
-    unit -> std_files
-  (** [std_files ~readme ~license ~change_log ~meta ~opam] specifies
-      the location of package standard files:
-      {ul
-      {- [readme] is a readme file, defaults to ["README.md", true]. Automatic
-         install is in the {!doc} field.}
-      {- [license] is a license file, defaults to ["LICENSE.md", true].
-         Automatic install is in the {!doc} field.}
-      {- [change_log] the change log file, defaults to ["CHANGES.md", true].
-         Automatic install is in the {!doc} field.}
-      {- [meta] the package's ocamlfind META files, defaults to
-         [["pkg/META", true]]. Automatic install is in the {!lib} field.
-         These files also get META {!lint}ed.}
-      {- [opam] the package's OPAM package files, defaults to [["opam", true]].
-         Automatic install is in the {!lib} field. All the files
-         mentioned here will be OPAM and dependency {!lint}ed.}} *)
-
-  (** {1:lint Distribution linting description} *)
-
-  type lint
-  (** The type for specifying distribution linting.  *)
-
-  val lint :
-    ?custom:(unit -> R.msg result list) ->
-    ?files:fpath list option ->
-    ?meta:bool ->
-    ?opam:bool ->
-    ?deps_excluding:string list option ->  unit -> lint
-  (** [lint] specifies the package's distribution lint:
-      {ul
-      {- [custom] defines a custom linting process run with the current
-         directory set at the root of the distribution. Successes and errors
-         in the returned list are reported as such and any error in the list
-         makes the lint fail. Defaults to [None].}
-      {- [files] if [Some files], ensures that all files mentioned in
-         the package {{!stdfiles}standard files} and [files] are present in the
-         distribution. Defaults to [Some []]. If [None] disables the test.}
-      {- [meta]. If [true] (default) performs [ocamlfind] META linting
-         on the META files mentioned in the package's
-         {{!stdfiles}standard files}.}
-      {- [opam]. If [true] (default) performs OPAM file linting on the
-         [opam] files mentioned in the package's {{!stdfiles}standard files}.}
-      {- [deps_excluding] if [Some excludes], checks that the root
-         package identifiers mentioned in your OCamlbuild [_tags] file
-         are (possibly optional) dependencies in the OPAM files
-         mentioned in the package's {{!stdfiles}standard files} and
-         vice-versa. Package identifiers that do not follow this rule
-         can be be specified in [excludes] which are added to the
-         following set of identifiers automatically excluded from the
-         test:
-         {ul
-         {- The OPAM package names that start with ["conf-"].}
-         {- {!Topkg_care.Lint.default_package_excludes}}}
-         If [None] disables dependency linting.}} *)
-
   (** {1 Package description} *)
+
+  type std_file
+  (** The type for specifying a standard file. *)
+
+  val std_file : ?install:bool -> fpath -> std_file
+  (** [std_file ~install p] is a standard file [p] expressed relative
+      to the source repository root directory. The file is
+      automatically installed if [install] is [true] (default). *)
+
+  type meta_file
+  (** The type for specifying an OCamlfind META file. *)
+
+  val meta_file : ?lint:bool -> ?install:bool -> fpath -> meta_file
+  (** [meta_file ~lint ~install p] is a META file [p] expressed relative
+      to the source repository root directory. The file is automatically
+      installed in the {!lib} field if [install] is [true] (default).
+      If [lint] is [true] (default), it is OCamlfind linted. *)
+
+  type opam_file
+  (** The type for specifying an opam file. *)
+
+  val opam_file :
+    ?lint:bool -> ?lint_deps_excluding:string list option -> ?install:bool ->
+    fpath -> opam_file
+  (** [opam_file ~lint ~lint_deps_excluding ~install p] is an OPAM file
+      [p] expressd relative to the source repository root directory such that:
+      {ul
+      {- If [install] is [true] (default), it is automatically installed
+         in the {!lib} field.}
+      {- If [lint] is [true] (default), it is OPAM linted.}
+      {- If [lint_deps_excluding] is [Some excludes], [topkg]
+         checks that each of the OPAM package dependencies is mentioned
+         as a root package in the OCamlbuild [_tags] file and vice-versa. The
+         following package names are excluded from this test:
+         {ul
+         {- The packages names mentioned in [excludes].}
+         {- Package names that start with ["conf-"]}
+         {- {!Topkg_care.OCamlfind.base_packages}}
+         {- {!Topkg_care.Opam.ocaml_base_packages}}}
+         If [None] the dependency check is disabled.}} *)
 
   val describe :
     ?delegate:Cmd.t ->
-    ?std_files:std_files ->
-    ?lint:lint ->
+    ?readme:std_file ->
+    ?license:std_file ->
+    ?change_log:std_file ->
+    ?metas:meta_file list ->
+    ?opams:opam_file list ->
+    ?lint_files:fpath list option ->
+    ?lint_custom:(unit -> R.msg result list) ->
     ?distrib:distrib ->
     ?build:build ->
     string -> install list -> unit
-  (** [describe name ~delegate ~std_files ~lint ~distrib ~builder installs]
-      describes a package named [name] with:
+  (** [describe name installs] describes a package named [name] with:
       {ul
-      {- [delegate], specify a package delegate command to use. If unspecfied
-         determined by the delegate lookup procedure, see [topkg-delegate(7)]
-         for more information.}
-      {- [std_files], specifies the standard files of the package.}
-      {- [lint], specifies distribution linting, defaults to {!lint}[ ()].}
+      {- [delegate], the package delegate command to use. If unspecfied
+         determined by the delegate lookup procedure, see
+         [topkg help delegate] for more information.}
+      {- [readme] is a readme file, defaults to {!std_file}
+         [ "README.md"].  Automatic install is in the {!doc} field.}
+      {- [license] is a license file, defaults to {!std_file}
+         [ "LICENSE.md"].  Automatic install is in the {!doc} field.}
+      {- [change_log] the change log, defaults to {!std_file}
+         [ "CHANGES.md"].  Automatic install is in the {!doc} field.}
+      {- [metas] the package's ocamlfind META files, defaults to
+         {!meta_file} [ "pkg/META"].}
+      {- [opams] the package's OPAM package files, defaults to
+         {!opam_file} [ "opam"].}
+      {- [lint_files] if [Some files], ensures that all files mentioned in
+         [readme], [license], [change_log], [metas], [opams] and [files]
+         are present in the distribution. Defaults to [Some []].
+         If [None] disables the test.}
+      {- [lint_custom] defines a custom linting process run with the current
+         directory set at the root of the distribution. Successes and errors
+         in the returned list are reported as such and any error in the list
+         makes the lint fail. Defaults to [None].}
       {- [distrib], specifies the distribution process, defaults to
          {!distrib}[ ()].}
       {- [builder], specifies the package builder.}
       {- [installs] specifies the install moves. Note that some of
-         standard files of [std_files] are automatically installed and
-         don't need to be specified; see {!stdfiles}.}} *)
+         standard files are automatically installed and don't need to
+         be specified, see {!std_file}, {!meta_file} and {!opam_file}.}} *)
+
 end
 
 (** {1 Private} *)
@@ -1345,12 +1336,12 @@ module Private : sig
     val lint_files : t -> fpath list option
     (** [lint_files p] are [p]'s files to check for existence. *)
 
-    val lint_metas : t -> fpath list option
-    (** [lint_metas p] are [p]'s META file to [ocamlfind lint]. *)
+    val lint_metas : t -> (fpath * bool) list
+    (** [lint_metas p] are [p]'s META file to OCamlfind lint. *)
 
-    val lint_opams : t -> (fpath * string list option) list option
-    (** [lint_opams p] are [p]'s OPAM file [opam lint] tupled with
-        dependency exclusion to perform dependency linting. *)
+    val lint_opams : t -> (fpath * bool * string list option) list
+    (** [lint_opams p] are [p]'s OPAM file OPAM lint and dependency
+        lint. *)
 
     (** {1:codec Codec} *)
 
@@ -1463,18 +1454,20 @@ release process.
 
 {1:setup Basic setup}
 
-Your repository and distribution archive should have the following files.
+In most cases your the root of you source repository should have the
+following files.
 {ul
-{- [pkg/META], a
-    {{:http://projects.camlcity.org/projects/findlib.html}Findlib}
-    [META] file. That you should install in the [lib] directory
-    of the package (see below).}
 {- [pkg/pkg.ml], the package description written with {!Topkg}.
    See {{!descr}package description.}}
+{- [pkg/META], a
+    {{:http://projects.camlcity.org/projects/findlib.html}Findlib}
+    [META] file. This file will automatically be installed in the
+    lib directory, see [metas] in {!Pkg.describe}.}
 {- [_tags] ocamlbuild file with at least the [true : bin_annot] line.
    See {{!cmt}handling cmt and cmti} files for details.}
-{- [opam], your package metadata, its dependencies and the instructions
-   to build it. The [depends:] fields must have a ["topkg" {build}] line.}
+{- [opam], your package metadata, its dependencies and the {{!build}instructions
+   to build} it. The [depends:] fields must have a ["topkg" {build}] line,
+   and likely ["ocamlfind" {build}] and ["ocamlbuild" {build}] lines.}
 {- [README.md], your readme file (the actual file path can be changed via
    the [readme_file] argument of {!Pkg.describe} FIXME).}
 {- [LICENSE.md], your license file (the actual file path can be changed via

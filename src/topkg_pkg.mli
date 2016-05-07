@@ -8,20 +8,38 @@
 
 open Topkg_result
 
+type std_file
+val std_file : ?install:bool -> Topkg_fpath.t -> std_file
+
+type meta_file
+val meta_file : ?lint:bool -> ?install:bool -> Topkg_fpath.t -> meta_file
+
+type opam_file
+val opam_file :
+  ?lint:bool -> ?lint_deps_excluding:string list option -> ?install:bool ->
+  Topkg_fpath.t -> opam_file
+
 type t
 
 val empty : t
 val v :
   ?delegate:Topkg_cmd.t ->
-  ?std_files:Topkg_std_files.t ->
-  ?lint:Topkg_lint.t ->
+  ?readme:std_file ->
+  ?license:std_file ->
+  ?change_log:std_file ->
+  ?metas:meta_file list ->
+  ?opams:opam_file list ->
+  ?lint_files:Topkg_fpath.t list option ->
+  ?lint_custom:(unit -> R.msg result list) ->
   ?distrib:Topkg_distrib.t ->
   ?build:Topkg_build.t -> string ->
   Topkg_install.t list -> t
 
 val name : t -> string
 val delegate : t -> Topkg_cmd.t option
-val std_files : t -> Topkg_std_files.t
+val readme : t -> Topkg_fpath.t
+val change_log : t -> Topkg_fpath.t
+val license : t -> Topkg_fpath.t
 val distrib : t -> Topkg_distrib.t
 val build : t -> Topkg_build.t
 val install : t -> Topkg_install.t
@@ -31,9 +49,6 @@ val codec : t Topkg_codec.t
 (* Derived accessors *)
 
 val build_dir : t -> Topkg_fpath.t
-val readme : t -> Topkg_fpath.t
-val change_log : t -> Topkg_fpath.t
-val license : t -> Topkg_fpath.t
 val opam : name:string -> t -> Topkg_fpath.t
 
 (* Distrib *)
@@ -52,8 +67,8 @@ val run_build : t -> int result
 
 val lint_custom : t -> (unit -> R.msg result list) option
 val lint_files : t -> Topkg_fpath.t list option
-val lint_metas : t -> Topkg_fpath.t list option
-val lint_opams : t -> (Topkg_fpath.t * string list option) list option
+val lint_metas : t -> (Topkg_fpath.t * bool) list
+val lint_opams : t -> (Topkg_fpath.t * bool * string list option) list
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

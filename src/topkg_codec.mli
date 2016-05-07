@@ -36,6 +36,7 @@ val option : 'a t -> 'a option t
 val result : ok:'a t -> error:'b t -> ('a, 'b) Result.result t
 val list : 'a t -> 'a list t
 val pair : 'a t -> 'b t -> ('a * 'b) t
+val t2 : 'a t -> 'b t -> ('a * 'b) t
 val t3 : 'a t -> 'b t -> 'c t -> ('a * 'b * 'c) t
 val t4 : 'a t -> 'b t -> 'c t -> 'd t -> ('a * 'b * 'c * 'd) t
 val t5 : 'a t -> 'b t -> 'c t -> 'd t -> 'e t -> ('a * 'b * 'c * 'd * 'e) t

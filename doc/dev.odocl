@@ -19,13 +19,11 @@ Topkg_fexts
 Topkg_fpath
 Topkg_install
 Topkg_ipc
-Topkg_lint
 Topkg_log
 Topkg_opam
 Topkg_os
 Topkg_pkg
 Topkg_result
-Topkg_std_files
 Topkg_string
 Topkg_vcs
 

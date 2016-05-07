@@ -211,7 +211,7 @@ let main_cmd =
      `P "This delegate only supports the following delegations:";
      `I ("$(b,topkg publish doc)",
          "Commits and pushes the documentation to the gh-branch of the
-          source repository. The publication directory PATH is
+          source repository. The publication directory PATH in the branch is
           determined by matching the OPAM 'doc' field against the
           pattern SCHEME://HOST/REPO/PATH.");
      `I ("$(b,topkg publish distrib)",

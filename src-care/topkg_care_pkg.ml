@@ -278,6 +278,7 @@ let build p ~dir ~args ~out =
 let pp_path = Topkg_care_text.Pp.path
 let pp_status = Topkg_care_text.Pp.status
 
+let lint_log msg = Logs.info (fun m -> m ~header:"LINT" "%a" Fmt.text msg); 0
 let lint_disabled test =
   Logs.info (fun m -> m ~header:"LINT" "Package@ disabled@ %a." Fmt.text test);
   0
@@ -354,25 +355,40 @@ let lint_file_with_cmd file_kind ~cmd file errs =
 
 let lint_metas p =
   begin
-    pkg p >>= fun p -> match Topkg.Private.Pkg.lint_metas p with
-    | None -> Ok (lint_disabled "ocamlfind META files linting")
-    | Some metas ->
-        let cmd = Cmd.(Topkg_care_ocamlfind.cmd % "lint") in
-        let lint = lint_file_with_cmd "META file" ~cmd in
-        path_set_of_strings metas
-        >>= fun metas -> Ok (Fpath.Set.fold lint metas 0)
+    pkg p
+    >>= fun p -> match Topkg.Private.Pkg.lint_metas p with
+    | [] -> Ok (lint_log "No ocamlfind META file to lint")
+    | metas ->
+      let cmd = Cmd.(Topkg_care_ocamlfind.cmd % "lint") in
+      let lint errs (f, lint) =
+        begin
+          Fpath.of_string f >>| fun f ->
+          if not lint
+          then lint_log (strf "ocamlfind META lint disabled for %a" Fpath.pp f)
+          else lint_file_with_cmd "META file" ~cmd f errs
+        end
+        |> Logs.on_error_msg ~use:(fun () -> errs + 1)
+      in
+      Ok (List.fold_left lint 0 metas)
   end
   |> Logs.on_error_msg ~use:(fun () -> 1)
 
 let lint_opams p =
   begin
     pkg p >>= fun p -> match Topkg.Private.Pkg.lint_opams p with
-    | None -> Ok (lint_disabled "OPAM files linting")
-    | Some opams ->
+    | [] -> Ok (lint_log "No OPAM file to lint")
+    | opams ->
         let cmd = Cmd.(Topkg_care_opam.cmd % "lint") in
-        let lint = lint_file_with_cmd "OPAM file" ~cmd in
-        path_set_of_strings (List.rev_map fst opams)
-        >>= fun opams -> Ok (Fpath.Set.fold lint opams 0)
+        let lint errs (f, lint, _) =
+          begin
+            Fpath.of_string f >>| fun f ->
+            if not lint
+            then lint_log (strf "OPAM file lint disabled for %a" Fpath.pp f)
+            else lint_file_with_cmd "OPAM file" ~cmd f errs
+          end
+          |> Logs.on_error_msg ~use:(fun () -> errs + 1)
+        in
+        Ok (List.fold_left lint 0 opams)
   end
   |> Logs.on_error_msg ~use:(fun () -> 1)
 
@@ -382,7 +398,7 @@ let lint_deps_default_excludes =
   |> String.Set.union Topkg_care_opam.ocaml_base_packages
   |> String.Set.union (String.Set.of_list exclude)
 
-let lint_opam_deps errs (opam, exclude) =
+let lint_opam_deps errs (opam, _, exclude) =
   let pp_deps_mismatches ppf (opam_only, tags_only) =
     let pp_miss present absent ppf id =
       Fmt.pf ppf "@[%a: %a present but %a absent@]"
@@ -448,8 +464,8 @@ let lint_opam_deps errs (opam, exclude) =
 let lint_deps p =
   begin
     pkg p >>= fun p -> match Topkg.Private.Pkg.lint_opams p with
-    | None -> Ok (lint_disabled "OPAM dependency linting")
-    | Some opams -> Ok (List.fold_left lint_opam_deps 0 opams)
+    | [] -> Ok (lint_log "No OPAM file to dependency lint")
+    | opams -> Ok (List.fold_left lint_opam_deps 0 opams)
   end
   |> Logs.on_error_msg ~use:(fun () -> 1)
 

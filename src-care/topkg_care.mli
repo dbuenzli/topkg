@@ -125,7 +125,7 @@ module Opam : sig
 
   val cmd : Cmd.t
   (** [cmd] is a command for [opam] looked up using
-      {!Topkg.Env.OCaml.tool}[ "opam" `Build_os]. *)
+      {!Topkg.Env.tool}[ "opam" `Build_os]. *)
 
   (** {1:publish Publish} *)
 
@@ -218,7 +218,7 @@ module OCamlbuild : sig
 
   val cmd : Cmd.t
   (** [cmd] is a command for [ocamlbuild] looked up using
-      {!Topkg.Env.OCaml.tool}[ "ocamlbuild" `Build_os]. *)
+      {!Topkg.Env.tool}[ "ocamlbuild" `Build_os]. *)
 
   (** {1 Packages} *)
 
@@ -241,7 +241,7 @@ module OCamlfind : sig
 
   val cmd : Cmd.t
   (** [cmd] is a command for [ocamlfind] looked up using
-      {!Topkg.Env.OCaml.tool}[ "ocamlfind" `Build_os]. *)
+      {!Topkg.Env.tool}[ "ocamlfind" `Build_os]. *)
 
   (** {1 Packages} *)
 
