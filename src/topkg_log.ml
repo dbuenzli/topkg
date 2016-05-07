@@ -87,7 +87,7 @@ let debug msgf = msg Debug msgf
 
 let on_error_msg ?(level = Error) ~use = function
 | Ok v -> v
-| Error (`Msg e) -> msg Error (fun m -> m "%s" e); use ()
+| Error (`Msg e) -> msg level (fun m -> m "%s" e); use ()
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli
