@@ -10,7 +10,7 @@ package "care" (
   directory = "../topkg-care"
   description = "Topkg package care tools"
   version = "%%VERSION%%"
-  requires = "opam-lib cmdliner bos.setup"
+  requires = "topkg opam-lib cmdliner bos.setup"
   archive(byte) = "topkg_care.cma"
   archive(native) = "topkg_care.cmxa"
   plugin(byte) = "topkg_care.cma"
