@@ -39,6 +39,7 @@ let rem_ext s = match last_dot_index s with
 | Some i -> Topkg_string.with_index_range ~last:(i - 1) s
 
 let basename s = Filename.basename s
+let dirname s = Filename.dirname s
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

@@ -52,6 +52,9 @@ type 'a msgf =
 let _err_count = ref 0
 let err_count () = !_err_count
 
+let _warn_count = ref 0
+let warn_count () = !_warn_count
+
 let pp_level_header ppf (h,l) = match h with
 | Some h -> Format.fprintf ppf "[%s] " h
 | None ->
@@ -65,9 +68,12 @@ let pp_level_header ppf (h,l) = match h with
 
 let msg level msgf = match !_level with
 | None -> ()
-| Some level' when level > level' -> if level = Error then incr _err_count
+| Some level' when level > level' ->
+    if level = Error then incr _err_count else
+    if level = Warning then incr _warn_count else ()
 | Some _ ->
-    if level = Error then incr _err_count;
+    (if level = Error then incr _err_count else
+     if level = Warning then incr _warn_count else ());
     msgf @@
     (fun ?header fmt ->
        Format.eprintf ("%s: %a@[" ^^ fmt ^^ "@]@.")

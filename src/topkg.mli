@@ -160,7 +160,10 @@ module Fpath : sig
   (** [rem_ext p] is [p] without its filename extension. *)
 
   val basename : t -> string
-  (** [basename p] is [p] basename, the last non empty segment of [p]. *)
+  (** [basename p] is [p]'s basename, the last non empty segment of [p]. *)
+
+  val dirname : t -> string
+  (** [dirname p] is [p]'s dirname, [p] without its  last non empty segment. *)
 end
 
 (** Command lines.
@@ -750,11 +753,12 @@ module Exts : sig
   type t = ext list
   (** The type for sets (list) of file extensions. *)
 
-  val interface_opt_opaque : ext list
-  (** [interface_opt_opaque] is [[".mli"; ".cmi"; ".cmti"]] *)
+  val api : ext list
+  (** [api] is
+      [[`Ext ".mli"; `Ext ".cmi"; `Ext ".cmti"; `Ext ".cmx"]] *)
 
-  val interface : ext list
-  (** [interface] is [".cmx" :: interface] *)
+  val cmx : ext list
+  (** [cmx] is [[`Ext ".cmx"]] *)
 
   val c_library : ext list
   (** [c_library] is the extension for C libraries. This is determined
@@ -768,7 +772,7 @@ module Exts : sig
   (** [library] is [[".cma"; ".cmxa"; ".cmxs"] @ c_library] *)
 
   val module_library : ext list
-  (** [module_library] is [(interface @ library)]. *)
+  (** [module_library] is [(api @ library)]. *)
 
   val exe : ext list
   (** [exe] is the extension for executables. This is determined from
@@ -805,7 +809,7 @@ module Pkg : sig
          preparation is performed if a [`Pin]
          {{!Env.build}build context} is detected. This means that
          the checkout is watermarked and the massage hook is invoked,
-         see point 5. in {!distrib}.}
+         see point 2. in {!distrib}.}
       {- [dir] is the directory where build artefacts are generated,
          (defaults to ["_build"]). Note that his value can be overriden
          from the command line.}
@@ -895,6 +899,21 @@ fun _ os ~build_dir ->
       see the {{:https://opam.ocaml.org/doc/manual/dev-manual.html#sec25}
       OPAM manual} for details. *)
 
+  val install_mllib :
+    ?field:field ->
+    ?cond:bool -> ?api:string list -> ?dst_dir:fpath -> fpath -> install
+  (** [install_mllib ~field ~cond ~api ~dst_dir mllib] installs
+      an OCaml library described by the file [mllib] with
+      {ul
+      {- [field] is the field where it gets installed (defaults to {!lib}).}
+      {- If [cond] is [false] (defaults to [true]), no move is generated.}
+      {- [api] is the list of modules that defines the public interface
+         of the library, if [None] all the modules mentioned in [mllib]
+         are part of the public interface.}
+      {- [dst_dir] is the destination directory of the library
+         in the field. If unspecified this is the root of the field.}} *)
+
+
   (** {1:distrib Distribution description} *)
 
   type watermark = string * [ `String of string | `Version | `Name
@@ -956,13 +975,13 @@ fun _ os ~build_dir ->
       {- [uri] is an URI pattern that specifies the location of the
          distribution on the WWW. In this string any sub-string
          ["$(NAME)"] is replaced by the package name, ["$(VERSION)"] is replaced
-         by the distribution version string and ["$(VERSION_NUM)"] by
+         by the distribution version string and ["$(VERSION_NUM)"] by the
          distribution version string, chopping an initial
          ['v'] or ['V'] character if present. This argument is used to
          generate the [url] file of an OPAM package for the distribution;
          it will be deprecated in the future in favour of a [x-distrib-uri]
          field in the OPAM file. If the value is unspecified it defaults to:
-{[PKG_HOMEPAGE/releases/$(NAME)-$(VERSION_NUM).tbz]]}
+{[PKG_HOMEPAGE/releases/$(NAME)-$(VERSION_NUM).tbz]}
          where PKG_HOMEPAGE is the package's OPAM file [homepage] field.
          As a special case if the
          hostname of PKG_HOMEPAGE is [github] the following is used:
@@ -980,15 +999,15 @@ fun _ os ~build_dir ->
       The distribution process assumes that the source repository
       working directory is clean so that its definitions are consistent
       with those of the distribution build directory. A warning is
-      generated if this is the case as it may end up in inconsistent
+      generated if this is not the case as it may end up in inconsistent
       distribution archives (but which may be fine to only publish
       a documentation update).
 
       Let [$NAME] be the name of the package, [$BUILD] be its
       {{!build}build directory}, [$VERSION] be the VCS tag description
       (e.g.  [git-describe(1)] if you are using [git]) of the source
-      repository HEAD commit and [distrib] the distribution
-      description found in the source's repository [pkg/pkg.ml] file.
+      repository HEAD commit and [distrib] the {{!distrib}distribution
+      description} found in the source's repository [pkg/pkg.ml] file.
       {ol
       {- Clone the source repository at [HEAD] as the distribution build
          directory [$BUILD/$NAME-$VERSION.build].}
@@ -1030,8 +1049,9 @@ fun _ os ~build_dir ->
       contexts (this occurence was not subsituted because a ZERO
       WIDTH NON-JOINER U+200C was introduced between the first
       two percent characters). If this scheme poses a problem for certain
-      files simply filter the result of {!files_to_watermark} or
-      replace it by the exact files you'd like to watermark. *)
+      files or your doubts are greater than expected simply filter the
+      result of {!files_to_watermark} or replace it by the exact files you'd
+      like to watermark. *)
 
   val watermarks : watermark list
   (** [watermarks] is the default list of watermarks. It has the following

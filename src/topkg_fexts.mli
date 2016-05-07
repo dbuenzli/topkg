@@ -12,8 +12,8 @@ type ext = [`Ext of string | `Obj | `Lib | `Dll | `Exe]
 
 type t = ext list
 
-val interface_opt_opaque : ext list
-val interface : ext list
+val api : ext list
+val cmx : ext list
 val c_library : ext list
 val c_dll_library : ext list
 val library : ext list

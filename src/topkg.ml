@@ -59,6 +59,8 @@ module Pkg = struct
   let misc = Topkg_install.misc
   let man = Topkg_install.man
 
+  let install_mllib = Topkg_install.mllib
+
   (* Package *)
 
   type std_file = Topkg_pkg.std_file
@@ -88,7 +90,7 @@ module Pkg = struct
     begin
       disable_auto_main ();
       Log.info (fun m -> m "topkg %%VERSION%% auto main running");
-      match Topkg_conf.cmd with
+      let ret = match Topkg_conf.cmd with
       | `Help -> pr_help ()
       | `Build -> Topkg_conf.warn_unused (); Topkg_pkg.run_build pkg
       | `Ipc cmd -> Topkg_ipc.answer cmd pkg
@@ -96,6 +98,14 @@ module Pkg = struct
           match args with
           | cmd :: _ -> R.error_msgf "Unknown command '%s'." cmd
           | [] -> R.error_msgf "Missing command."
+      in
+      ret >>= fun ret ->
+      let msg kind = strf "Package description has %s, see log above." kind in
+      if Log.err_count () > 0
+      then (Log.err (fun m -> m "%s" (msg "errors")); Ok 1) else
+      if Log.warn_count () > 0
+      then (Log.warn (fun m -> m "%s" (msg "warnings")); Ok ret) else
+      Ok ret
     end
     |> Log.on_error_msg ~use:(fun () -> 1)
 

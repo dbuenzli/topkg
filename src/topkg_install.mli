@@ -32,6 +32,10 @@ val stublibs : field
 val misc : field
 val man : field
 
+val mllib :
+  ?field:field -> ?cond:bool -> ?api:string list -> ?dst_dir:Topkg_fpath.t ->
+  Topkg_fpath.t -> t
+
 val to_instructions :
   ?header:string ->
   bdir:Topkg_fpath.t -> (* TODO remove *)

@@ -4,6 +4,8 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
+open Topkg_result
+
 
 type file = string * Topkg_fexts.ext
 type field_move =
@@ -83,6 +85,54 @@ let bin = bin_mvs `Bin
 let sbin = bin_mvs `Sbin
 let libexec = bin_mvs `Libexec
 
+let parse_mllib contents =
+  let lines = Topkg_string.cuts ~sep:'\n' contents in
+  let add_mod acc l =
+    let m = String.trim @@ match Topkg_string.cut ~sep:'#' l with
+    | None -> l
+    | Some (m, _ (* comment *)) -> m
+    in
+    if m = "" then acc else m :: acc
+  in
+  List.fold_left add_mod [] lines
+
+let mllib ?(field = lib) ?(cond = true) ?api ?dst_dir mllib =
+  if not cond then [] else
+  let lib_dir = Topkg_fpath.dirname mllib in
+  let lib_base = Topkg_fpath.rem_ext mllib in
+  let dst f = match dst_dir with
+  | None -> None
+  | Some dir -> Some (Topkg_fpath.append dir (Topkg_fpath.basename f))
+  in
+  let api mllib_mods = match api with
+  | None -> mllib_mods
+  | Some api ->
+      let in_mllib i = List.mem (Topkg_string.capitalize i) mllib_mods in
+      let api, orphans = List.partition in_mllib api in
+      let warn o =
+        Topkg_log.warn (fun m -> m "mllib %s: unknown interface %s" mllib o)
+      in
+      List.iter warn orphans;
+      api
+  in
+  let library = field ?dst:(dst lib_base) ~exts:Topkg_fexts.library lib_base in
+  let add_mods acc mllib_mods =
+    let api = api mllib_mods in
+    let add_mod acc m =
+      let fname = Topkg_fpath.append lib_dir (Topkg_string.lowercase m) in
+      if List.mem m api
+      then (field ?dst:(dst fname) ~exts:Topkg_fexts.api fname :: acc)
+      else (field ?dst:(dst fname) ~exts:Topkg_fexts.cmx fname :: acc)
+    in
+    List.fold_left add_mod acc mllib_mods
+  in
+  begin
+    Topkg_os.File.read mllib
+    >>= fun contents -> Ok (parse_mllib contents)
+    >>= fun mods -> Ok (List.flatten @@ add_mods [library] mods)
+  end
+  |> Topkg_log.on_error_msg ~use:(fun () -> [])
+
 let to_instructions ?header ~bdir c i =
 (*
   let native = Topkg_conf_ocaml.native c in
@@ -111,7 +161,7 @@ let to_instructions ?header ~bdir c i =
   targets, ((`Header header), moves)
 
 
-let codec : t Topkg_codec.t =
+let codec : t Topkg_codec.t = (* we don't care *)
   let fields = (fun _ -> ()), (fun () -> []) in
   Topkg_codec.version 0 @@
   Topkg_codec.(view ~kind:"install" fields unit)

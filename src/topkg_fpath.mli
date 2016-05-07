@@ -17,6 +17,7 @@ val get_ext : t -> string
 val has_ext : string -> t -> bool
 val rem_ext : t -> t
 val basename : t -> string
+val dirname : t -> string
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

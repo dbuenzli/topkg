@@ -27,17 +27,19 @@ open Topkg
 let () =
   let pkg_name = Env.string ~absent:(fun () -> Ok "topkg") "pkg-name" in
   let care = pkg_name = "topkg-care" in
+  let metas = [ Pkg.meta_file ~install:false "pkg/META" ] in
   let opams = [
     Pkg.opam_file "topkg.opam"
       ~lint_deps_excluding:(Some ["fmt";"logs";"bos";"cmdliner";"opam-lib"]);
     Pkg.opam_file "topkg-care.opam"]
   in
-  Pkg.describe pkg_name ~opams [
+  Pkg.describe pkg_name ~metas ~opams [
     Pkg.lib ~cond:(not care) "pkg/META";
     Pkg.lib ~cond:(not care) "topkg.opam" ~dst:"opam";
-    Pkg.lib ~cond:(not care) ~exts:Exts.module_library "src/topkg";
+    Pkg.install_mllib ~cond:(not care) ~api:["Topkg"] "src/topkg.mllib";
     Pkg.lib ~cond:care "topkg-care.opam" ~dst:"opam";
-    Pkg.lib ~cond:care ~exts:Exts.module_library "src-care/topkg_care";
+    Pkg.install_mllib ~cond:care ~api:["Topkg_care"]
+      "src-care/topkg_care.mllib";
     Pkg.bin ~cond:care ~auto:true "src-bin/topkg_bin" ~dst:"topkg";
     Pkg.bin ~cond:care ~auto:true
       "src-bin/toy_github_delegate" ~dst:"toy-github-topkg-delegate";

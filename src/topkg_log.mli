@@ -30,6 +30,7 @@ val debug : 'a msgf -> unit
 
 val on_error_msg : ?level:level -> use:(unit -> 'a) -> 'a result -> 'a
 val err_count : unit -> int
+val warn_count : unit -> int
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli
