@@ -4,40 +4,27 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-open Bos_setup
+(** Entry point for [pkg.ml] files. *)
 
-let bistro () =
-  begin
-    let topkg = Cmd.(v "topkg") in
-    OS.Cmd.run Cmd.(topkg % "distrib")
-    >>= fun () -> OS.Cmd.run Cmd.(topkg % "publish")
-    >>= fun () -> OS.Cmd.run Cmd.(topkg % "opam" % "pkg")
-    >>= fun () -> OS.Cmd.run Cmd.(topkg % "opam" % "submit")
-    >>= fun () -> Ok 0
-  end
-  |> Cli.handle_error
+(** {1 Main} *)
 
-(* Command line interface *)
+open Topkg_result
 
-open Cmdliner
+val describe :
+  ?delegate:Topkg_cmd.t ->
+  ?readme:Topkg_pkg.std_file ->
+  ?license:Topkg_pkg.std_file ->
+  ?change_log:Topkg_pkg.std_file ->
+  ?metas:Topkg_pkg.meta_file list ->
+  ?opams:Topkg_pkg.opam_file list ->
+  ?lint_files:Topkg_fpath.t list option ->
+  ?lint_custom:(unit -> R.msg result list) ->
+  ?distrib:Topkg_distrib.t ->
+  ?build:Topkg_build.t ->
+  string -> (Topkg_conf.t -> Topkg_install.t list result) -> unit
 
-let doc = "For when you are in a hurry or need to go for a drink"
-let man =
-  [ `S "DESCRIPTION";
-    `P "The $(b,$(tname)) command (quick in Russian) is equivalent to invoke:";
-  `Pre "\
-topkg distrib       # Create the distribution archive
-topkg publish       # Publish it on the WWW with its documentation
-topkg opam pkg      # Create an OPAM package
-topkg opam submit   # Submit it to OCaml's OPAM repository";
-    `P "See topkg-release(7) for more information.";
-  ] @ Cli.common_opts_man @ [
-  ] @ Cli.see_also ~cmds:[]
+val disable : unit -> unit
 
-let cmd =
-  let info = Term.info "bistro" ~sdocs:Cli.common_opts ~doc ~man in
-  let t = Term.(pure bistro $ Cli.setup) in
-  (t, info)
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

@@ -17,7 +17,7 @@ type opam_file = std_file * bool * string list option
 let opam_file ?(lint = true) ?(lint_deps_excluding = Some []) ?install file =
   std_file ?install file, lint, lint_deps_excluding
 
-let install_std_files readme license change_log metas opams =
+let std_files_installs readme license change_log metas opams =
   let add field (p, install) acc = if install then field p :: acc else acc in
   add Topkg_install.doc readme @@
   add Topkg_install.doc license @@
@@ -38,7 +38,7 @@ type t =
     lint_custom :(unit -> R.msg result list) option;
     distrib : Topkg_distrib.t;
     build : Topkg_build.t;
-    install : Topkg_install.t; }
+    installs : Topkg_conf.t -> Topkg_install.t list result; }
 
 let v
     ?delegate
@@ -53,13 +53,13 @@ let v
     ?(build = Topkg_build.v ())
     name installs
   =
-  let std_files = install_std_files readme license change_log metas opams in
-  let installs = List.rev_append std_files installs in
-  let install = List.sort compare (List.flatten installs) in
   { name; delegate; readme; license; change_log; metas; opams; lint_files;
-    lint_custom; distrib; build; install }
+    lint_custom; distrib; build; installs }
 
-let empty = v "" []
+let empty = v "" (fun _ -> Ok [])
+let with_name_and_build_dir p name build_dir =
+  let build = Topkg_build.with_dir p.build build_dir in
+  { p with name; build }
 
 let name p = p.name
 let delegate p = p.delegate
@@ -68,7 +68,14 @@ let change_log p = fst p.change_log
 let license p = fst p.license
 let distrib p = p.distrib
 let build p = p.build
-let install p = p.install
+let install p c =
+  p.installs c >>= fun installs ->
+  let std_files =
+    std_files_installs p.readme p.license p.change_log p.metas p.opams
+  in
+  let installs = List.rev_append std_files installs in
+  let install = List.sort compare (List.flatten installs) in
+  Ok install
 
 let std_files p =
   fst (p.readme) :: fst (p.license) :: fst (p.change_log) ::
@@ -87,6 +94,7 @@ let opam ~name p =
       "opam"
 
 let codec =
+  let stub _ = invalid_arg "not executable outside package definition" in
   let string_list_option = Topkg_codec.(option @@ list string) in
   let std_file = Topkg_codec.(pair string bool) in
   let meta_file = Topkg_codec.(pair std_file bool) in
@@ -101,7 +109,6 @@ let codec =
   let opams = Topkg_codec.(with_kind "opams" @@ list opam_file) in
   let lint_files = Topkg_codec.(with_kind "lint_files" @@ string_list_option) in
   let lint_custom =
-    let stub () = invalid_arg "not executable outside package definition" in
     let kind = "lint_custom" in
     let enc = function None -> "\x00" | Some _ -> "\x01" in
     let dec = function
@@ -110,26 +117,26 @@ let codec =
   in
   let distrib = Topkg_codec.(with_kind "distrib" @@ Topkg_distrib.codec) in
   let build = Topkg_codec.(with_kind "build" @@ Topkg_build.codec) in
-  let install = Topkg_codec.(with_kind "install" @@ Topkg_install.codec) in
   let fields =
     (fun p -> (p.name, p.delegate, p.readme, p.license, p.change_log),
               (p.metas, p.opams, p.lint_files, p.lint_custom, p.distrib),
-              (p.build, p.install)),
+              (p.build)),
     (fun ((name, delegate, readme, license, change_log),
           (metas, opams, lint_files, lint_custom, distrib),
-          (build, install)) ->
+          (build)) ->
        { name; delegate; readme; license; change_log;
          metas; opams; lint_files; lint_custom; distrib;
-         build; install })
+         build; installs = stub })
   in
   Topkg_codec.version 0 @@
   Topkg_codec.(view ~kind: "package" fields
                  (t3
                     (t5 name delegate readme license change_log)
                     (t5 metas opams lint_files lint_custom distrib)
-                    (t2 build install)))
+                    build))
 (* Distrib *)
 
+let distrib_uri p = Topkg_distrib.uri p.distrib
 let distrib_prepare p ~dist_build_dir ~name ~version ~opam =
   let d = distrib p in
   let ws = Topkg_distrib.watermarks d in
@@ -152,45 +159,41 @@ let distrib_prepare_pin p =
   >>= fun files -> Topkg_distrib.watermark_files ws_defs files
   >>= fun () -> Topkg_distrib.massage d ()
 
-let distrib_uri p = Topkg_distrib.uri p.distrib
-
 (* Build *)
 
-let run_build p =
-  let header = p.name in
-  let conf = Topkg_conf.OCaml.v `Host_os in
-  let targets, install =
-    Topkg_install.to_instructions ~header ~bdir:(Topkg_build.dir p.build)
-      conf p.install
-  in
-  let prepare =
-    match Topkg_build.prepare_on_pin p.build && Topkg_conf.build = `Pin with
-    | false -> Ok ()
-    | true ->
-        (distrib_prepare_pin p)
-        |> R.reword_error_msg ~replace:true
-          (fun e -> R.msgf "Pin distribution preparation failed: %s" e)
-  in
-  prepare
-  >>= fun () ->
-  (Topkg_build.pre p.build Topkg_conf.build)
-  |> R.reword_error_msg ~replace:true
-    (fun e -> R.msgf "Pre-build hook failed: %s" e)
-  >>= fun () ->
-  let build_cmd =
-    (Topkg_build.cmd p.build) Topkg_conf.build `Host_os
-      (Topkg_build.dir p.build)
-  in
-  Topkg_os.Cmd.run Topkg_cmd.(build_cmd %% of_list targets)
-  >>= fun () ->
-  let install_file = p.name ^ ".install" in
+let write_opam_install_file p install =
+  let file = p.name ^ ".install" in
   let install = Topkg_opam.Install.to_string install in
-  Topkg_os.File.write install_file install
-  >>= fun () ->
-  (Topkg_build.post p.build Topkg_conf.build)
+  Topkg_os.File.write file install
+  >>| fun () -> Topkg_log.app (fun m -> m "Wrote OPAM install file %s" file)
+
+let run_build_hook kind hook c =
+  (hook c)
   |> R.reword_error_msg ~replace:true
-    (fun e -> R.msgf "Post-build hook failed: %s" e)
-  >>= fun () -> Ok 0
+    (fun e -> R.msgf "%s-build hook failed: %s" kind e)
+
+let build p ~dry_run c os =
+  let header = p.name in
+  install p c >>= fun install ->
+  Ok (Topkg_install.to_instructions ~header c os install)
+  >>= fun (targets, install) -> match dry_run with
+  | true -> write_opam_install_file p install >>= fun () -> Ok 0
+  | false ->
+      let build_cmd = (Topkg_build.cmd p.build) c os in
+      let is_pin = Topkg_conf.build_context c = `Pin in
+      let prepare = match Topkg_build.prepare_on_pin p.build && is_pin with
+      | false -> Ok ()
+      | true ->
+          (distrib_prepare_pin p)
+          |> R.reword_error_msg ~replace:true
+            (fun e -> R.msgf "Pin distribution preparation failed: %s" e)
+      in
+      prepare
+      >>= fun () -> run_build_hook "Pre" (Topkg_build.pre p.build) c
+      >>= fun () -> Topkg_os.Cmd.run Topkg_cmd.(build_cmd %% of_list targets)
+      >>= fun () -> write_opam_install_file p install
+      >>= fun () -> run_build_hook "Post" (Topkg_build.post p.build) c
+      >>= fun () -> Ok 0
 
 (* Lint *)
 

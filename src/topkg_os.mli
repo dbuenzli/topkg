@@ -8,6 +8,8 @@
 
     Abridged [bos]. See {!Topkg.OS} for documentation. *)
 
+(** {1 OS} *)
+
 open Topkg_result
 
 module Env : sig
@@ -47,7 +49,6 @@ module Dir : sig
 end
 
 module Cmd : sig
-
   val exists : Topkg_cmd.t -> bool result
   val must_exist : Topkg_cmd.t -> Topkg_cmd.t result
 
@@ -70,8 +71,6 @@ module Cmd : sig
   val to_file : Topkg_fpath.t -> run_out -> unit result
   val run_out : ?err:Topkg_fpath.t -> Topkg_cmd.t -> run_out
 end
-
-val exit : 'a result -> unit
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

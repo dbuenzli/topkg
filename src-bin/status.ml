@@ -70,7 +70,7 @@ let until =
   let docv = "COMMIT-ISH" in
   Arg.(value & opt string "HEAD" & info ["until"] ~doc ~docv)
 
-let doc = "list commits to publish in the next distribution"
+let doc = "List commits to publish in the next distribution"
 let man =
   [ `S "DESCRIPTION";
     `P "The $(b,$(tname)) command consults the package's VCS and outputs the

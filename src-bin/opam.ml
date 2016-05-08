@@ -127,7 +127,7 @@ let pkg_name =
              by the package description."
   in
   let docv = "PKG_NAME" in
-  Arg.(value & opt (some string) None & info ["pkg-name"] ~doc ~docv)
+  Arg.(value & opt (some string) None & info ["n"; "pkg-name"] ~doc ~docv)
 
 let pkg_version =
   let doc = "The version string $(docv) of the OPAM package. If absent provided
@@ -162,7 +162,7 @@ let pkg_descr =
   let docv = "FILE" in
   Arg.(value & opt (some Cli.path_arg) None & info ["pkg-descr"] ~doc ~docv)
 
-let doc = "interaction with OPAM and the OCaml OPAM repository"
+let doc = "Interaction with OPAM and the OCaml OPAM repository"
 let man =
   [
     `S "SYNOPSIS";

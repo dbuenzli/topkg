@@ -62,7 +62,7 @@ let delete =
   let doc = "Delete the specified tag rather than create it." in
   Arg.(value & flag & info ["d"; "delete"] ~doc)
 
-let doc = "tag the package's source repository with a version"
+let doc = "Tag the package's source repository with a version"
 let man =
   [ `S "DESCRIPTION";
     `P "The $(b,$(tname)) command tags the package's VCS HEAD commit with a

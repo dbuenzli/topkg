@@ -8,6 +8,8 @@
 
     See {!Topkg.Cmd} for documentation. *)
 
+(** {1 Command lines} *)
+
 type t
 
 val v : string -> t

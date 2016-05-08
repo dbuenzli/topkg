@@ -103,7 +103,7 @@ let target =
   let doc = "Target to browse, see above for the list of targets." in
   Arg.(value & pos 0 string "homepage" & info [] ~doc ~docv:"TARGET or URI")
 
-let doc = "browse the package's WWW links"
+let doc = "Browse the package's WWW links"
 let man =
   let target acc (t, _, doc) =
     if doc = "" then acc else

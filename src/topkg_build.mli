@@ -10,25 +10,22 @@ open Topkg_result
 
 (** {1 Build} *)
 
-type context = [ `Pin | `Dev | `Distrib ]
-
 type t
 
 val v :
   ?prepare_on_pin:bool ->
   ?dir:Topkg_fpath.t ->
-  ?pre:(context -> unit result) ->
-  ?cmd:(context -> Topkg_conf.os -> build_dir:Topkg_fpath.t -> Topkg_cmd.t) ->
-  ?post:(context -> unit result) -> unit -> t
+  ?pre:(Topkg_conf.t -> unit result) ->
+  ?cmd:(Topkg_conf.t -> Topkg_conf.os -> Topkg_cmd.t) ->
+  ?post:(Topkg_conf.t -> unit result) -> unit -> t
+
+val with_dir : t -> Topkg_fpath.t -> t
 
 val prepare_on_pin : t -> bool
 val dir : t -> Topkg_fpath.t
-val pre : t -> (context -> unit result)
-val cmd :
-  t -> (context -> Topkg_conf.os -> build_dir:Topkg_fpath.t -> Topkg_cmd.t)
-
-val post : t -> (context -> unit result)
-
+val pre : t -> (Topkg_conf.t -> unit result)
+val cmd : t -> (Topkg_conf.t -> Topkg_conf.os -> Topkg_cmd.t)
+val post : t -> (Topkg_conf.t -> unit result)
 val codec : t Topkg_codec.t
 
 (*---------------------------------------------------------------------------

@@ -109,7 +109,33 @@ let parse_version v =
   with
   | Failure _ -> None
 
+(* Formatters *)
 
+let pp_text ppf s = (* was c&p from Fmt, pp_print_text is 4.02 *)
+  let is_nl_or_sp c = c = '\n' || c = ' ' in
+  let rec stop_at sat ~start ~max s =
+    if start > max then start else
+    if sat s.[start] then start else
+    stop_at sat ~start:(start + 1) ~max s
+  in
+  let sub s start stop ~max =
+    if start = stop then "" else
+    if start = 0 && stop > max then s else
+    String.sub s start (stop - start)
+  in
+  let max = String.length s - 1 in
+  let rec loop start s = match stop_at is_nl_or_sp ~start ~max s with
+  | stop when stop > max -> Format.pp_print_string ppf (sub s start stop ~max)
+  | stop ->
+      Format.pp_print_string ppf (sub s start stop ~max);
+      begin match s.[stop] with
+      | ' ' -> Format.pp_print_space ppf ()
+      | '\n' -> Format.pp_force_newline ppf ()
+      | _ -> assert false
+      end;
+      loop (stop + 1) s
+  in
+  loop 0 s
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

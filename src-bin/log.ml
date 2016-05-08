@@ -73,7 +73,7 @@ let last_version =
   in
   Arg.(value & flag & info ["t"; "last-version"] ~doc)
 
-let doc = "show and edit the package's change log"
+let doc = "Show and edit the package's change log"
 let man =
   [ `S "DESCRIPTION";
     `P "The $(b,$(tname)) command shows, edits and commits

@@ -12,7 +12,7 @@ let lint_distrib pkg ~dir =
 
 let build_distrib pkg ~dir =
   Logs.app (fun m -> m "@.Building distrib in %a" Fpath.pp dir);
-  let args = [ "installer"; "false"; "vcs"; "false" ] in
+  let args = Cmd.(v "--installer" % "false" % "--vcs" % "false") in
   let out = OS.Cmd.out_string in
   Topkg_care.Pkg.build pkg ~dir ~args ~out >>= function
   | (_, (_, `Exited 0)) ->
@@ -79,7 +79,7 @@ let skip_build =
   let doc = "Do not try to build the distribution from the archive." in
   Arg.(value & flag & info ["skip-build"] ~doc)
 
-let doc = "create a package distribution archive"
+let doc = "Create a package distribution archive"
 let man =
   [ `S "DESCRIPTION";
     `P "The $(b,$(tname)) command creates a package distribution

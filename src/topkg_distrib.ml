@@ -99,7 +99,7 @@ let default_files_to_watermark =
     in
     Set.mem ext exts
   in
-  let not_binary f = not (is_binary_ext (Topkg_fpath.get_ext f)) in
+  let not_binary f = not (is_binary_ext @@ Topkg_fpath.get_ext f) in
   fun () ->
     Topkg_vcs.get ()
     >>= fun repo -> Topkg_vcs.tracked_files repo
@@ -133,7 +133,6 @@ let files_to_watermark d = d.files_to_watermark
 let massage d = d.massage
 let exclude_paths d = d.exclude_paths
 let uri d = d.uri
-
 let codec =
   let uri = Topkg_codec.(with_kind "uri" @@ option string) in
   let fields =

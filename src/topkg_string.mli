@@ -31,6 +31,8 @@ val uppercase : string -> string
 
 val parse_version : string -> (int * int * int * string option) option
 
+val pp_text : Format.formatter -> string -> unit
+
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli
 

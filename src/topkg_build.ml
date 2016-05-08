@@ -11,13 +11,16 @@ type context = [ `Pin | `Dev | `Distrib ]
 type t =
   { prepare_on_pin : bool;
     dir : Topkg_fpath.t;
-    pre : context -> unit result;
-    cmd : context -> Topkg_conf.os -> build_dir:Topkg_fpath.t -> Topkg_cmd.t;
-    post : context -> unit result; }
+    pre : Topkg_conf.t -> unit result;
+    cmd : Topkg_conf.t -> Topkg_conf.os -> Topkg_cmd.t;
+    post : Topkg_conf.t -> unit result; }
+
+let with_dir b dir = { b with dir }
 
 let nop = fun _ -> Ok ()
-let cmd _ os ~build_dir =
+let cmd c os =
   let ocamlbuild = Topkg_conf.tool "ocamlbuild" os in
+  let build_dir = Topkg_conf.build_dir c in
   Topkg_cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %
              "-build-dir" % build_dir)
 
@@ -31,7 +34,6 @@ let dir b = b.dir
 let pre b = b.pre
 let cmd b = b.cmd
 let post b = b.post
-
 let codec =
   let prepare_on_pin = Topkg_codec.(with_kind "prepare_on_pin" @@ bool) in
   let dir = Topkg_codec.(with_kind "dir" @@ string) in

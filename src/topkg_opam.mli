@@ -54,8 +54,8 @@ module Install : sig
       if the file doesn't exist. *)
 
   type t = [ `Header of string option ] * (field * move) list
-   (** The type for opam install files. An optional starting header
-       comment and a list of field moves. *)
+  (** The type for opam install files. An optional starting header
+      comment and a list of field moves. *)
 
   val to_string : t -> string
   (** [to_string t] is [t] as syntactically valid OPAM install file. *)

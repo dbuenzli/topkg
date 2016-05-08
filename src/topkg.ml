@@ -13,6 +13,7 @@ module String = Topkg_string
 
 type fpath = string
 module Fpath = Topkg_fpath
+
 module Cmd = Topkg_cmd
 module Log = Topkg_log
 module OS = Topkg_os
@@ -20,26 +21,9 @@ module Vcs = Topkg_vcs
 
 (* Package description *)
 
-module Env = Topkg_conf
+module Conf = Topkg_conf
 module Exts = Topkg_fexts
 module Pkg = struct
-
-  (* Distrib *)
-
-  type watermark = Topkg_distrib.watermark
-  type distrib = Topkg_distrib.t
-
-  let distrib = Topkg_distrib.v
-  let watermarks = Topkg_distrib.default_watermarks
-  let files_to_watermark = Topkg_distrib.default_files_to_watermark
-  let massage = Topkg_distrib.default_massage
-  let exclude_paths = Topkg_distrib.default_exclude_paths
-
-  (* Build *)
-
-  type build = Topkg_build.t
-  type build_context = Topkg_build.context
-  let build = Topkg_build.v
 
   (* Install *)
 
@@ -58,8 +42,23 @@ module Pkg = struct
   let stublibs = Topkg_install.stublibs
   let misc = Topkg_install.misc
   let man = Topkg_install.man
+  let mllib = Topkg_install.mllib
 
-  let install_mllib = Topkg_install.mllib
+  (* Distrib *)
+
+  type watermark = Topkg_distrib.watermark
+  type distrib = Topkg_distrib.t
+
+  let distrib = Topkg_distrib.v
+  let watermarks = Topkg_distrib.default_watermarks
+  let files_to_watermark = Topkg_distrib.default_files_to_watermark
+  let massage = Topkg_distrib.default_massage
+  let exclude_paths = Topkg_distrib.default_exclude_paths
+
+  (* Build *)
+
+  type build = Topkg_build.t
+  let build = Topkg_build.v
 
   (* Package *)
 
@@ -72,70 +71,13 @@ module Pkg = struct
   type opam_file = Topkg_pkg.opam_file
   let opam_file = Topkg_pkg.opam_file
 
-  type t = Topkg_pkg.t
+  (* Describe *)
 
-  let pr = Format.printf
-  let pr_help () =
-    pr "Usage example:@\n %s" Sys.argv.(0);
-    List.iter (fun (k, v) -> match v with
-    | `Bool b -> pr " %s %b" k b
-    | `String s -> pr " %s %S" k s) (List.sort compare (Env.get ()));
-    pr "@.";
-    Ok 0
-
-  let do_auto_main = ref true
-  let disable_auto_main () = do_auto_main := false
-
-  let auto_main pkg =
-    begin
-      disable_auto_main ();
-      Log.info (fun m -> m "topkg %%VERSION%% auto main running");
-      let ret = match Topkg_conf.cmd with
-      | `Help -> pr_help ()
-      | `Build -> Topkg_conf.warn_unused (); Topkg_pkg.run_build pkg
-      | `Ipc cmd -> Topkg_ipc.answer cmd pkg
-      | `Unknown args ->
-          match args with
-          | cmd :: _ -> R.error_msgf "Unknown command '%s'." cmd
-          | [] -> R.error_msgf "Missing command."
-      in
-      ret >>= fun ret ->
-      let msg kind = strf "Package description has %s, see log above." kind in
-      if Log.err_count () > 0
-      then (Log.err (fun m -> m "%s" (msg "errors")); Ok 1) else
-      if Log.warn_count () > 0
-      then (Log.warn (fun m -> m "%s" (msg "warnings")); Ok ret) else
-      Ok ret
-    end
-    |> Log.on_error_msg ~use:(fun () -> 1)
-
-  let pkg = ref None
-
-  let describe
-      ?delegate ?readme ?license ?change_log ?metas ?opams ?lint_files
-      ?lint_custom ?distrib ?build name installs =
-    match !pkg with
-    | Some _ -> invalid_arg "Topkg.Pkg.describe already called"
-    | None ->
-        let p =
-          Topkg_pkg.v ?delegate ?readme ?license ?change_log ?metas ?opams
-            ?lint_files ?lint_custom ?distrib ?build name installs
-        in
-        pkg := Some p;
-        if !do_auto_main then exit (auto_main p) else ()
-
-  let err_no_main () =
-    if !do_auto_main && !pkg = None then
-      Log.err begin fun m ->
-        m "No@ package@ description@ found.@ A@ syntax@ error@ may@ have@ \
-           occured@ or@ did@ you@ forget@ to@ call@ Topkg.Pkg.describe@ ?"
-      end
-
-  let () = at_exit err_no_main
+  let describe = Topkg_main.describe
 end
 
 module Private = struct
-  let disable_auto_main = Pkg.disable_auto_main
+  let disable_main = Topkg_main.disable
   module Codec = Topkg_codec
   module Pkg = Topkg_pkg
   module Ipc = Topkg_ipc

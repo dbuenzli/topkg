@@ -6,8 +6,6 @@
 
 open Topkg_result
 
-let strf = Printf.sprintf
-
 (* Environment variables. *)
 
 module Env = struct
@@ -90,7 +88,7 @@ module File = struct
       with exn -> close oc; raise exn
     with Sys_error e -> R.error_msg e
 
-  let write_subst file vars s = (* very ugly mister *)
+  let write_subst file vars s = (* very ugly mister, too lazy to rewrite *)
     try
       let oc = if file = dash then stdout else open_out file in
       let close oc = if file = dash then () else close_out_noerr oc in
@@ -113,7 +111,8 @@ module File = struct
                 let id = String.sub s (id_start) (!last_id - id_start) in
                 try
                   let subst = List.assoc id vars in
-                  output_substring oc s !start (start_subst - !start);
+                  output oc (Bytes.unsafe_of_string s)
+                    !start (start_subst - !start);
                   output_string oc subst;
                   stop := true;
                   start := !last_id + 2;
@@ -125,7 +124,7 @@ module File = struct
             done
           end
         done;
-        output_substring oc s !start (len - !start);
+        output oc (Bytes.unsafe_of_string s) !start (len - !start);
         flush oc;
         close oc;
         Ok ()
@@ -184,6 +183,7 @@ module Cmd = struct
   let err_empty_line = "no command, empty command line"
 
   let line ?stdout ?stderr cmd =
+    let strf = Printf.sprintf in
     if Topkg_cmd.is_empty cmd then failwith err_empty_line else
     let cmd = List.rev_map Filename.quote (Topkg_cmd.to_rev_list cmd) in
     let cmd = String.concat " " cmd in
@@ -201,8 +201,8 @@ module Cmd = struct
   (* Command existence *)
 
   let test_cmd = match Sys.os_type with
-    | "Win32" -> Topkg_cmd.v "where"
-    | _ -> Topkg_cmd.v "type"
+  | "Win32" -> Topkg_cmd.v "where"
+  | _ -> Topkg_cmd.v "type"
 
   let cmd_bin cmd =
     try List.hd (Topkg_cmd.to_list cmd) with
@@ -256,10 +256,6 @@ module Cmd = struct
   let to_file stdout o = out_file stdout o |> success
   let run_out ?err cmd = { cmd; err }
 end
-
-let exit = function
-| Ok _ -> exit 0
-| Error (`Msg e) -> Topkg_log.err (fun m -> m "%s" e); exit 1
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

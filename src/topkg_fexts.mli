@@ -8,6 +8,8 @@
 
     See {!Topkg.Exts} for documentation. *)
 
+(** {1 File extensions} *)
+
 type ext = [`Ext of string | `Obj | `Lib | `Dll | `Exe]
 
 type t = ext list

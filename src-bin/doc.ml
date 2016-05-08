@@ -78,7 +78,7 @@ let dev =
   let doc = "Build the development documentation." in
   Arg.(value & flag & info ["dev"] ~doc)
 
-let doc = "build the package's API documentation"
+let doc = "Build the package's API documentation"
 let man =
   [ `S "DESCRIPTION";
     `P "The $(b,$(tname)) build the package's API documentation. Use

@@ -7,7 +7,7 @@
 open Bos_setup
 
 let ocaml =
-  Cmd.of_list @@ Topkg.Cmd.to_list @@ Topkg.Env.tool "ocaml" `Build_os
+  Cmd.of_list @@ Topkg.Cmd.to_list @@ Topkg.Conf.tool "ocaml" `Build_os
 
 let pkg_must_exist pkg_file = match OS.File.must_exist pkg_file with
 | Ok _ -> Ok pkg_file

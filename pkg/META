@@ -1,6 +1,6 @@
 description = "The transitory OCaml software packager"
 version = "%%VERSION%%"
-requires = "result"
+requires = "bytes result"
 archive(byte) = "topkg.cma"
 archive(native) = "topkg.cmxa"
 plugin(byte) = "topkg.cma"

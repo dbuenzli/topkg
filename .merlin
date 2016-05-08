@@ -1,4 +1,6 @@
 PKG bytes result rresult astring fmt fpath logs bos cmdliner opam-lib
 S src
+S src-bin
+S src-care
 S test
 B _build/**

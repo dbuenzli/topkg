@@ -49,7 +49,7 @@ val publish_msg : t -> (string, R.msg) result
 (** {1 Build} *)
 
 val build :
-  t -> dir:Fpath.t -> args:string list ->
+  t -> dir:Fpath.t -> args:Cmd.t ->
   out:(OS.Cmd.run_out -> ('a, R.msg) result) -> ('a, R.msg) result
 
 (** {1 Distrib} *)

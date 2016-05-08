@@ -31,16 +31,14 @@ val doc : field
 val stublibs : field
 val misc : field
 val man : field
-
 val mllib :
   ?field:field -> ?cond:bool -> ?api:string list -> ?dst_dir:Topkg_fpath.t ->
   Topkg_fpath.t -> t
 
 val to_instructions :
   ?header:string ->
-  bdir:Topkg_fpath.t -> (* TODO remove *)
-  Topkg_conf.OCaml.t -> t ->
-  (Topkg_fpath.t list * Topkg_opam.Install.t)
+  Topkg_conf.t ->
+  Topkg_conf.os -> t -> (Topkg_fpath.t list * Topkg_opam.Install.t)
 
 val codec : t Topkg_codec.t
 

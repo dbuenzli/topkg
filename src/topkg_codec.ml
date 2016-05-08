@@ -220,9 +220,7 @@ let msg =
   let msg = (fun (`Msg m) -> m), (fun m -> `Msg m) in
   view msg string
 
-let result_error_msg ok =
-  result ~ok ~error:msg
-
+let result_error_msg ok = result ~ok ~error:msg
 let fpath = string
 let cmd =
   let cmd =

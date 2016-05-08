@@ -7,7 +7,7 @@
 open Bos_setup
 
 let cmd =
-  Cmd.of_list @@ Topkg.Cmd.to_list @@ Topkg.Env.tool "ocamlbuild" `Build_os
+  Cmd.of_list @@ Topkg.Cmd.to_list @@ Topkg.Conf.tool "ocamlbuild" `Host_os
 
 let find_packages ~roots s =
   let find_next_package_id =

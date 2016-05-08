@@ -6,7 +6,6 @@
 
 open Topkg_result
 
-
 type file = string * Topkg_fexts.ext
 type field_move =
   { field : Topkg_opam.Install.field;
@@ -42,7 +41,8 @@ let mvs
 
 let lib =
   let drop_exts =
-    let c = Topkg_conf.OCaml.v `Host_os in
+    (* TODO *)
+    let c = Topkg_conf.OCaml.v Topkg_conf.empty `Host_os in
     let native = Topkg_conf.OCaml.native c in
     let native_dynlink = Topkg_conf.OCaml.native_dynlink c in
     if native && not native_dynlink then Topkg_fexts.ext ".cmxs" else
@@ -61,7 +61,8 @@ let stublibs = mvs `Stublibs
 let man = mvs `Man
 
 let bin_drops =
-  if not Topkg_conf.OCaml.(native (v `Host_os))
+  (* TODO *)
+  if not Topkg_conf.OCaml.(native (v Topkg_conf.empty `Host_os))
   then Topkg_fexts.ext ".native" else []
 
 let bin_mvs
@@ -74,7 +75,8 @@ let bin_mvs
     | Some _ as dst -> dst
     in
     let src =
-      if Topkg_conf.OCaml.(native (v `Host_os))
+      (* TODO *)
+      if Topkg_conf.OCaml.(native (v Topkg_conf.empty `Host_os))
       then src ^ ".native" else src ^ ".byte"
       in
       src, dst
@@ -133,12 +135,14 @@ let mllib ?(field = lib) ?(cond = true) ?api ?dst_dir mllib =
   end
   |> Topkg_log.on_error_msg ~use:(fun () -> [])
 
-let to_instructions ?header ~bdir c i =
+let to_instructions ?header c os i =
 (*
   let native = Topkg_conf_ocaml.native c in
   let native_dynlink = Topkg_conf_ocam.native_dynlink c in
 *)
-  let ext_to_string = Topkg_fexts.ext_to_string c in
+  let bdir = Topkg_conf.build_dir c in
+  let ocaml_conf = Topkg_conf.OCaml.v c os in
+  let ext_to_string = Topkg_fexts.ext_to_string ocaml_conf in
   let maybe_build = [ ".cmti"; ".cmt" ] in
   let file_to_str ?(build_target = false) (n, ext) =
     let ext = match ext with

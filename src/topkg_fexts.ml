@@ -4,17 +4,17 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-type ext = [`Ext of string | `Obj | `Lib | `Dll | `Exe]
+type ext = [ `Ext of string | `Obj | `Lib | `Dll | `Exe ]
 type t = ext list
 
-let api = [`Ext ".mli"; `Ext ".cmi"; `Ext ".cmti"; `Ext ".cmx"; ]
+let api = [ `Ext ".mli"; `Ext ".cmi"; `Ext ".cmti"; `Ext ".cmx" ]
 let cmx = [ `Ext ".cmx" ]
-let c_library = [`Lib]
-let c_dll_library = [`Dll]
-let library = [`Ext ".cma"; `Ext ".cmxa"; `Ext ".cmxs"] @ c_library
+let c_library = [ `Lib ]
+let c_dll_library = [ `Dll ]
+let library = [` Ext ".cma"; `Ext ".cmxa"; `Ext ".cmxs" ] @ c_library
 let module_library = (api @ library)
-let exe = [`Exe]
-let ext e = [`Ext e]
+let exe = [ `Exe ]
+let ext e = [ `Ext e ]
 let exts es = List.map (fun e -> `Ext e) es
 
 let ext_to_string c =

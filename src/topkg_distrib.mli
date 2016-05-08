@@ -44,7 +44,6 @@ val files_to_watermark : t -> (unit -> Topkg_fpath.t list result)
 val massage : t -> (unit -> unit result)
 val exclude_paths : t -> (unit -> Topkg_fpath.t list result)
 val uri : t -> string option
-
 val codec : t Topkg_codec.t
 
 (* Defaults *)

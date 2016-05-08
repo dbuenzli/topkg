@@ -20,6 +20,9 @@ val ( >>= ) :
   ('c, 'b) Result.result
 (** [r >>= f] is [f v] if [r = Ok v] and [r] if [r = Error _]. *)
 
+val ( >>| ) : ('a, 'b) Result.result -> ('a -> 'c) -> ('c, 'b) Result.result
+(** [r >>| f] is [Ok (f v)] if [r = Ok v] and [r] if [r = Error _]. *)
+
 (** This definition re-export [result]'s constructors so that an
     [open Topkg] will get them in scope. *)
 type ('a, 'b) r = ('a, 'b) Result.result = Ok of 'a | Error of 'b
@@ -292,8 +295,11 @@ module Log : sig
   (** {1 Monitoring} *)
 
   val err_count : unit -> int
-  (** [err_count ()] is the number of messages logged with level [Error]
-      across all sources. *)
+  (** [err_count ()] is the number of messages logged with level [Error]. *)
+
+  val warn_count : unit -> int
+  (** [warn_count ()] is the number of messages logged with level [Warning]. *)
+
 end
 
 (** OS interaction. *)
@@ -472,14 +478,6 @@ module OS : sig
         output can be consumed with {!to_string}, {!to_lines} or {!to_file}.
         If [err] is specified [stderr] is redirected to the given file. *)
   end
-
-(*
-  val exit : 'a result -> unit
-  (** [exit r] is
-      {ul
-      {- [exit 0] if [r = Ok _]}
-      {- Prints [m] on stderr and [exit 1] if [r = Error (`Msg m)].}} *)
-*)
 end
 
 (** Version control system repositories. *)
@@ -598,27 +596,16 @@ end
 
 (** {1 Package description} *)
 
-(** Build environment. *)
-module Env : sig
+(** Build configuration. *)
+module Conf : sig
 
-  (** {1 Environment keys} *)
+  (** {1:tool Tool lookup}
 
-  val bool : ?quiet:bool -> ?absent:(unit -> bool result) -> string -> bool
-  (** [bool key] declares [key] as being a boolean key in the
-      environment.  A pair of positional arguments [key value] with
-      [value] either ["true"] or ["false"] must now be specified
-      on the command line. If [quiet] is [true] (defaults to [false])
-      the absence of the pair on the command line does not generate a warning.
-      If [absent] is specified (defaults to [(fun () -> Ok true)], the function
-      is used to determined the key value in case it is missing on the
-      command line. *)
-
-  val string :
-    ?quiet:bool -> ?absent:(unit -> string result) -> string -> string
-  (** [string key] is like {!bool} but gets an arbitrary string from the
-      command line. [absent] defaults to [(fun () -> Ok "undefined")]. *)
-
-  (** {1 Tool lookup} *)
+      If your package description needs to run tools (e.g. in the
+      pre and post build hooks, see {!Pkg.build}) it should get the
+      tool to invoke with the following function. This allows to
+      control the executable being run which is useful for
+      cross-compilation scenarios. *)
 
   type os = [ `Build_os | `Host_os ]
   (** The type for operating systems.
@@ -628,36 +615,182 @@ module Env : sig
          and runs.}} *)
 
   val tool : string -> os -> Cmd.t
-  (** [tool bin os] is a build OS binary [bin] which produces output
-      suitable for the OS [os].
+  (** [tool cmd os] is a command [cmd] which can be run on the build OS
+      which produces output suitable for the OS [os].
 
-      For example the executable name for [tool "ocamlc" `Host_os] (resp.
-      [`Build_os]) is determined, in order, as follows:
+      The actual command returned depends on the following lookup procedure,
+      here exemplified on the invocation [tool "mytool" `Host_os] (resp.
+      [`Build_os]).
+      {ol
+      {- [Cmd.v "cmd"], if the environment variable HOST_OS_MYTOOL (resp.
+         BUILD_OS_MYTOOL) is set to ["cmd"]}
+      {- [Cmd.v (Fpath.append path "mytool")], if the environment variable
+         HOST_OS_XBIN  (resp. BUILD_OS_BIN) is set to [path].}
+      {- [Cmd.v ("mytool" ^ "suff")], if the environment variable
+         HOST_OS_SUFF (resp. BUILD_OS_SUFF).}
+      {- [Cmd.(v "ocamlfind" % "mytool")] if ["mytool"] is part of
+         the OCaml tools that can be invoked through ocamlfind.}
+      {- [Cmd.v "mytool"] otherwise.}} *)
+
+  (** {1:kconv Key value converters} *)
+
+  type 'a conv
+  (** The type for key value converters. *)
+
+  val conv :
+    ?docv:string -> (string -> 'a result) -> (Format.formatter -> 'a -> unit) ->
+    'a conv
+  (** [conv ~docv parse print] is a configuration value converter
+      parsing values with [parse] and printing them with
+      [print]. [docv] is a documentation meta-variable used in the
+      documentation to stand for the configuration value, defaults to
+      ["VALUE"]. *)
+
+  val bool : bool conv
+  (** [bool] is a converter for booleans. *)
+
+  val int : int conv
+  (** [int] is a converter for integers. *)
+
+  val string : string conv
+  (** [string] is a converter for strings. *)
+
+  val fpath : fpath conv
+  (** [fpath] is a converter for file paths. *)
+
+  val some : ?none:string -> 'a conv -> 'a option conv
+  (** [some conv] is like [conv] but wraps the parsed value in [Some].
+      [none] is the string printed for [None] by the converter printer,
+      defaults to [""]. *)
+
+  (** {1:key Keys}
+
+      {b Warning.} Configuration keys must be created before the call
+      to {!Pkg.describe}. Yes you are right, that's a little bit dirty. *)
+
+  type 'a key
+  (** The type for configuration keys whose lookup value is of type ['a].
+
+      A configuration key has a name and represents a value of type
+      ['a] in a build configuration. If ["name"] is the name of the key
+      then its value can be specified on the command line using
+      [--name v] where [v] is the value of the key and is parsed
+      according to the key's {{!conv}value converter}.
+
+      There are a few predefined key, see the {{!conf}configuration section}. *)
+
+  val key :
+    ?docv:string -> ?doc:string -> ?env:string -> string -> 'a conv ->
+    absent:'a -> 'a key
+  (** [key name conv ~absent ~env ~doc ~docv] is a configuration key
+      with name [name] parsed from the command line with [conv].
+      [absent] is used if the value is not specified on the command
+      line. If [env] is specified and exists in the process environment,
+      the value of the variable is parsed with [conv] and used instead
+      of [absent] when needed.
+
+      [doc] is a documentation string for the key. [docv] is a meta
+      is a documentation to stand for the key value, defaults to the
+      [docv] of [conv]. In [doc] occurences of the substring $(docv)
+      are replaced by the value of [docv]. *)
+
+  val discovered_key :
+    ?docv:string -> ?doc:string -> ?env:string -> string -> 'a conv ->
+    absent:(unit -> 'a result) -> 'a key
+  (** [discovered_key] is like {!key} but the absent value is discovered,
+      {e if needed}, with [discover]. *)
+
+  val with_pkg : ?default:bool -> string -> bool key
+  (** [with_pkg ~default pkg] is a boolean configuration key named
+      [(strf "with-%s" pkg)] to assert existence of OPAM packages.
+      If absent defaults to [default].
+
+      Usually specified in OPAM build instructions with:
+      {["--with-thatpkg" "%{thatpkg:installed}%"]} along with an entry in the
+      depopt field of the OPAM file.
+
+      {b Warning.} Only use this combinator for denoting OPAM
+      package existence, the resulting key may switch to a discovery
+      process in the future. *)
+
+  (** {1:conf Configurations} *)
+
+  type t
+  (** The type for configurations. *)
+
+  val value : t -> 'a key -> 'a
+  (** [value c k] is the value of configuration key [k] in [c].
+
+      @raise Invalid_argument  If [k] was (illegaly) created after the call
+      to {!Pkg.describe} or if dirty tricks are being played. *)
+
+  val pkg_name : t -> string
+  (** [pkg_name c] is either the value of the package name as given to
+      {!Pkg.describe} or the value of a predefined key [--pkg-name] which
+      overrides the package name. This defines the name of the generated
+      OPAM install file. Used to handle {{!multiopam}multiple
+      OPAM packages}. *)
+
+  val build_dir : t -> fpath
+  (** [build_dir c] is either the value of build directory as given
+      to {!Pkg.describe} via {!Pkg.build} or the value of a predefined
+      key [--build-dir] which overrides the package definition. *)
+
+  val vcs : t -> bool
+  (** [vcs c] is the value of a predefined key [--vcs].
+      It is [true] if the package directory is VCS managed. Usually
+      should not be specified manually: if absent it is determined
+      automatically by using {!Topkg.Vcs.find} and used to determine
+      the {!build_context}. *)
+
+  val installer : t -> bool
+  (** [installer c] is the value of a predefined key [--installer].
+      It is [true] if the build is initiated by an installer like OPAM.
+      If absent defaults to [false]. Usually specified in OPAM build
+      instructions with ["--installer" "true"]. This is used to
+      determine the {!build_context}. *)
+
+  type build_context = [`Dev | `Distrib | `Pin ]
+  (** The type for build contexts. See {!val:build_context} for semantics. *)
+
+  val build_context : t -> [`Dev | `Distrib | `Pin ]
+  (** [build_context c] is the build context of [c]. This is derived from
+      {!vcs} and {!installer} as follows.
       {ul
-      {- If the environment variable [HOST_OS_OCAMLC] (resp.
-         [BUILD_OS_OCAMLC])
-         is set to ["bin"], ["bin"] is used for the executable name.}
-      {- If the environment variable [HOST_OS_XBIN] (resp. [BUILD_OS_BIN]) is
-         set to ["path"], the value ["path/ocamlc"] is used for the
-         executable name.}
-      {- If the environment variable [HOST_OS_SUFF] (resp. [BUILD_OS_SUFF])
-         is set to [suff], the value ["ocamlcsuff"] is used.}c
-      {- Otherwise ["ocamlc"] is used.}} *)
+      {- [`Distrib] iff [not (vcs c)]. No VCS is present, this is a build from
+         a distribution. If there are configuration bits they should
+         be setup according to the build configuration.}
+      {- [`Dev] iff [vcs c && not (installer c)]. This is a development
+         build invoked manually in a source repository. The repository checkout
+         should likely not be touched and configuration bits not be setup.
+         This is happening for example if the developer is testing the package
+         description in her working source repository by invoking
+         [pkg/pkg.ml] or [topkg build].}
+      {- [`Pin] iff [vcs c && installer c]. This is a package manager pin build.
+         In this case the repository checkout may need to be massaged
+         into a pseudo-distribution for the package to be installed. This means
+         that distribution watermarking and massaging should be performed,
+         see {!Pkg.distrib} and the [prepare_on_pin] argument of {!Pkg.build}.
+         Besides exisiting configuration bits should be setup according to the
+         build environment.}} *)
+
+  val dump : Format.formatter -> t -> unit
+  (** [dump ppf c] formats an unspecified representation of [c] on [ppf]. *)
 
   (** {1:ocaml OCaml configuration} *)
 
   (** OCaml configuration. *)
   module OCaml : sig
 
-    (** {1 Tools} *)
-
     (** {1:conf OCaml system configuration} *)
+
+    type conf = t
 
     type t
     (** The type for OCaml configurations. *)
 
-    val v : os -> t
-    (** [v os] is the configuration of the OCaml system for the OS
+    val v : conf -> os -> t
+    (** [v c os] is the configuration of the OCaml system for the OS
         [os] obtained by reading the output of [tool "ocamlc" os] with
         the [-config] option. *)
 
@@ -710,125 +843,56 @@ module Env : sig
     val dump : Format.formatter -> t -> unit
     (** [dump ppf c] prints an unspecified representation of [c] on [ppf]. *)
   end
-
-  (** {1:build_context Build context}
-
-      The two variables {!vcs} and {!installer} are used to detect build
-      contexts.  *)
-
-  val vcs : bool
-  (** [vcs] is [bool "vcs"]. Usually this variable should not be specified
-      manually, it is determined automatically by using {!Vcs.find}. *)
-
-  val installer : bool
-  (** [installer] is [bool "installer"]. Must be set to [false] if the
-      build is initiated by a package installer like OPAM.  *)
-
-  val build : [ `Distrib | `Dev | `Pin ]
-  (** [build] is:
-      {ul
-      {- [`Distrib] iff [not vcs]. This is a build from a distribution.
-         If there are configuration bits they should be setup according to
-         the build environment.}
-      {- [`Dev] iff [vcs && not installer]. This is a development build invoked
-         manually from a source repository checkout. The repository checkout
-         should likely not be touched and configuration bits not be setup.
-         This is happening for example if the developer is testing the package
-         description in the source repository.}
-      {- [`Pin] iff [vcs && installer]. This is a package manager pin build.
-         In this case the repository checkout may need to be massaged
-         into a pseudo-distribution for the package to be installed. For example
-         to specify the version watermarks or if the install depends on files
-         that are generated at distribution creation time. Existing
-         configuration bits should also be setup according to the build
-         environment.}} *)
 end
 
 (** Exts defines sets of file extensions. *)
 module Exts : sig
 
-  type ext = [`Ext of string | `Obj | `Lib | `Dll | `Exe]
-  (** The type for extensions. *)
+  (** {1 File extensions} *)
+
+  type ext
+  (** The type for file extensions. *)
 
   type t = ext list
-  (** The type for sets (list) of file extensions. *)
+  (** The type for lists of file extensions. *)
 
-  val api : ext list
-  (** [api] is
-      [[`Ext ".mli"; `Ext ".cmi"; `Ext ".cmti"; `Ext ".cmx"]] *)
+  val api : t
+  (** [api] is [exts [".mli"; ".cmi"; ".cmti"; ".cmx"]] *)
 
   val cmx : ext list
-  (** [cmx] is [[`Ext ".cmx"]] *)
+  (** [cmx] is [ext ".cmx"] *)
 
   val c_library : ext list
-  (** [c_library] is the extension for C libraries. This is determined
-      from {!Env.OCaml.v} [`Host]'s configuration. *)
+  (** [c_library] is the extension for C libraries (archives). The
+      actual value is determined from {{!Conf.OCaml}OCaml's configuration}. *)
 
   val c_dll_library : ext list
-  (** [c_dll_library] is the extension for C dynamic libraries. This
-      is determined from OCaml's {!Env.OCaml.v} [`Host]'s configuration. *)
+  (** [c_dll_library] is the extension for C dynamic libraries (archives). The
+      actual value is determined from {{!Conf.OCaml}OCaml's configuration}. *)
 
   val library : ext list
-  (** [library] is [[".cma"; ".cmxa"; ".cmxs"] @ c_library] *)
+  (** [library] is [exts [".cma"; ".cmxa"; ".cmxs"] @ c_library] *)
 
   val module_library : ext list
   (** [module_library] is [(api @ library)]. *)
 
   val exe : ext list
-  (** [exe] is the extension for executables. This is determined from
-      OCaml's {!Env.OCaml.v} [`Host]'s configuration. *)
+  (** [exe] is the extension for executables. The actual value is determined
+      from {{!Conf.OCaml}OCaml's configuration}. *)
 
   val exts : string list -> ext list
-  (** [exts sl] is [sl] as a list of extensions. *)
+  (** [exts ss] is [ss] as a list of extensions. *)
 
   val ext : string -> ext list
   (** [ext s] is [s] as a list of extensions. *)
+
+  (**/**)
+  val ext_to_string : Conf.OCaml.t -> ext -> string
+  (**/**)
 end
 
 (** Package description. *)
 module Pkg : sig
-
-  (** {1:build Build description} *)
-
-  type build
-  (** The type for package build description. *)
-
-  type build_context = [ `Pin | `Distrib | `Dev ]
-  (** The type for build contexts. See {!Env.build_context}. *)
-
-  val build :
-    ?prepare_on_pin:bool ->
-    ?dir:fpath ->
-    ?pre:(build_context -> unit result) ->
-    ?cmd:(build_context -> Env.os -> build_dir:fpath -> Cmd.t) ->
-    ?post:(build_context -> unit result) -> unit -> build
-  (** [build ~prepare_on_pin ~dir ~cmd ~pre ~post] describes the package
-      build procedure.
-      {ul
-      {- [prepare_on_pin] if [true] (default) distribution
-         preparation is performed if a [`Pin]
-         {{!Env.build}build context} is detected. This means that
-         the checkout is watermarked and the massage hook is invoked,
-         see point 2. in {!distrib}.}
-      {- [dir] is the directory where build artefacts are generated,
-         (defaults to ["_build"]). Note that his value can be overriden
-         from the command line.}
-      {- [pre] is a hook that is invoked with the build context, after
-         distribution preparation (TODO link) if applicable, but
-         before the build command. It can be used to adapt the build
-         setup according to the build context. Default is a nop.}
-      {- [cmd] determines the build command that will be invoked with the
-         targets to build as determined by {{!install}install} moves.
-         It is given an OS specification and the build directory and must
-         return a command line to run. Defaults to:
-{[
-fun _ os ~build_dir ->
-  Cmd.(Env.tool "ocamlbuild" os %
-       "-use-ocamlfind" % "-classic-display" %
-       "-build-dir" % build_dir)
-]}}
-      {- [post] is a hook that is invoked after the build command
-         with the build context. Default is a nop.}} *)
 
   (** {1:install Installation description}
 
@@ -844,32 +908,36 @@ fun _ os ~build_dir ->
     ?built:bool -> ?cond:bool -> ?exts:Exts.t -> ?dst:string ->
     string -> install
   (** The type for field install functions. A call
-      [field ~cond ~exts ~dst path] generates install moves as follows:
+      [field ~built ~cond ~exts ~dst path] generates install moves as follows:
       {ul
-      {- If [built] is [true] (defaults), [path] is expressed relative
-         to the build directory of the {{!builder}package builder}.
-         If [false], [path] is relative to the root of the distribution.}
+      {- If [built] is [true] (default), [path] is expressed relative
+         to the {{!build}build directory} of the package and the path
+         will be given to build system invocation for construction.
+         If [false], [path] is relative to the root of the distribution
+         and is excluded from the build system invocation; this can
+         be used for installing files that don't need to be built.}
       {- If [cond] is [false] (defaults to [true]), no move is generated.}
       {- If [exts] is present, generates a move for each path in
          the list: [List.map (fun e -> path ^ e) exts].}
       {- [dst] is the path used as the move destination, relative to
          directory corresponding to the field. If unspecified this is
-         [Filename.basename path]}} *)
+         [Fpath.basename path]}} *)
 
   val lib : field
   (** [lib] package specific directory. *)
 
   val libexec : ?auto:bool -> field
-  (** [lib] global directory with executable bit set. See {!bin}. *)
+  (** [lib] global directory with executable bit set. For [auto], see
+      {!bin}. *)
 
   val bin : ?auto:bool -> field
   (** [bin] global directory. If [auto] is [true], selects the native
       binary over the byte code one according to the value of
-      {!Env.native} and adds {!Exts.exe} to the destination (which
+      {!Conf.OCaml.native} and adds {!Exts.exe} to the destination (which
       does the right thing on Windows). *)
 
   val sbin : ?auto:bool -> field
-  (** [sbin] global directory. See {!bin}. *)
+  (** [sbin] global directory. For [auto] see {!bin}. *)
 
   val toplevel : field
   (** [toplevel] package specific directory. *)
@@ -899,11 +967,14 @@ fun _ os ~build_dir ->
       see the {{:https://opam.ocaml.org/doc/manual/dev-manual.html#sec25}
       OPAM manual} for details. *)
 
-  val install_mllib :
-    ?field:field ->
-    ?cond:bool -> ?api:string list -> ?dst_dir:fpath -> fpath -> install
-  (** [install_mllib ~field ~cond ~api ~dst_dir mllib] installs
-      an OCaml library described by the file [mllib] with:
+  (** {2 Higher-level install} *)
+
+  val mllib :
+    ?field:field -> ?cond:bool -> ?api:string list -> ?dst_dir:fpath ->
+    fpath -> install
+  (** [mllib ~field ~cond ~api ~dst_dir mllib] installs an OCaml library
+      described by the
+      {{:https://github.com/ocaml/ocamlbuild/blob/master/manual/manual.adoc#19-archives-documentation}OCamlbuild .mllib file} [mllib] with:
       {ul
       {- [field] is the field where it gets installed (defaults to {!lib}).}
       {- If [cond] is [false] (defaults to [true]), no move is generated.}
@@ -911,8 +982,53 @@ fun _ os ~build_dir ->
          of the library, if [None] all the modules mentioned in [mllib]
          are part of the public interface.}
       {- [dst_dir] is the destination directory of the library
-         in the field. If unspecified this is the root of the field.}} *)
+         in the field. If unspecified this is the root of the field's
+         directory.}} *)
 
+  (** {1:build Build description} *)
+
+  type build
+  (** The type for package build description. *)
+
+  val build :
+    ?prepare_on_pin:bool ->
+    ?dir:fpath ->
+    ?pre:(Conf.t -> unit result) ->
+    ?cmd:(Conf.t -> Conf.os -> Cmd.t) ->
+    ?post:(Conf.t -> unit result) -> unit -> build
+  (** [build ~prepare_on_pin ~dir ~cmd ~pre ~post] describes the package
+      build procedure.
+      {ul
+      {- [prepare_on_pin] if [true] (default) distribution
+         preparation is performed if a [`Pin]
+         {{!Env.build}build context} is detected. This means that
+         the checkout is watermarked and the massage hook is invoked,
+         see step 2. of {{!distdetails}distribution creation}.}
+      {- [dir] is the directory where build artefacts are generated,
+         (defaults to ["_build"]). Note that his value can be overriden
+         from the command line.}
+      {- [pre] is a hook that is invoked with the build context, after
+         distribution preparation if applicable, but before the build
+         command. It can be used to adapt the build setup according to
+         the build configuration. Default is a nop.}
+      {- [cmd] determines the build command that will be invoked with the
+         targets to build as determined by {{!install}install} moves.
+         It is given the build configuration an {{!Conf.os}OS specification}
+         and and must return a command line to run that will buid the targets
+         in the {{!Conf.build_dir}build directory} of the build configuration.
+         Defaults to:
+{[
+fun c os ->
+  let ocamlbuild = Conf.tool "ocamlbuild" os in
+  let build_dir = Conf.build_dir c in
+  Cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %
+       "-build-dir" % build_dir)
+]}}
+      {- [post] is a hook that is invoked with the build context after
+         the build command returned sucessfully. Default is a nop.}}
+
+      {b Warning.} If you are invoking tools in your hooks consider
+      using {!Conf.tool} to look them up it helps for cross-compilation. *)
 
   (** {1:distrib Distribution description} *)
 
@@ -948,12 +1064,11 @@ fun _ os ~build_dir ->
     ?files_to_watermark:(unit -> fpath list result) ->
     ?massage:(unit -> unit result) ->
     ?exclude_paths:(unit -> fpath list result) ->
-    ?uri:string ->
-    unit -> distrib
+    ?uri:string -> unit -> distrib
   (** [distrib ~watermarks ~files_to_watermark ~massage
       ~exclude_paths ~uri ()] influences the distribution creation
-      process performed by the [topkg] tool. See below for the exact
-      details.
+      process performed by the [topkg] tool.
+      See the {{!distdetails}full details about distribution creations}.
 
       In the following the {e distribution build directory} is a
       private clone of the package's source repository's [HEAD] when
@@ -987,71 +1102,7 @@ fun _ os ~build_dir ->
          hostname of PKG_HOMEPAGE is [github] the following is used:
 {[PKG_DEV_REPO/releases/download/$(VERSION)/$(NAME)-$(VERSION_NUM).tbz]}
          where PKG_DEV_REPO is the package's OPAM file [dev-repo] field
-         without the [.git] suffix.}}
-
-      {b Distribution creation details.} The following describes the
-      exact steps performed by [topkg distrib] to create the
-      distribution archive. Note that [topkg] allows to override or
-      disable part of the process via command line arguments, e.g. to
-      specify the version string manually or skip linting. See [topkg
-      distrib --help] for more information.
-
-      The distribution process assumes that the source repository
-      working directory is clean so that its definitions are consistent
-      with those of the distribution build directory. A warning is
-      generated if this is not the case as it may end up in inconsistent
-      distribution archives (but which may be fine to only publish
-      a documentation update).
-
-      Let [$NAME] be the name of the package, [$BUILD] be its
-      {{!build}build directory}, [$VERSION] be the VCS tag description
-      (e.g.  [git-describe(1)] if you are using [git]) of the source
-      repository HEAD commit and [distrib] the {{!distrib}distribution
-      description} found in the source's repository [pkg/pkg.ml] file.
-      {ol
-      {- Clone the source repository at [HEAD] as the distribution build
-         directory [$BUILD/$NAME-$VERSION.build].}
-      {- Prepare the distribution:
-        {ol
-         {- Invoke the [files_to_watermark] function of [distrib] in the
-            distribution build directory to determine the files to watermark
-            with [watermarks] and perform the watermarking process.}
-         {- Run the [massage] function of [distrib] in the distribution
-            build directory. This can be used to create distribution time
-            build artefacts.}}}
-      {- Invoke the [exclude_paths] function of [distrib] in the
-         distribution build directory to determine the paths to exclude
-         from the archive.}
-      {- Create a distribution tarball [$BUILD/$NAME-$VERSION.tbz] with the
-         file hierarchy in [$BUILD/$NAME-$VERSION.build],
-         excluding the paths determined at the preceeding point and delete the
-         clone [$BUILD/$NAME-$VERSION.build]. File modifications times in
-         the archive are set to [HEAD]'s commit time and file
-         permissions are preserved. Any other form of file metadata is
-         discarded in the archive.}
-      {- Test the distribution. Unpack it in directory [$BUILD/$NAME-$VERSION],
-         lint the distribution, build the package in the current
-         build environment, on success delete [$BUILD/$NAME-$VERSION].
-         Note that this uses the archive's [pkg/pkg.ml] file, which
-         should not be different from the source's repository file
-         if the latter was clean when [topkg distrib] was invoked.}}
-
-      {b Note on watermarking.} It is right to doubt the beauty and be
-      concerned about the watermarking process. However experience
-      shows that alternatives like having an OCaml module generated
-      with the appropriate information doesn't work well in
-      practice. Version numbers do not only show up in OCaml source
-      code. They also appear in documentation comments, metadata
-      files, textual data files and non-OCaml source files. Having by
-      default the whole distribution being watermarked allows one to
-      write %‌%VERSION%% in any context and be sure it will be
-      substituted with the right version number in pin and distribution
-      contexts (this occurence was not subsituted because a ZERO
-      WIDTH NON-JOINER U+200C was introduced between the first
-      two percent characters). If this scheme poses a problem for certain
-      files or your doubts are greater than expected simply filter the
-      result of {!files_to_watermark} or replace it by the exact files you'd
-      like to watermark. *)
+         without the [.git] suffix.}} *)
 
   val watermarks : watermark list
   (** [watermarks] is the default list of watermarks. It has the following
@@ -1142,7 +1193,7 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
     ?lint_custom:(unit -> R.msg result list) ->
     ?distrib:distrib ->
     ?build:build ->
-    string -> install list -> unit
+    string -> (Conf.t -> install list result) -> unit
   (** [describe name installs] describes a package named [name] with:
       {ul
       {- [delegate], the package delegate command to use. If unspecfied
@@ -1169,10 +1220,80 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
       {- [distrib], specifies the distribution process, defaults to
          {!distrib}[ ()].}
       {- [builder], specifies the package builder.}
-      {- [installs] specifies the install moves. Note that some of
-         standard files are automatically installed and don't need to
-         be specified, see {!std_file}, {!meta_file} and {!opam_file}.}} *)
+      {- [installs] given a {{!Conf.t}build configuration} specifies the
+         install moves. Note that some of standard files are automatically
+         installed and don't need to be specified, see {!std_file},
+         {!meta_file} and {!opam_file}.}} *)
 
+  (** {1:distdetails Package distribution creation details}
+
+      The following describes the exact steps performed by [topkg
+      distrib] to create the distribution archive. Note that [topkg]
+      allows to override or disable part of the process via command
+      line arguments, e.g. to specify the version string manually or
+      skip linting. See [topkg distrib --help] for more information.
+
+      The distribution process assumes that the source repository
+      working directory is clean so that its definitions are consistent
+      with those of the distribution build directory. A warning is
+      generated if this is not the case as it may end up in inconsistent
+      distribution archives (but which may be fine to only publish
+      a documentation update).
+
+      Let [$NAME] be the name of the package, [$BUILD] be its
+      {{!build}build directory}, [$VERSION] be the VCS tag description
+      (e.g.  [git-describe(1)] if you are using [git]) of the source
+      repository HEAD commit and [distrib] the {{!distrib}distribution
+      description} found in the source's repository [pkg/pkg.ml] file.
+      {ol
+      {- Clone the source repository at [HEAD] as the distribution build
+         directory [$BUILD/$NAME-$VERSION.build].}
+      {- Prepare the distribution:
+        {ol
+         {- Invoke the [files_to_watermark] function of [distrib] in the
+            distribution build directory to determine the files to watermark
+            with [watermarks] and perform the watermarking process.}
+         {- Run the [massage] function of [distrib] in the distribution
+            build directory. This can be used to create distribution time
+            build artefacts.}}}
+      {- Invoke the [exclude_paths] function of [distrib] in the
+         distribution build directory to determine the paths to exclude
+         from the archive.}
+      {- Create a distribution tarball [$BUILD/$NAME-$VERSION.tbz] with the
+         file hierarchy in [$BUILD/$NAME-$VERSION.build],
+         excluding the paths determined at the preceeding point and delete the
+         clone [$BUILD/$NAME-$VERSION.build]. File modifications times in
+         the archive are set to [HEAD]'s commit time and file
+         permissions are preserved. Any other form of file metadata is
+         discarded in the archive.}
+      {- Test the distribution. Unpack it in directory [$BUILD/$NAME-$VERSION],
+         lint the distribution, build the package in the current
+         build environment, on success delete [$BUILD/$NAME-$VERSION].
+         Note that this uses the archive's [pkg/pkg.ml] file, which
+         should not be different from the source's repository file
+         if the latter was clean when [topkg distrib] was invoked.}}
+
+      {2 Note on watermarking}
+
+      It is right to doubt the beauty and be concerned about the
+      watermarking process. However experience shows that alternatives
+      like having an OCaml module generated with the appropriate
+      information doesn't work well in practice. Version numbers do
+      not only show up in OCaml source code. They also appear in
+      documentation comments, metadata files, textual data files and
+      non-OCaml source files.
+
+      Watermarking by default all the non binary files of the
+      distribution allows one to write %‌%VERSION%% in any context and
+      be sure it will be substituted with the right version number in
+      pin and distribution {{!Conf.build_context}build contexts}
+      (this occurence was not subsituted
+      because a ZERO WIDTH NON-JOINER U+200C was introduced between
+      the first two percent characters).
+
+      If this scheme poses a problem for certain files or you remain
+      unconvinced, simply filter the result of {!files_to_watermark} or
+      replace it by the exact files you would like to watermark.  *)
 end
 
 (** {1 Private} *)
@@ -1186,11 +1307,11 @@ module Private : sig
 
   (** {1 Private} *)
 
-  val disable_auto_main : unit -> unit
-  (** [disable_auto_main ()] disables [Topkg]'s automatic main
-      function used by package descriptions. Invoke this function
-      in your main function if you are not using [Topkg] in a description
-      file but as as a library. *)
+  val disable_main : unit -> unit
+  (** [disable_main ()] disables [Topkg]'s main invoked on
+      {!Pkg.describe}. Invoke this function in your main function if
+      you are not using [Topkg] in a description file but as as a
+      library. *)
 
   (** Topkg interprocess communication codec.
 
@@ -1477,7 +1598,8 @@ tool, see {!care}.
 {- {!care}}
 {- Advanced topics
    {ul {- {!config_store}}
-       {- {!multiopam}}}}}
+       {- {!multiopam}}}}
+{- {!menagerie}}}
 
 {1:setup Source repository setup}
 
@@ -1535,15 +1657,15 @@ down to:
 {v
 build: [[
   "ocaml" "pkg/pkg.ml" "build"
-          "installer" "true" ]]
+          "--installer" "true" ]]
 v}
 
-The ["installer" "true"] directive is used to inform the package
-description about the {{!Pkg.build_context}build context}. This
-invocation of [pkg/pkg.ml] executes your build system with a set of
-targets determined from the build configuration and generates in the
-root directory of your distribution an OPAM [install] file that OPAM
-uses to install and uninstall your package.
+The ["--installer" "true"] configuration key specification is used to
+inform the package description about the {{!Pkg.build_context}build
+context}. This invocation of [pkg/pkg.ml] executes your build system
+with a set of targets determined from the build configuration and
+generates in the root directory of your distribution an OPAM [install]
+file that OPAM uses to install and uninstall your package.
 
 This is all you need to specify. Do not put anything in the remove
 field of the OPAM file. Likewise there is no need to invoke [ocamlfind] with
@@ -1855,13 +1977,14 @@ for the package.
 {2:config_store Storing build configuration information in software}
 
 The following sample setup shows how to store build configuration
-information in build artefacts. The setup also works seamlessly during
+information in build artefacts.
+
+In this example we store the location of the install's [etc] directory
+in the build artefacts. The setup also works seamlessly during
 development if build artefacts are invoked from the root directory of
 the source repository.
 
-In this example we store the location of the install's [etc] directory
-in the build artefacts. We have the following file layout in our
-source repository:
+We have the following file layout in our source repository:
 {v
 etc/mypkg.conf       # Configuration file
 src/mypkg_etc.ml     # Module with path to the etc dir
@@ -1869,7 +1992,7 @@ v}
 
 the contents of [src/mypkg_etc.ml] is simply:
 {[
-(* This file is overwritten by release builds. During development
+(* This file is overwritten by distribution builds. During development
    it refers to the [etc] directory at the root directory of the
    source repository. *)
 
@@ -1879,31 +2002,36 @@ the value [Mypkg_etc.dir] is used in the sources to refer to the [etc]
 directory of the install. In the package description file
 [pkg/pkg.ml] we have the following lines:
 {[
-let etc_dir = Env.string "etc-dir"
-let etc_config = function
+let (* 1 *) etc_dir =
+  let doc = "path to the etc install directory" in
+  Conf.(key "etc-dir" string ~absent:"etc" ~doc)
+
+let (* 2 *) etc_config c = match Conf.build_context c with
 | `Dev -> Ok () (* Do nothing, the repo src/mypkg_etc.ml will do *)
 | `Pin | `Distrib ->
-    let config = strf "let dir = %S" etc_dir in
+    let config = strf "let dir = %S" (Conf.value c etc_dir) in
     OS.File.write "src/mypkg_etc.ml" config
 
 let () =
-  let build = Pkg.build ~pre:etc_config in
-  Pkg.describe ~build [
-  ...
-  Pkg.etc "etc/mpypkg.conf";
-  ... ]
+  let build = Pkg.build ~pre:etc_config () in
+  Pkg.describe "mypkg" ~build @@ fun c ->
+  Ok [ (* 3 *) Pkg.etc "etc/mpypkg.conf"; ... ]
 ]}
 
-In words we declare a configuration key ["etc-dir"] that holds the location
-of the [etc] directory and we have a pre-build hook that writes the file
-[src/mypkg_etc.ml] with its actual value on [`Pin] and [`Distrib] builds.
-Finally we install the [etc/mypkg.conf] configuration in the [etc] directory.
+In words:
+{ol
+{- We declare a configuration key ["etc-dir"] that holds the location
+of the install [etc] directory.}
+{- We have a pre-build hook that writes the file
+[src/mypkg_etc.ml] with its actual value on [`Pin] and [`Distrib] builds.}
+{- We install the [etc/mypkg.conf] configuration in the install [etc]
+   directory.}}
 The OPAM build instructions for the package are:
 {v
 build:
 [[ "ocaml" "pkg/pkg.ml" "build"
-           "installer" "true"
-           "etc-dir" "%{mypkg:etc}%" ]]
+           "--installer" "true"
+           "--etc-dir" "%{mypkg:etc}%" ]]
 v}
 
 {2:multiopam Multiple OPAM packages for a single distribution}
@@ -1916,7 +2044,7 @@ trick} to manage its dependencies between [topkg] and [topkg-care].
 To achieve this your package description file must describe for each
 package [$PKG] a correspondingly named install alternative and you should
 have a corresponding OPAM file [$PKG.opam] at the root of your
-source repository.
+source repository. TODO
 
 The build instructions of these OPAM files need to give the name of
 the package to the build invocation so that the right install description
@@ -1924,8 +2052,8 @@ can be selected:
 {v
 build:
 [[ "ocaml" "pkg/pkg.ml" "build"
-           "installer" "true"
-           "pkg-name" "%{name}%" ]]
+           "--pkg-name" "%{name}%"
+           "--installer" "true" ]]
 v}
 
 In general you will use the default install and OPAM file to create
@@ -1947,6 +2075,39 @@ v}
 
 See [topkg help release] for more information about releasing
 packages with [topkg].
+
+{1:menagerie Menagerie of [pkg.ml] files}
+
+{{:https://github.com/dbuenzli/hmap/blob/master/pkg/pkg.ml}Hmap}
+{ul {- Single module library. The simplest you can get.}}
+
+{{:https://github.com/dbuenzli/fpath/blob/master/pkg/pkg.ml}Fpath}
+{ul {- Single module library with toplevel support.}}
+
+{{:https://github.com/dbuenzli/carcass/blob/master/pkg/pkg.ml}Carcass}
+{ul
+{- One library namespaced by a single module.}
+{- One single module library.}
+{- One executable.}
+{- {{!config_store}Stores} install [etc] location in the software artefacts,
+   using a {{!Pkg.build}pre-build hook}.}
+{- Adjusts the watermarking process to prevent the watermarking the files
+   in the [etc] file hierarchy of the distribution that are installed in the
+   install [etc] directory.}
+{- Install files from the source tree, i.e. files that are not built (the files
+   in the [etc] hierarchy).}}
+
+{{:https://github.com/dbuenzli/topkg/blob/master/pkg/pkg.ml}Topkg}
+{ul
+{- Ignore the funky source bootstraping ([#mod_use] directives), that's
+   only for using [topkg] on itself.}
+{- Shows how to make {{!multiopam}multiple OPAM packages} for the same
+   distribution.}
+{- Manual [META] install, a single one is installed for all OPAM packages
+   by the base package. This leverages the [if_exists] ocamlfind mecanism.}
+{- Multiple OPAM file declaration and dependency linting exclusions:
+   the build system mentions packages that are not relevant to
+   all OPAM files.}}
 *)
 
 (*---------------------------------------------------------------------------

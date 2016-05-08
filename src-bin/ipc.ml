@@ -37,7 +37,7 @@ let args =
   let doc = "IPC call arguments" in
   Arg.(value (pos_all string [] & info [] ~doc ~docv:"ARG"))
 
-let doc = "interprocess communication with package description files"
+let doc = "Interprocess communication with package description files"
 let man =
   [ `S "DESCRIPTION";
     `P "The $(b,$(tname)) command is used by package description files. It is

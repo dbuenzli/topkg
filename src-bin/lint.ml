@@ -36,7 +36,7 @@ let ignore_pkg =
   let doc = "Ignore package description file." in
   Arg.(value & flag & info ["i"; "ignore-pkg" ] ~doc)
 
-let doc = "check package distribution consistency and conventions"
+let doc = "Check package distribution consistency and conventions"
 let man =
   [ `S "DESCRIPTION";
     `P "The $(b,$(tname)) command makes tests on a package distribution or

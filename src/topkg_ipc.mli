@@ -24,7 +24,7 @@ val distrib_prepare :
   dist_build_dir:string -> name:string -> version:string -> opam:string ->
   Topkg_fpath.t list result t
 
-val answer : Topkg_cmd.t -> Topkg_pkg.t -> int Topkg_result.result
+val answer : Topkg_cmd.t -> Topkg_pkg.t -> unit Topkg_result.result
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

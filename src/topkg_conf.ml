@@ -26,22 +26,302 @@ let os_suff_env = function
 | `Build_os -> "BUILD_OS_SUFF"
 | `Host_os -> "HOST_OS_SUFF"
 
-let tool name os =
-  let tool = match Topkg_os.Env.var (os_tool_env name os) with
-  | Some bin -> bin
-  | None ->
-      match Topkg_os.Env.var (os_bin_dir_env os) with
-      | Some path -> Topkg_fpath.(path // name)
-      | None ->
-          match Topkg_os.Env.var (os_suff_env os) with
-          | Some suff -> name ^ suff
-          | None -> name
-  in
-  Topkg_cmd.v tool
+let ocamlfindable = function
+| "ocamlc" | "ocamlcp" | "ocamlmktop" | "ocamlopt" | "ocamldoc" | "ocamldep"
+| "ocamlmklib" | "ocamlbrowser" as c -> Some Topkg_cmd.(v "ocamlfind" % c)
+| _ -> None
 
-(* OCaml configuration *)
+let tool name os = match Topkg_os.Env.var (os_tool_env name os) with
+| Some cmd -> Topkg_cmd.v cmd
+| None ->
+    match Topkg_os.Env.var (os_bin_dir_env os) with
+    | Some path -> Topkg_cmd.v Topkg_fpath.(path // name)
+    | None ->
+        match Topkg_os.Env.var (os_suff_env os) with
+        | Some suff -> Topkg_cmd.v (name ^ suff)
+        | None ->
+            match ocamlfindable name with
+            | Some cmd -> cmd
+            | None -> Topkg_cmd.v name
+
+(* Configuration value converters *)
+
+type 'a conv =
+  { parse : (string -> 'a result);
+    print : (Format.formatter -> 'a -> unit);
+    docv : string; }
+
+let conv ?(docv = "VALUE") parse print = { parse; print; docv }
+let conv_parser conv = conv.parse
+let conv_printer conv = conv.print
+let conv_docv conv = conv.docv
+let conv_with_docv conv ~docv = { conv with docv }
+
+let bool =
+  let parse s = try Ok (bool_of_string s) with
+  | Invalid_argument _ -> R.error_msgf "%S: Can't parse boolean value" s
+  in
+  conv ~docv:"BOOL" parse Format.pp_print_bool
+
+let int =
+  let parse s = try Ok (int_of_string s) with
+  | Failure _ -> R.error_msgf "%S: Can't parse integer value" s
+  in
+  conv ~docv:"INT" parse Format.pp_print_int
+
+let string = conv ~docv:"STRING" (fun s -> Ok s) Format.pp_print_string
+let fpath = conv_with_docv string "PATH"
+
+let some ?(none = "") conv =
+  let parse s = match conv.parse s with
+  | Ok v -> Ok (Some v)
+  | Error _ as e -> e
+  in
+  let print ppf = function
+  | None -> Format.pp_print_string ppf none
+  | Some v -> conv.print ppf v
+  in
+  { conv with parse; print }
+
+(* Universal type, see http://mlton.org/UniversalType *)
+
+type univ = exn
+let univ (type s) () =
+  let module M = struct exception E of s option end in
+  (fun x -> M.E (Some x)), (function M.E x -> x | _ -> None)
+
+(* Configuration keys *)
+
+let key_id =
+  let count = ref (-1) in
+  fun () -> incr count; !count
+
+type 'a absent = Value of 'a | Discover of (unit -> 'a result)
+type 'a key =
+  { id : int;                                      (* unique id for the key. *)
+    name : string;                                              (* key name. *)
+    conv : 'a conv;                                  (* key value converter. *)
+    absent : 'a absent;                             (* value if unspecified. *)
+    env : string option;       (* environment variable to override [absent]. *)
+    to_univ : 'a -> univ;                     (* convert to universal value. *)
+    of_univ : univ -> 'a option;            (* convert from universal value. *)
+    doc : string; }                            (* documentation for the key. *)
+
+module Key = struct
+  type t = V : 'a key -> t
+  let compare (V k0) (V k1) = (compare : int -> int -> int) k0.id k1.id
+end
+
+module Kset = Set.Make (Key)
+module Kmap = Map.Make (Key)
+
+let key_index = ref Kset.empty
+
+let cli_opts_of_key_index () =
+  let add_key (Key.V k as key) acc = ("--" ^ k.name, key) :: acc in
+  Kset.fold add_key !key_index []
+
+let _key ?docv ?(doc = "Undocumented") ?env name conv absent =
+  let id = key_id () in
+  let to_univ, of_univ = univ () in
+  let conv = match docv with
+  | None -> conv
+  | Some docv -> conv_with_docv conv docv
+  in
+  let key = { id; name; conv; absent; env; to_univ; of_univ; doc } in
+  key_index := Kset.add (Key.V key) !key_index;
+  key
+
+let key ?docv ?doc ?env name conv ~absent =
+  _key ?docv ?doc ?env name conv (Value absent)
+
+let discovered_key ?docv ?doc ?env name conv ~absent =
+  _key ?docv ?doc ?env name conv (Discover absent)
+
+let key_absent_value k = (* WARNING raises Failure *)
+  let absent_field k = match k.absent with
+  | Value v -> v
+  | Discover discover ->
+      match discover () (* exciting... *) with
+      | Ok v -> v
+      | Error (`Msg m) -> failwith (Topkg_string.strf "key %s: %s" k.name m)
+  in
+  match k.env with
+  | None -> absent_field k
+  | Some var ->
+      match Topkg_os.Env.var var with
+      | None -> absent_field k
+      | Some ev ->
+          match conv_parser k.conv ev with
+          | Ok v -> v
+          | Error (`Msg m) ->
+              failwith (Topkg_string.strf "key %s: env %s: %s" k.name var m)
+
+let with_pkg ?(default = true) pkg =
+  let doc = Topkg_string.strf "true if package %s is installed." pkg in
+  key ("with-" ^ pkg) bool ~absent:default ~doc
+
+(* Predefined keys *)
+
+let pkg_name =
+  let doc = "The name $(docv) of the package (and hence the OPAM file). \
+             If absent provided by the package description."
+  in
+  let absent () = assert false (* handled specially by [of_cli_args] *) in
+  discovered_key "pkg-name" string ~absent ~doc ~docv:"NAME"
+
+let build_dir =
+  let doc = "Specifies the build directory $(docv)." in
+  let absent () = assert false (* handled specially by [of_cli_args] *) in
+  discovered_key "build-dir" string ~absent ~doc ~docv:"BUILD_DIR"
+
+let vcs =
+  let doc = "Specifies if the package directory is VCS managed." in
+  let absent () = Topkg_vcs.find () >>= function
+  | None -> Ok false
+  | Some _ -> Ok true
+  in
+  discovered_key "vcs" bool ~absent ~doc
+
+let installer =
+  let doc = "Specifies if the build is initiated by an installer (e.g. OPAM)" in
+  key "installer" bool ~absent:false ~doc
+
+(* Key documentation *)
+
+let pp_cli_opt ppf opt_name absent env doc docv =
+  let prf = Format.fprintf in
+  let pp_doc ppf doc =
+    let subst = function "docv" -> docv | s -> Topkg_string.strf "$(%s)" s in
+    let b = Buffer.create 244 in
+    let doc =
+      try Buffer.add_substitute b subst doc; Buffer.contents b
+      with Not_found -> doc
+    in
+    Topkg_string.pp_text ppf doc
+  in
+  let pp_absent absent env ppf () = match absent, env with
+  | "", None -> ()
+  | "", Some var -> prf ppf "@ (or %s env)" var
+  | absent, None -> prf ppf "@ (absent=%s)" absent
+  | absent, Some var -> prf ppf "@ (absent=%s or %s env)" absent var
+  in
+  prf ppf "@[<v4>@[%s %s %a@]@,@[%a@]@]"
+    opt_name docv (pp_absent absent env) () pp_doc doc
+
+let pp_key ppf k =
+  let absent = match k.absent with
+  | Discover _ -> "discovered"
+  | Value v -> Topkg_string.strf "@[<h>%a@]" (conv_printer k.conv) v
+  in
+  let opt_name = match k.name with
+  | "pkg-name" -> "-n NAME, --pkg-name" (* a bit ugly to special case *)
+  | n -> Topkg_string.strf "--%s" n
+  in
+  let docv = conv_docv k.conv in
+  pp_cli_opt ppf opt_name absent k.env k.doc docv
+
+let pp_keys_cli_opts ppf () =
+  let pp_key is_first (Key.V k) =
+    if is_first then () else Format.pp_print_cut ppf ();
+    pp_key ppf k; false
+  in
+  let by_name (Key.V k) (Key.V k') = compare k.name k'.name in
+  let keys = List.sort by_name (Kset.elements !key_index) in
+  Format.fprintf ppf "@[<v>";
+  ignore (List.fold_left pp_key true keys);
+  Format.fprintf ppf "@]";
+  ()
+
+(* Configurations *)
+
+type t = univ Kmap.t
+
+let empty = Kmap.empty
+let is_empty = Kmap.is_empty
+let mem k c = Kmap.mem (Key.V k) c
+let add k v c = Kmap.add (Key.V k) (k.to_univ v) c
+let rem k c = Kmap.remove (Key.V k) c
+let find k c = try k.of_univ (Kmap.find (Key.V k) c) with Not_found -> None
+let value c k = match find k c with
+| Some v -> v
+| None ->
+    invalid_arg
+      (Topkg_string.strf "configuration key %s undefined, did you create
+         a key after the call to Pkg.describe ?" (* dirty bastard *) k.name)
+
+let dump ppf c =
+  let dump_binding (Key.V k) v is_first =
+    if is_first then () else Format.pp_print_cut ppf ();
+    match k.of_univ v with
+    | None -> assert false
+    | Some v ->
+        Format.fprintf ppf "%s: @[%a@]" k.name (conv_printer k.conv) v;
+        false
+  in
+  Format.fprintf ppf "@[<v>";
+  ignore (Kmap.fold dump_binding c true);
+  Format.fprintf ppf "@]";
+  ()
+
+let of_cli_args ~pkg_name:name ~build_dir:bdir args =
+  let cli_opts = cli_opts_of_key_index () in
+  let cli_opts = ("-n", Key.V pkg_name) :: cli_opts in
+  let rec parse_keys conf = function
+  | key :: def :: defs ->
+      begin match try Some (List.assoc key cli_opts) with Not_found -> None with
+      | None ->
+          Topkg_log.warn
+            (fun m -> m "key %s: unknown, ignoring." key);
+          parse_keys conf defs
+      | Some (Key.V k) ->
+          if mem k conf then begin
+            Topkg_log.warn
+              (fun m -> m "key %s: repeated definition, ignoring." key);
+            parse_keys conf defs
+          end else begin
+            match (conv_parser k.conv) def with
+            | Ok v ->
+                parse_keys (add k v conf) defs
+            | Error (`Msg e) ->
+                Topkg_log.warn
+                  (fun m -> m "key %s: %s, using absent value" key e);
+                parse_keys conf defs
+          end
+      end
+  | [] -> conf
+  | key :: [] ->
+      Topkg_log.warn (fun m -> m "key %s: No value specified." key);
+      conf
+  in
+  let add_if_absent (Key.V k) conf = (* WARNING raises *)
+    if mem k conf then conf else
+    add k (key_absent_value k) conf
+  in
+  let ensure_pkg_name_and_bdir conf =
+    let conf = if mem pkg_name conf then conf else add pkg_name name conf in
+    if mem build_dir conf then conf else add build_dir bdir conf
+  in
+  let cli_conf = ensure_pkg_name_and_bdir (parse_keys empty args) in
+  try Ok (Kset.fold add_if_absent !key_index cli_conf) with
+  | Failure e -> R.error_msg e
+
+let pkg_name c = value c pkg_name
+let build_dir c = value c build_dir
+let vcs c = value c vcs
+let installer c = value c installer
+
+type build_context = [`Dev | `Distrib | `Pin ]
+let build_context c =
+  if not (vcs c) then `Distrib else
+  if (installer c) then `Pin else
+  `Dev
+
+(* OCaml configuration, as communicated by ocamlc -config  *)
 
 module OCaml = struct
+
+  type conf = t
 
   (* Log strings *)
 
@@ -62,17 +342,15 @@ module OCaml = struct
     let parse_line acc l = match Topkg_string.cut ~sep:':' l with
     | Some (k, v) -> (k, String.trim v) :: acc
     | None ->
-        Topkg_log.warn begin fun m ->
-          m "OCaml %s conf: cannot parse line %S" (os_to_string os) l;
-        end;
+        Topkg_log.warn (fun m ->
+            m (conf "cannot parse line %S") (os_to_string os) l);
         acc
     in
     begin
       let ocamlc = tool "ocamlc" os in
       Topkg_os.Cmd.(run_out Topkg_cmd.(ocamlc % "-config") |> to_lines)
-      >>= fun lines ->
-      let conf = List.(rev (fold_left parse_line [] lines)) in
-      Ok { os; conf }
+      >>= fun lines -> Ok (List.(rev (fold_left parse_line [] lines)))
+      >>= fun conf -> Ok { os; conf }
     end
     |> R.reword_error_msg ~replace:true
       (fun msg -> R.msgf (conf " %s") (os_to_string os) msg)
@@ -80,18 +358,19 @@ module OCaml = struct
 
   let host_os = lazy (read_config `Host_os)
   let build_os = lazy (read_config `Build_os)
-  let v = function
-  | `Host_os -> Lazy.force host_os
-  | `Build_os -> Lazy.force build_os
+  let v c (* We have the build configuration [c] here since we might give
+             the ability to override this info from the cli once, ou pas. *)
+    = function
+    | `Host_os -> Lazy.force host_os
+    | `Build_os -> Lazy.force build_os
 
   let add_discovery k v c = c.conf <- (k, v) :: c.conf
   let find k c = try Some (List.assoc k c.conf) with Not_found -> None
   let get ~absent k c = match find k c with
   | Some v -> v
   | None ->
-      Topkg_log.warn begin fun m ->
-        m (conf_key "undefined, using %S") (os_to_string c.os) k absent
-      end;
+      Topkg_log.warn (fun m ->
+          m (conf_key "undefined, using %S") (os_to_string c.os) k absent);
       absent
 
   let get_string_with_discovery k c ~discover = match find k c with
@@ -104,10 +383,9 @@ module OCaml = struct
     | Some v ->
         try Some (bool_of_string v) with
         | (* That good old joke... *) Invalid_argument _ ->
-            Topkg_log.warn begin fun m ->
+            Topkg_log.warn (fun m ->
               m (conf_key "could not parse boolean,@ trying to discover")
-                (os_to_string c.os) k
-            end;
+                (os_to_string c.os) k);
             None
     in
     match maybe_v with
@@ -118,20 +396,18 @@ module OCaml = struct
     get_bool_with_discovery k c ~discover:begin fun k c ->
       match find "standard_library" c with
       | None ->
-          Topkg_log.warn begin fun m ->
-            m (conf_key
-                 "undefined, stdlib dir not found for discovery@ using %B")
-              (os_to_string c.os) k on_error
-          end;
+          Topkg_log.warn (fun m ->
+              m (conf_key
+                   "undefined, stdlib dir not found for discovery@ using %B")
+                (os_to_string c.os) k on_error);
           on_error
       | Some stdlib_dir ->
           match Topkg_os.File.exists (Topkg_fpath.(stdlib_dir // file c)) with
           | Ok exist -> exist
           | Error (`Msg e) ->
-              Topkg_log.warn begin fun m ->
+              Topkg_log.warn (fun m ->
                 m (conf_key "undefined,@ discovery error: %s,@ using %B")
-                  (os_to_string c.os) k e on_error
-              end;
+                  (os_to_string c.os) k e on_error);
               on_error
     end
 
@@ -140,18 +416,16 @@ module OCaml = struct
     let k = "version" in
     match find k c with
     | None ->
-        Topkg_log.warn begin fun m ->
-          m (conf_key "missing, using 0.0.0") (os_to_string c.os) k
-      end;
+        Topkg_log.warn (fun m ->
+          m (conf_key "missing, using 0.0.0") (os_to_string c.os) k);
         dumb_version
     | Some version ->
         match Topkg_string.parse_version version with
         | Some version -> version
         | None ->
-            Topkg_log.warn begin fun m ->
-              m (conf_key "cannot parse from %S, using 0.0.0")
-                (os_to_string c.os) k version
-            end;
+            Topkg_log.warn (fun m ->
+                m (conf_key "cannot parse from %S, using 0.0.0")
+                  (os_to_string c.os) k version);
             dumb_version
 
   let ext_obj c = get ~absent:".o" "ext_obj" c
@@ -175,10 +449,9 @@ module OCaml = struct
       | Some (`Win_msvc | `Win_cc) -> ".exe"
       | Some `Other -> ""
       | None ->
-          Topkg_log.warn begin fun m ->
+          Topkg_log.warn (fun m ->
             m (conf_key "undefined and@ no C toolchain@ detected,@ using \"\"")
-              (os_to_string c.os) k;
-          end;
+              (os_to_string c.os) k;);
           ""
     end
 
@@ -200,89 +473,6 @@ module OCaml = struct
     in
     Format.fprintf ppf "@[<1>["; loop c.conf; Format.fprintf ppf "]@]"
 end
-
-(* TODO cleanup *)
-
-(* Parses the command line. The actual cmd execution occurs in the call
-     to Pkg.describe. *)
-
-let err ?(stop = true) fmt =
-  let k _ = if stop then exit 1 else () in
-  Format.kfprintf k Format.err_formatter ("%s: " ^^ fmt ^^ "@.") Sys.argv.(0)
-
-let err_parse a = err "value of `%s' is not 'true' or 'false'" a
-let err_mdef a = err "bool `%s' is defined more than once" a
-let err_miss a = err ~stop:false "boolean key '%s' is missing" a
-let warn_unused k = err ~stop:false "warning: environment key `%s` unused" k
-
-let cmd, env =
-  let rec parse_env acc = function
-  | key :: def :: defs ->
-        begin try ignore (List.assoc key acc); err_mdef key; [] with
-        | Not_found -> parse_env ((key, def) :: acc) defs
-        end
-  | [] -> (List.rev acc)
-  | key :: [] -> acc (* err "key '%s' has no definition" key *)
-  in
-  match List.tl (Array.to_list Sys.argv) with
-  | ("help" | "-h" | "--help" | "-help") :: args -> `Help, parse_env [] args
-  | "build" :: args -> `Build, parse_env [] args
-  | "ipc" :: verbosity :: _ as args ->
-      ignore (Topkg_log.level_of_string verbosity
-      >>= fun level -> Ok (Topkg_log.set_level level)); (* FIXME *)
-      `Ipc (Topkg_cmd.of_list args), []
-  | args -> `Unknown args, []
-
-let kenv = ref []
-let get () = !kenv
-let add_bool key b = kenv := (key, (`Bool b)) :: !kenv
-let add_string key s = kenv := (key, (`String s)) :: !kenv
-let bool ?(quiet = false) ?(absent = fun () -> Ok true) key =
-  let b = try bool_of_string (List.assoc key env) with
-  | Not_found ->
-      if cmd = `Build && not quiet then err_miss key;
-      begin match absent () with
-      | Ok v -> v
-      | Error (`Msg e) ->
-          Topkg_log.err (fun m ->
-                m "error while determining value for key '%s':\n%s" key e);
-          true
-      end
-  | Invalid_argument _ -> err_parse key; true
-  in
-  add_bool key b; b
-
-let string ?(quiet = false) ?(absent = fun () -> Ok "undefined") key =
-  let s = try List.assoc key env with
-  | Not_found ->
-      if cmd = `Build && not quiet then (err_miss key; "undefined") else
-      begin match absent () with
-      | Ok v -> v
-      | Error (`Msg e) ->
-          Topkg_log.err (fun m ->
-              m "error while determining value for key '%s':\n%s" key e);
-           "undefined"
-      end
-  in
-  add_string key s; s
-
-let warn_unused () =
-  let keys = List.map fst env in
-  let keys_used = List.map fst (get ()) in
-  let unused = List.find_all (fun k -> not (List.mem k keys_used)) keys in
-  List.iter warn_unused unused
-
-(* Build context *)
-
-let installer = bool ~absent:(fun () -> Ok false) "installer"
-let vcs =
-  let absent () = Topkg_vcs.find () >>= function vcs -> Ok (vcs <> None) in
-  bool ~quiet:true ~absent "vcs"
-
-let build =
-  if not vcs then `Distrib else
-  if installer then `Pin else
-  `Dev
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

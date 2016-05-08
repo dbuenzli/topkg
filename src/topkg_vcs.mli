@@ -36,6 +36,7 @@ val describe : ?dirty:bool -> ?commit_ish:string -> t -> string result
 val tags : t -> string list result
 val changes :
   ?until:string -> t -> after:string -> (string * string) list result
+
 val tracked_files : ?tree_ish:string -> t -> Topkg_fpath.t list result
 
 val clone : t -> dir:Topkg_fpath.t -> unit result

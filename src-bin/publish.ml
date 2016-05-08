@@ -79,7 +79,7 @@ let kind =
   in
   Arg.(value & pos 1 (some string) None & info [] ~doc ~docv:"KIND")
 
-let doc = "publish package distribution archives and derived artefacts"
+let doc = "Publish package distribution archives and derived artefacts"
 let man =
   [ `S "SYNOPSIS";
     `P "$(b,$(mname)) $(b,$(tname)) [$(i,OPTION)]... [$(i,ARTEFACT)]...";

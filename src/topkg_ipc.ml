@@ -18,7 +18,7 @@ let error_args args =
   R.error_msgf "IPC: %a, unknown arguments"
     Topkg_cmd.dump (Topkg_cmd.of_list args)
 
-(* Package description. Description functions raise Invalid_argument
+(* Package description IPC. Description functions raise Invalid_argument
    at the other end. *)
 
 let pkg = v Topkg_cmd.(v "pkg") Topkg_pkg.codec
@@ -58,19 +58,17 @@ let answer_distrib_prepare p ~dist_build_dir ~name ~version ~opam =
 
 (* IPC answer *)
 
-let _answer p = function
-| "pkg" :: [] -> answer_pkg p
-| "lint" :: "custom" :: [] -> answer_lint_custom p
+let answer cmd p = match Topkg_cmd.to_list cmd with
+| "pkg" :: [] ->
+    answer_pkg p
+| "lint" :: "custom" :: [] ->
+    answer_lint_custom p
 | "distrib" :: "prepare" ::
   "dist-build-dir" :: dist_build_dir :: "name" :: name ::
   "version" :: version :: "opam" :: opam :: [] ->
     answer_distrib_prepare p ~dist_build_dir ~name ~version ~opam
 | args ->
     error_args args
-
-let answer cmd p = match Topkg_cmd.to_list cmd with
-| "ipc" :: _ :: req -> _answer p req >>= fun () -> Ok 0
-| args -> error_args args
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

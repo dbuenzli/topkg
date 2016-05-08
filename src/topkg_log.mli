@@ -8,6 +8,8 @@
 
     Abridged [logs]. See {!Topkg.Log} for documentation. *)
 
+(** {1 Log} *)
+
 open Topkg_result
 
 type level = App | Error | Warning | Info | Debug

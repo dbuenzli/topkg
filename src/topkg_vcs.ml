@@ -6,9 +6,6 @@
 
 open Topkg_result
 
-module Cmd = Topkg_cmd
-module OS = Topkg_os
-
 let parse_changes lines =
   try
     let parse_line l = match Topkg_string.cut ~sep:' ' l with
@@ -30,19 +27,19 @@ let pp_kind ppf = function
 
 let dirtify id = id ^ "-dirty"
 
-type t = kind * Cmd.t * Topkg_fpath.t
+type t = kind * Topkg_cmd.t * Topkg_fpath.t
 
 let git =
-  let git = Cmd.v (OS.Env.opt_var "TOPKG_GIT" ~absent:"git") in
-  lazy (OS.Cmd.exists git >>= fun exists -> Ok (exists, git))
+  let git = Topkg_cmd.v (Topkg_os.Env.opt_var "TOPKG_GIT" ~absent:"git") in
+  lazy (Topkg_os.Cmd.exists git >>= fun exists -> Ok (exists, git))
 
 let hg =
-  let hg = Cmd.v (OS.Env.opt_var "TOPKG_HG" ~absent:"hg") in
-  lazy (OS.Cmd.exists hg >>= fun exists -> Ok (exists, hg))
+  let hg = Topkg_cmd.v (Topkg_os.Env.opt_var "TOPKG_HG" ~absent:"hg") in
+  lazy (Topkg_os.Cmd.exists hg >>= fun exists -> Ok (exists, hg))
 
 let vcs_cmd kind cmd dir = match kind with
-| `Git -> Cmd.(cmd % "--git-dir" % dir)
-| `Hg -> Cmd.(cmd % "--repository" % dir)
+| `Git -> Topkg_cmd.(cmd % "--git-dir" % dir)
+| `Hg -> Topkg_cmd.(cmd % "--repository" % dir)
 
 let v k cmd ~dir = (k, cmd, dir)
 let kind (k, _, _) = k
@@ -54,28 +51,29 @@ let cmd (kind, cmd, dir) = vcs_cmd kind cmd dir
 let find_git () = Lazy.force git >>= function
 | (false, _) -> Ok None
 | (true, git) ->
-    let git_dir = Cmd.(git % "rev-parse" % "--git-dir") in
-    OS.Cmd.(run_out ~err:OS.File.null git_dir |> out_string) >>= function
+    let git_dir = Topkg_cmd.(git % "rev-parse" % "--git-dir") in
+    Topkg_os.Cmd.(run_out ~err:Topkg_os.File.null git_dir |> out_string)
+    >>= function
     | (dir, (_, `Exited 0)) -> Ok (Some (v `Git git dir))
     | _ -> Ok None
 
-let err_git cmd c = R.error_msgf "%a exited with %d" Cmd.dump cmd c
+let err_git cmd c = R.error_msgf "%a exited with %d" Topkg_cmd.dump cmd c
 let run_git r args out =
-  let git = Cmd.(cmd r %% args) in
-  OS.Cmd.(run_out git |> out) >>= function
+  let git = Topkg_cmd.(cmd r %% args) in
+  Topkg_os.Cmd.(run_out git |> out) >>= function
   | (v, (_, `Exited 0)) -> Ok v
   | (_, (_, `Exited c)) -> err_git git c
 
 let git_is_dirty r =
-  let diff = Cmd.(cmd r % "diff" % "--quiet" % "HEAD") in
-  OS.Cmd.(run_status ~err:OS.File.null diff) >>= function
+  let diff = Topkg_cmd.(cmd r % "diff" % "--quiet" % "HEAD") in
+  Topkg_os.Cmd.(run_status ~err:Topkg_os.File.null diff) >>= function
   | `Exited 0 -> Ok false
   | `Exited 1 -> Ok true
   | `Exited c -> err_git diff c
 
 let git_file_is_dirty r file =
-  let diff = Cmd.(cmd r % "diff-index" % "--quiet" % "HEAD" % p file) in
-  OS.Cmd.(run_status ~err:OS.File.null diff) >>= function
+  let diff = Topkg_cmd.(cmd r % "diff-index" % "--quiet" % "HEAD" % p file) in
+  Topkg_os.Cmd.(run_status ~err:Topkg_os.File.null diff) >>= function
   | `Exited 0 -> Ok false
   | `Exited 1 -> Ok true
   | `Exited c -> err_git diff c
@@ -87,69 +85,77 @@ let dirtify_if ~dirty r id = match dirty with
     Ok (if is_dirty then dirtify id else id)
 
 let git_head ~dirty r =
-  run_git r Cmd.(v "rev-parse" % "HEAD") OS.Cmd.out_string
+  run_git r Topkg_cmd.(v "rev-parse" % "HEAD") Topkg_os.Cmd.out_string
   >>= fun id -> dirtify_if ~dirty r id
 
 let git_commit_id ~dirty r commit_ish =
   let dirty = dirty && commit_ish = "HEAD" in
-  let id = Cmd.(v "rev-parse" % "--verify" % (commit_ish ^ "^{commit}")) in
-  run_git r id OS.Cmd.out_string >>= fun id -> dirtify_if ~dirty r id
+  let id = Topkg_cmd.(v "rev-parse" % "--verify" %
+                      (commit_ish ^ "^{commit}"))
+  in
+  run_git r id Topkg_os.Cmd.out_string >>= fun id -> dirtify_if ~dirty r id
 
 let git_commit_ptime_s r commit_ish =
-  let time = Cmd.(v "show" % "-s" % "--format=%ct" % commit_ish) in
-  run_git r time OS.Cmd.out_string
+  let time = Topkg_cmd.(v "show" % "-s" % "--format=%ct" % commit_ish) in
+  run_git r time Topkg_os.Cmd.out_string
   >>= fun ptime -> try Ok (int_of_string ptime) with
   | Failure _ -> R.error_msgf "Could not parse timestamp from %S" ptime
 
 let git_describe ~dirty r commit_ish =
   let dirty = dirty && commit_ish = "HEAD" in
   run_git r
-    Cmd.(v "describe" % "--always" %% on dirty (v "--dirty") %%
-         on (not dirty) (v commit_ish))
-    OS.Cmd.out_string
+    Topkg_cmd.(v "describe" % "--always" %% on dirty (v "--dirty") %%
+               on (not dirty) (v commit_ish))
+    Topkg_os.Cmd.out_string
 
 let git_tags r =
-  run_git r Cmd.(v "tag" % "--list") OS.Cmd.out_lines
+  run_git r Topkg_cmd.(v "tag" % "--list") Topkg_os.Cmd.out_lines
 
 let git_changes r ~after ~until =
   let range =
     if after = "" then until else
     Topkg_string.strf "%s..%s" after until
   in
-  let changes = Cmd.(v "log" % "--oneline" % "--no-decorate" % range) in
-  run_git r changes OS.Cmd.out_lines
+  let changes = Topkg_cmd.(v "log" % "--oneline" % "--no-decorate" % range) in
+  run_git r changes Topkg_os.Cmd.out_lines
   >>= fun commits -> parse_changes commits
 
 let git_tracked_files r ~tree_ish =
-  let tracked = Cmd.(v "ls-tree" % "--name-only" % "-r" % tree_ish) in
-  run_git r tracked OS.Cmd.out_lines
+  let tracked = Topkg_cmd.(v "ls-tree" % "--name-only" % "-r" % tree_ish) in
+  run_git r tracked Topkg_os.Cmd.out_lines
 
 let git_clone r ~dir:d =
-  let clone = Cmd.(v "clone" % "--local" % (dir r) % d) in
-  run_git r clone OS.Cmd.out_stdout >>= fun _ -> Ok ()
+  let clone = Topkg_cmd.(v "clone" % "--local" % (dir r) % d) in
+  run_git r clone Topkg_os.Cmd.out_stdout >>= fun _ -> Ok ()
 
 let git_checkout r ~branch ~commit_ish =
   let branch = match branch with
-  | None -> Cmd.empty
-  | Some branch -> Cmd.(v "-b" % branch)
+  | None -> Topkg_cmd.empty
+  | Some branch -> Topkg_cmd.(v "-b" % branch)
   in
-  run_git r Cmd.(v "checkout" % "--quiet" %% branch % commit_ish)
-  OS.Cmd.out_string
+  run_git r Topkg_cmd.(v "checkout" % "--quiet" %% branch % commit_ish)
+  Topkg_os.Cmd.out_string
   >>= fun _ -> Ok ()
 
 let git_commit_files r ~msg files =
-  let msg = match msg with None -> Cmd.empty | Some m -> Cmd.(v "-m" % m) in
-  let files = Cmd.(of_list @@ List.map p files) in
-  run_git r Cmd.(v "commit" %% msg %% files) OS.Cmd.out_stdout
+  let msg = match msg with
+  | None -> Topkg_cmd.empty
+  | Some m -> Topkg_cmd.(v "-m" % m)
+  in
+  let files = Topkg_cmd.(of_list @@ List.map p files) in
+  run_git r Topkg_cmd.(v "commit" %% msg %% files) Topkg_os.Cmd.out_stdout
 
 let git_tag r ~force ~sign ~msg ~commit_ish tag =
-  let msg = match msg with None -> Cmd.empty | Some m -> Cmd.(v "-m" % m) in
-  let flags = Cmd.(on force (v "-f") %% on sign (v "-s")) in
-  run_git r Cmd.(v "tag" % "-a" %% flags %% msg % tag % commit_ish)
-    OS.Cmd.out_stdout
+  let msg = match msg with
+  | None -> Topkg_cmd.empty
+  | Some m -> Topkg_cmd.(v "-m" % m)
+  in
+  let flags = Topkg_cmd.(on force (v "-f") %% on sign (v "-s")) in
+  run_git r Topkg_cmd.(v "tag" % "-a" %% flags %% msg % tag % commit_ish)
+    Topkg_os.Cmd.out_stdout
 
 let git_delete_tag r tag =
-  run_git r Cmd.(v "tag" % "-d" % tag) OS.Cmd.out_stdout
+  run_git r Topkg_cmd.(v "tag" % "-d" % tag) Topkg_os.Cmd.out_stdout
 
 (* Hg support *)
 
@@ -158,20 +164,21 @@ let hg_rev commit_ish = match commit_ish with "HEAD" -> "tip" | c -> c
 let find_hg () = Lazy.force hg >>= function
 | (false, _) -> Ok None
 | (true, hg) ->
-    let hg_root = Cmd.(hg % "root") in
-    OS.Cmd.(run_out ~err:OS.File.null hg_root |> out_string) >>= function
+    let hg_root = Topkg_cmd.(hg % "root") in
+    Topkg_os.Cmd.(run_out ~err:Topkg_os.File.null hg_root |> out_string)
+    >>= function
     | (dir, (_, `Exited 0)) -> Ok (Some (v `Hg hg dir))
     | _ -> Ok None
 
-let err_hg cmd c = R.error_msgf "%a exited with %d" Cmd.dump cmd c
+let err_hg cmd c = R.error_msgf "%a exited with %d" Topkg_cmd.dump cmd c
 let run_hg r args out =
-  let hg = Cmd.(cmd r %% args) in
-  OS.Cmd.(run_out hg |> out) >>= function
+  let hg = Topkg_cmd.(cmd r %% args) in
+  Topkg_os.Cmd.(run_out hg |> out) >>= function
   | (v, (_, `Exited 0)) -> Ok v
   | (_, (_, `Exited c)) -> err_hg hg c
 
 let hg_id r ~rev =
-  run_hg r Cmd.(v "id" % "-i" % "--rev" % rev) OS.Cmd.out_string
+  run_hg r Topkg_cmd.(v "id" % "-i" % "--rev" % rev) Topkg_os.Cmd.out_string
   >>= fun id ->
   let len = String.length id in
   let is_dirty = String.length id > 0 && id.[len - 1] = '+' in
@@ -182,7 +189,7 @@ let hg_is_dirty r =
   hg_id r ~rev:"tip" >>= function (id, is_dirty) -> Ok is_dirty
 
 let hg_file_is_dirty r file =
-  run_hg r Cmd.(v "status" % p file) OS.Cmd.out_string >>= function
+  run_hg r Topkg_cmd.(v "status" % p file) Topkg_os.Cmd.out_string >>= function
   | "" -> Ok false
   | _ -> Ok true
 
@@ -195,10 +202,10 @@ let hg_commit_id ~dirty r ~rev =
   Ok (if is_dirty && dirty then dirtify id else id)
 
 let hg_commit_ptime_s r ~rev =
-  let time = Cmd.(v "log" % "--template" % "'{date(date, \"%s\")}'" %
-                  "--rev" % rev)
+  let time = Topkg_cmd.(v "log" % "--template" % "'{date(date, \"%s\")}'" %
+                        "--rev" % rev)
   in
-  run_git r time OS.Cmd.out_string
+  run_git r time Topkg_os.Cmd.out_string
   >>= fun ptime -> try Ok (int_of_string ptime) with
   | Failure _ -> R.error_msgf "Could not parse timestamp from %S" ptime
 
@@ -207,8 +214,8 @@ let hg_describe ~dirty r ~rev =
   | Failure _ -> R.error_msgf "%s: Could not parse hg tag distance." (dir r)
   in
   let parent t =
-    run_hg r Cmd.(v "parent" % "--rev" % rev % "--template" % t)
-      OS.Cmd.out_string
+    run_hg r Topkg_cmd.(v "parent" % "--rev" % rev % "--template" % t)
+      Topkg_os.Cmd.out_string
   in
   parent "{latesttagdistance}" >>= get_distance
   >>= begin function
@@ -221,47 +228,55 @@ let hg_describe ~dirty r ~rev =
       hg_id ~rev:"tip" r >>= fun (_, is_dirty) ->
       Ok (if is_dirty then dirtify descr else descr)
 
-let hg_tags r = run_hg r Cmd.(v "tags" % "--quiet" (* sic *)) OS.Cmd.out_lines
+let hg_tags r =
+  run_hg r Topkg_cmd.(v "tags" % "--quiet" (* sic *)) Topkg_os.Cmd.out_lines
 
 let hg_changes r ~after ~until =
   let rev = Topkg_string.strf "%s::%s" after until in
   let changes =
-    Cmd.(v "log" % "--template" % "{node|short} {desc|firstline}\\n"
+    Topkg_cmd.(v "log" % "--template" % "{node|short} {desc|firstline}\\n"
          % "--rev" % rev)
   in
-  run_hg r changes OS.Cmd.out_lines
+  run_hg r changes Topkg_os.Cmd.out_lines
   >>= fun commits -> parse_changes commits
   >>= function
   | [] -> Ok []
   | after :: rest -> Ok (List.rev rest) (* hg order is reverse from git *)
 
 let hg_tracked_files r ~rev =
-  run_hg r Cmd.(v "manifest" % "--rev" % rev) OS.Cmd.out_lines
+  run_hg r Topkg_cmd.(v "manifest" % "--rev" % rev) Topkg_os.Cmd.out_lines
 
 let hg_clone r ~dir:d =
-  let clone = Cmd.(v "clone" % (dir r) % d) in
-  run_hg r clone OS.Cmd.out_stdout
+  let clone = Topkg_cmd.(v "clone" % (dir r) % d) in
+  run_hg r clone Topkg_os.Cmd.out_stdout
 
 let hg_checkout r ~branch ~rev =
-  run_hg r Cmd.(v "update" % "--rev" % rev) OS.Cmd.out_string
+  run_hg r Topkg_cmd.(v "update" % "--rev" % rev) Topkg_os.Cmd.out_string
   >>= fun _ -> match branch with
   | None -> Ok ()
   | Some branch ->
-      run_hg r Cmd.(v "branch" % branch) OS.Cmd.out_string >>= fun _ -> Ok ()
+      run_hg r Topkg_cmd.(v "branch" % branch) Topkg_os.Cmd.out_string
+      >>= fun _ -> Ok ()
 
 let hg_commit_files r ~msg files =
-  let msg = match msg with None -> Cmd.empty | Some m -> Cmd.(v "-m" % m) in
-  let files = Cmd.(of_list @@ List.map p files) in
-  run_hg r Cmd.(v "commit" %% msg %% files) OS.Cmd.out_stdout
+  let msg = match msg with
+  | None -> Topkg_cmd.empty
+  | Some m -> Topkg_cmd.(v "-m" % m)
+  in
+  let files = Topkg_cmd.(of_list @@ List.map p files) in
+  run_hg r Topkg_cmd.(v "commit" %% msg %% files) Topkg_os.Cmd.out_stdout
 
 let hg_tag r ~force ~sign ~msg ~rev tag =
   if sign then R.error_msgf "Tag signing is not supported by hg" else
-  let msg = match msg with None -> Cmd.empty | Some m -> Cmd.(v "-m" % m) in
-  run_hg r Cmd.(v "tag" %% on force (v "-f") %% msg % "--rev" % rev % tag)
-    OS.Cmd.out_stdout
+  let msg = match msg with
+  | None -> Topkg_cmd.empty
+  | Some m -> Topkg_cmd.(v "-m" % m)
+  in
+  run_hg r Topkg_cmd.(v "tag" %% on force (v "-f") %% msg % "--rev" % rev % tag)
+    Topkg_os.Cmd.out_stdout
 
 let hg_delete_tag r tag =
-  run_git r Cmd.(v "tag" % "--remove" % tag) OS.Cmd.out_stdout
+  run_git r Topkg_cmd.(v "tag" % "--remove" % tag) Topkg_os.Cmd.out_stdout
 
 (* Generic VCS support *)
 
@@ -273,14 +288,14 @@ let find ?dir () = match dir with
     end
 | Some dir ->
     let git_dir = Topkg_fpath.append dir ".git" in
-    OS.Dir.exists git_dir >>= function
+    Topkg_os.Dir.exists git_dir >>= function
     | true ->
         begin Lazy.force git >>= function
         | (_, cmd) ->  Ok (Some (v `Git cmd git_dir))
         end
     | false ->
         let hg_dir = Topkg_fpath.append dir ".hg" in
-        OS.Dir.exists hg_dir >>= function
+        Topkg_os.Dir.exists hg_dir >>= function
         | false -> Ok None
         | true ->
             Lazy.force hg >>= function
@@ -289,7 +304,10 @@ let find ?dir () = match dir with
 let get ?dir () = find ?dir () >>= function
 | Some r -> Ok r
 | None ->
-    let dir = match dir with None -> OS.Dir.current () | Some dir -> Ok dir in
+    let dir = match dir with
+    | None -> Topkg_os.Dir.current ()
+    | Some dir -> Ok dir
+    in
     dir >>= function dir ->
     R.error_msgf "%s: No VCS repository found" dir
 

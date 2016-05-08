@@ -4,7 +4,6 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-
 open Cmdliner
 
 let cmds =
@@ -16,7 +15,7 @@ let main () = `Help (`Pager, None)
 
 (* Command line interface *)
 
-let doc = "topkg package care"
+let doc = "Topkg package care"
 let man =
   [ `S "DESCRIPTION";
     `P "$(b,$(mname)) takes care of topkg packages.";
@@ -41,7 +40,7 @@ let main =
   (t, info)
 
 let main () =
-  Topkg.Private.disable_auto_main ();
+  Topkg.Private.disable_main ();
   match Term.eval_choice main cmds with
   | `Error _ -> exit 3
   | `Ok ret when ret <> 0 -> exit ret

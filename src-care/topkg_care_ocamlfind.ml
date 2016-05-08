@@ -7,7 +7,7 @@
 open Bos_setup
 
 let cmd =
-  Cmd.of_list @@ Topkg.Cmd.to_list @@ Topkg.Env.tool "ocamlfind" `Build_os
+  Cmd.of_list @@ Topkg.Cmd.to_list @@ Topkg.Conf.tool "ocamlfind" `Host_os
 
 let base_packages = String.Set.of_list
     [ "bigarray"; "bytes"; "compiler-libs"; "dynlink"; "graphics"; "num";

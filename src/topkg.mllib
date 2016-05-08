@@ -9,6 +9,7 @@ Topkg_fpath
 Topkg_install
 Topkg_ipc
 Topkg_log
+Topkg_main
 Topkg_opam
 Topkg_os
 Topkg_pkg

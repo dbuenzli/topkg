@@ -302,16 +302,24 @@ let troubleshoot =
     `P "If you get into trouble try the following to get a better undersanding
         of what is happening.";
     `S "ASK FOR MORE LOGGING";
-    `P "Invoke $(b,topkg) with $(b,-v) or $(b,-v -v), see the $(b,--verbosity)
+    `P "Invoke $(b,topkg) with $(b,-v), $(b,-v -v), or use the
+        TOPKG_VERBOSITY environment variable; see the $(b,--verbosity)
         option.";
     `P "Messages comming from the $(b,topkg) tool are prefixed
         by 'topkg:' while those comming from the package description are
         prefixed by its base name, usually 'pkg.ml:'.";
+    `S "DEBUG THE GENERATED OPAM INSTALL FILE";
+    `P "To debug the generated OPAM install file according to the build
+        configuration you don't need to build the package. Use the
+        $(b,--dry-run) (or $(b,-d)) option and add a little bit of logging to
+        output the build configuration that was determined:";
+    `Pre "pkg/pkg.ml build -d -v [OPTION]...";`Noblank;
+    `Pre "topkg build -d -v [OPTION]...      # mostly equivalent";
     `S "DEBUG PIN INSTALLS";
      `P "If you need more information about what happens when you
-         pin a package in OPAM (e.g. the actual watermark values) invoke
-         OPAM itself as follows:";
-    `P "TOPKG_VERBOSITY=debug opam upgrade $$$$MYPKG -v";
+         pin a package in OPAM, for example the actual watermark values,
+         invoke OPAM as follows:";
+    `P "TOPKG_VERBOSITY=debug opam upgrade mypkg -v";
     `S "RELEASE PROCESS TROUBLES";
     `P "See the TROUBLESHOOTING section of topkg-release(7)."
   ] @ Cli.see_also ~cmds:[]
@@ -348,7 +356,7 @@ let topic =
   let doc = "The topic to get help on, `topics' lists the topic." in
   Arg.(value & pos 0 (some string) None & info [] ~docv:"TOPIC" ~doc)
 
-let doc = "show help about topkg"
+let doc = "Show help about topkg"
 let man =
   [ `S "DESCRIPTION";
     `P "The $(b,$(tname)) command shows help about $(mname).";

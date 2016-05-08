@@ -6,6 +6,8 @@
 
 (** Package descriptions. *)
 
+(** {1 Package} *)
+
 open Topkg_result
 
 type std_file
@@ -22,6 +24,8 @@ val opam_file :
 type t
 
 val empty : t
+val with_name_and_build_dir : t -> string -> Topkg_fpath.t -> t
+
 val v :
   ?delegate:Topkg_cmd.t ->
   ?readme:std_file ->
@@ -33,7 +37,7 @@ val v :
   ?lint_custom:(unit -> R.msg result list) ->
   ?distrib:Topkg_distrib.t ->
   ?build:Topkg_build.t -> string ->
-  Topkg_install.t list -> t
+  (Topkg_conf.t -> Topkg_install.t list result) -> t
 
 val name : t -> string
 val delegate : t -> Topkg_cmd.t option
@@ -42,8 +46,7 @@ val change_log : t -> Topkg_fpath.t
 val license : t -> Topkg_fpath.t
 val distrib : t -> Topkg_distrib.t
 val build : t -> Topkg_build.t
-val install : t -> Topkg_install.t
-
+val install : t -> Topkg_conf.t -> Topkg_install.t result
 val codec : t Topkg_codec.t
 
 (* Derived accessors *)
@@ -54,14 +57,13 @@ val opam : name:string -> t -> Topkg_fpath.t
 (* Distrib *)
 
 val distrib_uri : t -> string option
-val distrib_prepare_pin : t -> unit result
 val distrib_prepare :
   t -> dist_build_dir:Topkg_fpath.t -> name:string -> version:string ->
   opam:Topkg_fpath.t -> Topkg_fpath.t list result
 
 (* Build *)
 
-val run_build : t -> int result
+val build : t -> dry_run:bool -> Topkg_conf.t -> Topkg_conf.os -> int result
 
 (* Lint *)
 

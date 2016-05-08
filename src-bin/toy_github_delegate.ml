@@ -186,7 +186,7 @@ let main_cmd () = `Help (`Pager, None)
 open Cmdliner
 
 let ipc_cmd =
-  let doc = "delegate request IPCs" in
+  let doc = "Delegate request IPCs" in
   let man =
     [ `S "DESCRIPTION";
       `P "The $(b,$(tname)) command implements the topkg delegate protocol.
@@ -202,7 +202,7 @@ let ipc_cmd =
   (t, info)
 
 let main_cmd =
-  let doc = "topkg's toy GitHub delegate" in
+  let doc = "Topkg's toy GitHub delegate" in
   let man =
    [ `S "DESCRIPTION";
      `P "$(b,$(mname)) is a toy topkg delegate for GitHub. It will disappear
@@ -238,7 +238,7 @@ let main_cmd =
   (t, info)
 
 let main () =
-  Topkg.Private.disable_auto_main ();
+  Topkg.Private.disable_main ();
   match Term.eval_choice main_cmd [ipc_cmd] with
   | `Error _ -> exit 3
   | `Ok ret -> exit ret

@@ -112,7 +112,7 @@ let msg =
   let docv = "MSG" in
   Arg.(value & opt (some string) None & info ["m"; "message"] ~doc ~docv)
 
-let doc = "interact with the package's issue tracker"
+let doc = "Interact with the package's issue tracker"
 let man =
   [ `S "SYNOPSIS";
     `P "$(b,$(mname)) $(b,$(tname)) [$(i,OPTION)]... [$(i,ACTION)]...";

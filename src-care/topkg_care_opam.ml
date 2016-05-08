@@ -9,7 +9,7 @@ open Bos_setup
 (* Command *)
 
 let cmd =
-  Cmd.of_list @@ Topkg.Cmd.to_list @@ Topkg.Env.tool "opam" `Build_os
+  Cmd.of_list @@ Topkg.Cmd.to_list @@ Topkg.Conf.tool "opam" `Host_os
 
 (* Publish *)
 
