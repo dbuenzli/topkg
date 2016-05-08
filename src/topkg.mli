@@ -6,7 +6,7 @@
 
 (** The transitory OCaml package builder.
 
-    See the {{!manual}manual}.
+    See the {{!basics}basics}.
 
     {e %%VERSION%% - {{:%%PKG_HOMEPAGE%% }homepage}} *)
 
@@ -903,7 +903,7 @@ fun _ os ~build_dir ->
     ?field:field ->
     ?cond:bool -> ?api:string list -> ?dst_dir:fpath -> fpath -> install
   (** [install_mllib ~field ~cond ~api ~dst_dir mllib] installs
-      an OCaml library described by the file [mllib] with
+      an OCaml library described by the file [mllib] with:
       {ul
       {- [field] is the field where it gets installed (defaults to {!lib}).}
       {- If [cond] is [false] (defaults to [true]), no move is generated.}
@@ -951,7 +951,7 @@ fun _ os ~build_dir ->
     ?uri:string ->
     unit -> distrib
   (** [distrib ~watermarks ~files_to_watermark ~massage
-      ~exclude_paths ~uri ()] influencs the distribution creation
+      ~exclude_paths ~uri ()] influences the distribution creation
       process performed by the [topkg] tool. See below for the exact
       details.
 
@@ -1446,111 +1446,152 @@ module Private : sig
   end
 end
 
-(** {1:manual Manual}
+(** {1:basics Basics}
 
-{!Topkg} is a package builder for distributing OCaml software. It
-provides a mechanism to describe an opam
-{{:http://opam.ocaml.org/doc/manual/dev-manual.html#sec25}[.install]
-file} according to the build environment and make corresponding
-invocations in your build system. This simple mechanism brings the
-following advantages:
+{!Topkg} is a packager for distributing OCaml software. At
+its heart it provides a simple and flexible mechanism to describe
+an OPAM {{:http://opam.ocaml.org/doc/manual/dev-manual.html#sec25}[install]
+file} according to the build configuration and make one corresponding
+invocation in your build system.
+
+This simple idea brings the following advantages:
 {ol
 {- It frees you from implementing an install procedure in your build
-   system: this task is delegated to {{:http://opam.ocaml.org}OPAM} or
-   to the [opam-installer] tool.}
+   system: this task is delegated to {{:http://opam.ocaml.org}OPAM},
+   to the [opam-installer] tool or anything that understands an OPAM
+   install file.}
 {- It doesn't reclaim control over your build system. It will only
-   invoke it {e once} with a list of targets determined from a package
-   description and a build environment explicitely specified on the
-   command line.}}
+   invoke it {e once} with a list of targets determined by the package
+   description according to a build configuration explicitely specified
+   on the command line.}
+{- It is very flexible and supports a wide range of installation scenarios.}}
 
-{!Topkg} has been designed with [ocamlbuild] in mind but it should be
-usable with any other build system as long as it is able to understand
-the targets topkg {{!map}generates}.
+Beyond this a [Topkg] package description provides information about
+the package's distribution creation and publication procedures. This
+enables swift and correct package distribution management via the [topkg]
+tool, see {!care}.
 
-{!Topkg} is a single ISC licensed OCaml library without dependencies
-that you add to you project build dependencies. It also provides the
-[topkg] command line tool that will help you to streamline your
-release process.
-
-{1:setup Basic setup}
-
-In most cases your the root of you source repository should have the
-following files.
 {ul
-{- [pkg/pkg.ml], the package description written with {!Topkg}.
-   See {{!descr}package description.}}
-{- [pkg/META], a
-    {{:http://projects.camlcity.org/projects/findlib.html}Findlib}
-    [META] file. This file will automatically be installed in the
-    lib directory, see [metas] in {!Pkg.describe}.}
-{- [_tags] ocamlbuild file with at least the [true : bin_annot] line.
-   See {{!cmt}handling cmt and cmti} files for details.}
-{- [opam], your package metadata, its dependencies and the {{!build}instructions
-   to build} it. The [depends:] fields must have a ["topkg" {build}] line,
-   and likely ["ocamlfind" {build}] and ["ocamlbuild" {build}] lines.}
-{- [README.md], your readme file (the actual file path can be changed via
-   the [readme_file] argument of {!Pkg.describe} FIXME).}
-{- [LICENSE.md], your license file (the actual file path can be changed via
-   the [license_file] argument of {!Pkg.describe} FIXME).}
-{- [CHANGES.md], your change log file (the actual file path can be changed via
-   the [changes_file] argument of {!Pkg.describe} FIXME).}}
+{- {!setup}}
+{- {!build}}
+{- {!care}}
+{- Advanced topics
+   {ul {- {!config_store}}
+       {- {!multiopam}}}}}
 
-{b Note.} If you start a new library,
-{{:http://erratique.ch/software/carcass}[carcass]} allows
-you to:
+{1:setup Source repository setup}
+
+The root of you source repository should have the following layout:
+{ul
+{- [pkg/pkg.ml], the package description written with {!Topkg}'s API.
+   See {{!descr}package description.}}
+{- [pkg/META], an
+    {{:http://projects.camlcity.org/projects/findlib.html}ocamlfind}
+    META file describing your package. This file is automatically installed
+    in the lib directory. See {!Pkg.describe} to configure this.}
+{- [_tags], ocamlbuild file with at least a [true : bin_annot] line.
+   See {{!cmt}handling cmt and cmti} files for details.}
+{- [opam], the package's OPAM metadata. See {!build}.}
+{- [README.md], your readme file. See {!Pkg.describe} to configure this.}
+{- [LICENSE.md], your license file. See {!Pkg.describe} to configure this.}
+{- [CHANGES.md], your change log. See {!Pkg.describe} to configure this.}}
+
+{2:carcass_ad Quick setup (advertisement)}
+
+If you start a new library
+{{:http://erratique.ch/software/carcass}[carcass]} can generate
+the structural boilerplate with your personal information. Invoke:
 {v
 carcass body topkg/pkg mypkg
 (cd mypkg && git init && git add . && git commit -m "First commit.")
 opam pin add -kgit mypkg mypkg#master
 v}
-to make your library [{opam,ocamlfind}]-able with correct version
-watermarks on releases and opam pins.
 
-{1:build Package build instructions}
+and you have a library that is [{opam,ocamlfind}]-able with correct
+version watermarks on releases and opam pins. You are now only a few
+invocations away to release it in the OCaml OPAM repository, see
+[topkg help release] for doing so; but don't forget to document it and
+make it provide something useful.
 
-The build instructions of your package are simply an invocation of
-[pkg/pkg.ml] with the [build] argument and a specification of the
-build environment on the command line. Here is for example how you
-should write that invocation in the [build:] field of the [opam] file
-of a hypothetical [mypkg] package:
+{1:build OPAM and package build instructions}
+
+The package needs to build-depend on [topkg] aswell as [ocamlfind]
+which is used by the package description file [pkg/pkg.ml] to find the
+[topkg] library; it is likely that you are using [ocamlbuild] too. So
+the depends field of your OPAM file should at least have:
+
+{v
+depends: [
+  "ocamlfind" {build}
+  "ocamlbuild" {build}
+  "topkg" {build} ]
+v}
+
+The build instructions of the package are simply an invocation of
+[pkg/pkg.ml] with the [build] command and a specification of the
+build configuration on the command line. In the simplest case, if
+your package has no configuration options, this simply boils
+down to:
 {v
 build: [[
   "ocaml" "pkg/pkg.ml" "build"
           "installer" "true" ]]
 v}
 
-This invocation will execute your build system with a set of targets
-determined from the build environment specified on the command line
-and generate, in the root directory of your distribution a
-[mypkg.install] file that OPAM will use to install and uninstall your
-package.
+The ["installer" "true"] directive is used to inform the package
+description about the {{!Pkg.build_context}build context}. This
+invocation of [pkg/pkg.ml] executes your build system with a set of
+targets determined from the build configuration and generates in the
+root directory of your distribution an OPAM [install] file that OPAM
+uses to install and uninstall your package.
 
-Note that there is no need to specify anything in the [remove:] field
-of the [opam] file and there is no need to invoke [ocamlfind] with
-your [META] file, simply install the latter in the [lib] section (see below).
+This is all you need to specify. Do not put anything in the remove
+field of the OPAM file. Likewise there is no need to invoke [ocamlfind] with
+your [META] file. Your [META] file should simply be installed in the
+[lib] directory which happens automatically by default.
 
-If you need to support another package system you can invoke
-[pkg/pkg.ml] as above and then manage the installation and
-uninstallation at a given [$DESTDIR] using the generated
-[mypkg.install] file and the [opam-installer] tool distributed with
-OPAM or you own [.install] file interpreter.
+{b Beyond OPAM.} If you need to support another package system you
+can invoke [pkg/pkg.ml] as above and then manage the installation and
+uninstallation at a given [$DESTDIR] with the generated OPAM [install]
+file using [opam-installer] tool or any other program that understand
+these files.
 
 {1:descr Package description}
 
-An OPAM [.install] file is a description of a standard UNIX
+The {!Pkg.describe} function has a daunting number of arguments and
+configuration options. However if you keep things simple and stick to
+the defaults not much of this will need to be specified. In fact if we
+consider the basic default {{!setup}setup} mentioned above for a library
+described to OCamlbuild in a [src/mylib.mllib] file your package description
+file [pkg/pkg.ml] will simply look like this:
+{[
+#!/usr/bin/env ocaml
+#use "topfind"
+#require "topkg"
+open Topkg
+
+let () =
+  Pkg.describe "mylib" [ Pkg.install_mllib "src/mylib.mllib"; ]
+]}
+Try to test the package build with [topkg build], if it succeeds this
+will write a [mylib.install] that describes the package installation.
+You are now ready to release, see [topkg help release] for the procedure.
+
+An OPAM [install] file is a description of a standard UNIX
 install. It has fields for each of the standard directories [lib],
 [bin], [man], [etc], etc. Each of these fields lists the files to
 install in the corresponding directory (or subdirectories). See the
-{{:http://opam.ocaml.org/doc/manual/dev-manual.html#sec25}[.install]
+{{:http://opam.ocaml.org/doc/manual/dev-manual.html#sec25}install
 file specification} in the OPAM developer manual for more information.
 
-In {!Topkg}, the package description file [pkg/pkg.ml] is simply:
+In its simplest form, the package description file [pkg/pkg.ml] is simply
+In {!Topkg}, the package description file  is simply:
 {ol
 {- A {{!section:Pkg.builder}builder specification}. It specifies the
    build tool that is invoked once with the files to build and install
-   as determined by the current build environment.}
+   as determined by the current build configuration.}
 {- A specification of the files to install according to the build
-   environment by specifying invoking install field functions.
+   configuration by specifying invoking install field functions.
 
 one wants build to put in each field
    of the package's [.install] file by invoking install field
@@ -1758,15 +1799,63 @@ boolean key.
 
 {1:map Map from descriptions to targets and build artefacts}
 
+{!Topkg} has been designed with [ocamlbuild] in mind but it should be
+usable with any other build system as long as it is able to understand
+the targets topkg {{!map}generates}.
+
+
 Given an invocation [Pkg.{lib,bin,...} "$PATH"], the system generates
 a target [$PATH] for your build system and expects to find the build
 artefact in [$BUILD/$PATH] where [$BUILD] is the build directory of
 the build tool (e.g. [_build] for [ocamlbuild]).
 
-{1:config Storing build environment information in a build}
+{1:care Package care}
 
-The following sample setup shows how to store build environment
-information in a build. The setup also works seamlessly during
+Developing and distributing packages implies a lot of mundane but
+nevertheless important tasks. The [topkg] tool, guided by information
+provided by {!Pkg.describe} helps you with these tasks.
+
+For example [topkg lint] makes sure that the package source repository
+or distribution follows a few established (or your) conventions and
+that the META and OPAM files of the package pass their respective
+linter.  [topkg distrib] will create watermarked and reproducible
+distribution archives (see {!Pkg.distrib}) while [topkg publish] and
+[topkg opam] will help publishing them. All this and more is described
+with details in [topkg]'s help system, invoke:
+{v
+topkg help release
+topkg help
+ v}
+
+to get an extended introduction and pointers to these features.
+
+{2:doccare Documentation care}
+
+Topkg provides support to make it easier to write and publish your
+package documentation. The [topkg doc -r] command generates and refreshes
+renderings of the package documentation while you work on it.
+
+Documentation publication is always derived from a generated
+distribution archive (the latter doesn't need to be published of
+course). So to push documentation fixes and clarifications simply invoke:
+
+{v
+topkg distrib
+topkg publish doc
+v}
+
+Make sure you include %‌%VERSION%% watermarks in the documentation so
+that readers know exactly which version they are reading. By default
+this will be substituted by a VCS tag description so it will be
+precise even though you may not have properly tagged a new release
+for the package.
+
+{1:advanced Advanced topics}
+
+{2:config_store Storing build configuration information in software}
+
+The following sample setup shows how to store build configuration
+information in build artefacts. The setup also works seamlessly during
 development if build artefacts are invoked from the root directory of
 the source repository.
 
@@ -1780,8 +1869,8 @@ v}
 
 the contents of [src/mypkg_etc.ml] is simply:
 {[
-(* This file is overwritten by release builds. During development it
-   refers to the [etc] directory at the root directory of the
+(* This file is overwritten by release builds. During development
+   it refers to the [etc] directory at the root directory of the
    source repository. *)
 
 let dir = "etc"
@@ -1804,7 +1893,12 @@ let () =
   Pkg.etc "etc/mpypkg.conf";
   ... ]
 ]}
-and the [opam] build instructions are:
+
+In words we declare a configuration key ["etc-dir"] that holds the location
+of the [etc] directory and we have a pre-build hook that writes the file
+[src/mypkg_etc.ml] with its actual value on [`Pin] and [`Distrib] builds.
+Finally we install the [etc/mypkg.conf] configuration in the [etc] directory.
+The OPAM build instructions for the package are:
 {v
 build:
 [[ "ocaml" "pkg/pkg.ml" "build"
@@ -1812,6 +1906,47 @@ build:
            "etc-dir" "%{mypkg:etc}%" ]]
 v}
 
+{2:multiopam Multiple OPAM packages for a single distribution}
+
+It is not too hard to define multiple OPAM packages for the same
+distribution. Topkg itself
+{{:https://github.com/dbuenzli/topkg/blob/master/DEVEL.md}uses this
+trick} to manage its dependencies between [topkg] and [topkg-care].
+
+To achieve this your package description file must describe for each
+package [$PKG] a correspondingly named install alternative and you should
+have a corresponding OPAM file [$PKG.opam] at the root of your
+source repository.
+
+The build instructions of these OPAM files need to give the name of
+the package to the build invocation so that the right install description
+can be selected:
+{v
+build:
+[[ "ocaml" "pkg/pkg.ml" "build"
+           "installer" "true"
+           "pkg-name" "%{name}%" ]]
+v}
+
+In general you will use the default install and OPAM file to create
+and publish the distribution archive file and all packages
+will use the same distribution; they will only differ in their
+OPAM file. Releasing the set of packages then becomes:
+{v
+# Release the distribution and base package (use topkg bistro
+# for doing this via a single invocation)
+topkg distrib
+topkg publish
+topkg opam pkg
+topkg opam submit
+
+# Create and release the other OPAM packages based on the ditrib
+topkg opam pkg --pkg-name $OTHER_PKG
+topkg opam submit --pkg-name $OTHER_PKG
+v}
+
+See [topkg help release] for more information about releasing
+packages with [topkg].
 *)
 
 (*---------------------------------------------------------------------------

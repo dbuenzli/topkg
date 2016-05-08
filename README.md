@@ -3,13 +3,13 @@ Topkg — The transitory OCaml software packager
 %%VERSION%%
 
 Topkg is a packager for distributing OCaml software. It provides an
-API to describe the files a package installs in a given environment
-and allows to encode information about its distribution and
-online publication procedures.
+API to describe the files a package installs in a given build
+configuration and to specify information about the package's
+distribution creation and publication procedures.
 
-The optional topkg-care package provides a command line tool that
-helps with various aspects of a package's life cycle: creating and
-linting a distribution, releasing it on the WWW, publish its
+The optional topkg-care package provides the `topkg` command line tool
+which helps with various aspects of a package's life cycle: creating
+and linting a distribution, releasing it on the WWW, publish its
 documentation, add it to the OCaml OPAM repository, etc.
 
 Topkg is distributed under the ISC license and has **no**
@@ -33,7 +33,7 @@ Contact: Daniel Bünzli `<daniel.buenzl i@erratique.ch>`
 Topkg and topkg-care can be installed with `opam`:
 
     opam install topkg       # All you need for your packages
-    opam install topkg-care  # Tools to take care of your packages
+    opam install topkg-care  # topkg binary, takes care of your packages
     
 If you don't use `opam` consult the [`topkg.opam`](topkg.opam) and
 [`topkg-care.opam`](topkg-care.opam) files for build instructions.

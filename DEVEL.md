@@ -3,7 +3,7 @@ Package structure
 
 This repo is the base of two OPAM packages:
 
-- `topkg`, with OPAM file [topkg.opam](opam)
+- `topkg`, with OPAM file [topkg.opam](topkg.opam)
 - `topkg-care` with OPAM file [topkg-care.opam](topkg-care.opam)
 
 Both share the same [pkg/pkg.ml](pkg/pkg.ml) file. `topkg` simply
