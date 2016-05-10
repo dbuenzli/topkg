@@ -73,9 +73,7 @@ let install p c =
   let std_files =
     std_files_installs p.readme p.license p.change_log p.metas p.opams
   in
-  let installs = List.rev_append std_files installs in
-  let install = List.sort compare (List.flatten installs) in
-  Ok install
+  Ok (List.rev_append std_files installs)
 
 let std_files p =
   fst (p.readme) :: fst (p.license) :: fst (p.change_log) ::
@@ -89,8 +87,9 @@ let opam ~name p =
   match try Some (List.find has_name opams) with Not_found -> None with
   | Some (opam, _, _) -> fst opam
   | None ->
-      Topkg_log.warn
-        (fun m -> m "No opam file for %s, using 'opam'" p.name);
+      if name <> p.name then
+        Topkg_log.warn
+          (fun m -> m "No opam file for %s, using 'opam'" p.name);
       "opam"
 
 let codec =
@@ -173,9 +172,8 @@ let run_build_hook kind hook c =
     (fun e -> R.msgf "%s-build hook failed: %s" kind e)
 
 let build p ~dry_run c os =
-  let header = p.name in
-  install p c >>= fun install ->
-  Ok (Topkg_install.to_instructions ~header c os install)
+  install p c
+  >>= fun is -> Ok (Topkg_install.to_build ~header:p.name c os is)
   >>= fun (targets, install) -> match dry_run with
   | true -> write_opam_install_file p install >>= fun () -> Ok 0
   | false ->

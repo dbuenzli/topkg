@@ -46,7 +46,7 @@ val change_log : t -> Topkg_fpath.t
 val license : t -> Topkg_fpath.t
 val distrib : t -> Topkg_distrib.t
 val build : t -> Topkg_build.t
-val install : t -> Topkg_conf.t -> Topkg_install.t result
+val install : t -> Topkg_conf.t -> Topkg_install.t list result
 val codec : t Topkg_codec.t
 
 (* Derived accessors *)

@@ -6,39 +6,37 @@
 
 (** Package install. *)
 
-type file = string * Topkg_fexts.ext
-type field_move =
-  { field : Topkg_opam.Install.field;
-    built : bool;
-    src : file;
-    dst : file; }
+(** {1 Install} *)
 
-type t = field_move list
+type t
+
+val flatten : t list -> t
+val to_build :
+  ?header:string ->
+  Topkg_conf.t ->
+  Topkg_conf.os -> t list -> (Topkg_fpath.t list * Topkg_opam.Install.t)
 
 type field =
-  ?built:bool -> ?cond:bool -> ?exts:Topkg_fexts.t ->
+  ?force:bool -> ?built:bool -> ?cond:bool -> ?exts:Topkg_fexts.t ->
   ?dst:string -> string -> t
 
+val bin : ?auto:bool -> field
+val doc : field
+val etc : field
 val lib : field
 val libexec : ?auto:bool -> field
-val bin : ?auto:bool -> field
+val man : field
+val misc : field
 val sbin : ?auto:bool -> field
-val toplevel : field
 val share : field
 val share_root : field
-val etc : field
-val doc : field
 val stublibs : field
-val misc : field
-val man : field
+val toplevel : field
+val unknown : string -> field
+
 val mllib :
   ?field:field -> ?cond:bool -> ?api:string list -> ?dst_dir:Topkg_fpath.t ->
   Topkg_fpath.t -> t
-
-val to_instructions :
-  ?header:string ->
-  Topkg_conf.t ->
-  Topkg_conf.os -> t -> (Topkg_fpath.t list * Topkg_opam.Install.t)
 
 val codec : t Topkg_codec.t
 

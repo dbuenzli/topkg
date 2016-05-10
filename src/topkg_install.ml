@@ -6,88 +6,116 @@
 
 open Topkg_result
 
-type file = string * Topkg_fexts.ext
-type field_move =
+type move_scheme =
   { field : Topkg_opam.Install.field;
+    auto_bin : bool;
+    force : bool;
     built : bool;
-    src : file;
-    dst : file; }
+    exts : Topkg_fexts.t;
+    src : string;
+    dst : string; }
 
-type t = field_move list
+type t = move_scheme list
 
-type field =
-  ?built:bool -> ?cond:bool -> ?exts:Topkg_fexts.t -> ?dst:string ->
-  string -> t
+let flatten ls = (* We don't care about order *)
+  let rec push acc = function v :: vs -> push (v :: acc) vs | [] -> acc in
+  let rec loop acc = function
+  | l :: ls -> loop (push acc l) ls
+  | [] -> acc
+  in
+  loop [] ls
 
-let to_file s = match Topkg_string.cut ~rev:true s ~sep:'.' with
+let split_ext s = match Topkg_string.cut ~rev:true s ~sep:'.' with
 | None -> s, `Ext ""
 | Some (name, ext) -> name, `Ext (Topkg_string.strf ".%s" ext)
 
-let mvs
-    ?(drop_exts = []) field ?(built = true) ?(cond = true) ?(exts = [])
-    ?dst src
-  =
-  if not cond then [] else
-  let mv src dst = { field; built; src; dst } in
-  let expand exts s d = List.map (fun e -> mv (s, e) (d, e)) exts in
-  let dst = match dst with None -> Filename.basename src | Some dst -> dst in
-  let files =
-    if exts = [] then [mv (to_file src) (to_file dst)] else
-    expand exts src dst
+let bin_drop_exts native = if native then [] else Topkg_fexts.ext ".native"
+let lib_drop_exts native native_dynlink =
+  if native
+  then (if native_dynlink then [] else Topkg_fexts.ext ".cmxs")
+  else Topkg_fexts.(c_library @ exts [".cmx"; ".cmxa"; ".cmxs"])
+
+let to_build ?header c os i =
+  let bdir = Topkg_conf.build_dir c in
+  let ocaml_conf = Topkg_conf.OCaml.v c os in
+  let native = Topkg_conf.OCaml.native ocaml_conf in
+  let native_dylink = Topkg_conf.OCaml.native_dynlink ocaml_conf in
+  let ext_to_string = Topkg_fexts.ext_to_string ocaml_conf in
+  let maybe_build = [ ".cmti"; ".cmt" ] in
+  let bin_drops = List.map ext_to_string (bin_drop_exts native) in
+  let lib_drops = List.map ext_to_string (lib_drop_exts native native_dylink) in
+  let file_to_str ?(build_target = false) (n, ext) =
+    let ext = match ext with
+    (* Work around https://github.com/ocaml/ocamlbuild/issues/6 *)
+    | `Exe when build_target -> `Ext ""
+    | _ -> ext
+    in
+    Topkg_string.strf "%s%s" n (ext_to_string ext)
   in
-  let has_ext (_, ext) ext' = ext = ext' in
-  let keep { src; _ } = not (List.exists (has_ext src) drop_exts) in
-  List.find_all keep files
-
-let lib =
-  let drop_exts =
-    (* TODO *)
-    let c = Topkg_conf.OCaml.v Topkg_conf.empty `Host_os in
-    let native = Topkg_conf.OCaml.native c in
-    let native_dynlink = Topkg_conf.OCaml.native_dynlink c in
-    if native && not native_dynlink then Topkg_fexts.ext ".cmxs" else
-    if native then [] else
-    Topkg_fexts.(c_library @ exts [".cmx"; ".cmxa"; ".cmxs"])
-  in
-  mvs ~drop_exts `Lib
-
-let share = mvs `Share
-let share_root = mvs `Share_root
-let etc = mvs `Etc
-let toplevel = mvs `Toplevel
-let doc = mvs `Doc
-let misc = mvs `Misc
-let stublibs = mvs `Stublibs
-let man = mvs `Man
-
-let bin_drops =
-  (* TODO *)
-  if not Topkg_conf.OCaml.(native (v Topkg_conf.empty `Host_os))
-  then Topkg_fexts.ext ".native" else []
-
-let bin_mvs
-    field ?(auto = false) ?built ?cond ?(exts = Topkg_fexts.exe) ?dst src
-  =
-  let src, dst =
-    if not auto then src, dst else
-    let dst = match dst with
-    | None -> Some (Filename.basename src)
-    | Some _ as dst -> dst
+  let add acc m =
+    let mv (targets, moves) src dst =
+      let src = file_to_str ~build_target:true src in
+      let drop = not m.force && match m.field with
+      | `Bin -> List.exists (Filename.check_suffix src) bin_drops
+      | `Lib -> List.exists (Filename.check_suffix src) lib_drops
+      | _ -> false
+      in
+      if drop then (targets, moves) else
+      let dst = file_to_str dst in
+      let maybe = List.exists (Filename.check_suffix src) maybe_build in
+      let targets = if m.built && not maybe then src :: targets else targets in
+      let src = if m.built then Topkg_string.strf "%s/%s" bdir src else src in
+      let move = (m.field, Topkg_opam.Install.move ~maybe src ~dst) in
+      (targets, move :: moves)
     in
     let src =
-      (* TODO *)
-      if Topkg_conf.OCaml.(native (v Topkg_conf.empty `Host_os))
-      then src ^ ".native" else src ^ ".byte"
-      in
-      src, dst
+      if m.auto_bin && m.field = `Bin
+      then (if native then m.src ^ ".native" else m.src ^ ".byte")
+      else m.src
+    in
+    if m.exts = [] then mv acc (split_ext src) (split_ext m.dst) else
+    let expand acc ext = mv acc (src, ext) (m.dst, ext) in
+    List.fold_left expand acc m.exts
   in
-  mvs ~drop_exts:bin_drops field ?built ?cond ~exts ?dst  src
+  let targets, moves = List.fold_left add ([], []) (flatten i) in
+  targets, ((`Header header), moves)
 
-let bin = bin_mvs `Bin
-let sbin = bin_mvs `Sbin
-let libexec = bin_mvs `Libexec
+(* Install fields *)
 
-let parse_mllib contents =
+type field =
+  ?force:bool -> ?built:bool -> ?cond:bool -> ?exts:Topkg_fexts.t ->
+  ?dst:string -> string -> t
+
+let _field field
+    ?(auto = true) ?(force = false) ?(built = true) ?(cond = true) ?(exts = [])
+    ?dst src =
+  if not cond then [] else
+  let dst = match dst with None -> Topkg_fpath.basename src | Some dst -> dst in
+  [{ field; auto_bin = auto; force; built; exts; src; dst }]
+
+let field field = _field ~auto:true field
+let field_exec
+    field ?auto ?force ?built ?cond ?(exts = Topkg_fexts.exe) ?dst src
+  =
+  _field field ?auto ?force ?built ?cond ~exts ?dst src
+
+let bin = field_exec `Bin
+let doc = field `Doc
+let etc = field `Etc
+let lib = field `Lib
+let libexec = field_exec `Libexec
+let man = field `Man
+let misc = field `Misc
+let sbin = field_exec `Sbin
+let share = field `Share
+let share_root = field `Share_root
+let stublibs = field `Stublibs
+let toplevel = field `Toplevel
+let unknown name = field (`Unknown name)
+
+(* Higher-level installs *)
+
+let parse_mllib_modules contents =
   let lines = Topkg_string.cuts ~sep:'\n' contents in
   let add_mod acc l =
     let m = String.trim @@ match Topkg_string.cut ~sep:'#' l with
@@ -130,40 +158,12 @@ let mllib ?(field = lib) ?(cond = true) ?api ?dst_dir mllib =
   in
   begin
     Topkg_os.File.read mllib
-    >>= fun contents -> Ok (parse_mllib contents)
-    >>= fun mods -> Ok (List.flatten @@ add_mods [library] mods)
+    >>= fun contents -> Ok (parse_mllib_modules contents)
+    >>= fun mods -> Ok (flatten @@ add_mods [library] mods)
   end
   |> Topkg_log.on_error_msg ~use:(fun () -> [])
 
-let to_instructions ?header c os i =
-(*
-  let native = Topkg_conf_ocaml.native c in
-  let native_dynlink = Topkg_conf_ocam.native_dynlink c in
-*)
-  let bdir = Topkg_conf.build_dir c in
-  let ocaml_conf = Topkg_conf.OCaml.v c os in
-  let ext_to_string = Topkg_fexts.ext_to_string ocaml_conf in
-  let maybe_build = [ ".cmti"; ".cmt" ] in
-  let file_to_str ?(build_target = false) (n, ext) =
-    let ext = match ext with
-    (* Work around https://github.com/ocaml/ocamlbuild/issues/6 *)
-    | `Exe when build_target -> `Ext ""
-    | _ -> ext
-    in
-    Topkg_string.strf "%s%s" n (ext_to_string ext)
-  in
-  let add_instruction (targets, moves) { field; built; src; dst; } =
-    let src = file_to_str ~build_target:true src in
-    let dst = file_to_str dst in
-    let maybe = List.exists (Filename.check_suffix src) maybe_build in
-    let targets = if built && not maybe then src :: targets else targets in
-    let src = if built then Topkg_string.strf "%s/%s" bdir src else src in
-    let move = (field, Topkg_opam.Install.move ~maybe src ~dst) in
-    (targets, move :: moves)
-  in
-  let targets, moves = List.fold_left add_instruction ([], []) i in
-  targets, ((`Header header), moves)
-
+(* Dummy codec *)
 
 let codec : t Topkg_codec.t = (* we don't care *)
   let fields = (fun _ -> ()), (fun () -> []) in

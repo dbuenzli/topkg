@@ -151,7 +151,7 @@ let check_log ret =
   let log kind count =
     if count > 0 then match kind with
     | `Errs -> Topkg_log.err (fun m -> m msg count "error(s)")
-    | `Warns -> Topkg_log.err (fun m -> m msg count "warning(s)")
+    | `Warns -> Topkg_log.warn (fun m -> m msg count "warning(s)")
   in
   let errs = Topkg_log.err_count () in
   let warns = Topkg_log.warn_count () in

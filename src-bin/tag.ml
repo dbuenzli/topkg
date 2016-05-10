@@ -15,7 +15,9 @@ let vcs_tag tag ~commit_ish ~force ~sign ~delete ~msg =
   Topkg.Vcs.get ()
   >>= fun repo -> match delete with
   | true -> Topkg.Vcs.delete_tag repo tag
-  | false -> Topkg.Vcs.tag repo ~force ~sign ~msg ~commit_ish tag
+  | false ->
+      Topkg.Vcs.tag repo ~force ~sign ~msg ~commit_ish tag >>| fun () ->
+      Logs.app (fun m -> m "Tagged version %a" Topkg_care.Pp.version tag)
 
 let tag () pkg_file change_log tag commit_ish force sign delete msg =
   begin

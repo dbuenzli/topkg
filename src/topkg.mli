@@ -905,10 +905,11 @@ module Pkg : sig
   (** The type for install moves. *)
 
   type field =
-    ?built:bool -> ?cond:bool -> ?exts:Exts.t -> ?dst:string ->
+    ?force:bool -> ?built:bool -> ?cond:bool -> ?exts:Exts.t -> ?dst:string ->
     string -> install
   (** The type for field install functions. A call
-      [field ~built ~cond ~exts ~dst path] generates install moves as follows:
+      [field ~force ~built ~cond ~exts ~dst path] generates install moves as
+      follows:
       {ul
       {- If [built] is [true] (default), [path] is expressed relative
          to the {{!build}build directory} of the package and the path
@@ -967,7 +968,7 @@ module Pkg : sig
       see the {{:https://opam.ocaml.org/doc/manual/dev-manual.html#sec25}
       OPAM manual} for details. *)
 
-  (** {2 Higher-level install} *)
+  (** {2 Higher-level installs} *)
 
   val mllib :
     ?field:field -> ?cond:bool -> ?api:string list -> ?dst_dir:fpath ->
