@@ -120,7 +120,7 @@ let curl_upload_archive curl archive owner repo release_id =
         owner repo release_id (Fpath.filename archive)
   in
   let auth = github_auth ~owner in
-  let data = Cmd.(v "--data-binary" % strf "@%s" (Fpath.to_string archive)) in
+  let data = Cmd.(v "--data-binary" % strf "@@%s" (Fpath.to_string archive)) in
   let ctype = Cmd.(v "-H" % "Content-Type:application/x-tar") in
   let cmd = Cmd.(curl %% ctype %% data % uri) in
   OS.Cmd.(run_with_auth auth cmd |> to_stdout)
