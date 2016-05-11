@@ -1111,7 +1111,7 @@ fun c os ->
   (** [distrib ~watermarks ~files_to_watermark ~massage
       ~exclude_paths ~uri ()] influences the distribution creation
       process performed by the [topkg] tool.
-      See the {{!distdetails}full details about distribution creations}.
+      See the {{!distdetails}full details about distribution creation}.
 
       In the following the {e distribution build directory} is a
       private clone of the package's source repository's [HEAD] when
@@ -1237,7 +1237,7 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
     ?distrib:distrib ->
     ?build:build ->
     string -> (Conf.t -> install list result) -> unit
-  (** [describe name installs] describes a package named [name] with:
+  (** [describe name install] describes a package named [name] with:
       {ul
       {- [delegate], the package delegate command to use. If unspecfied
          determined by the delegate lookup procedure, see
@@ -1263,11 +1263,11 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
          makes the lint fail. Defaults to [None].}
       {- [distrib], specifies the distribution process, defaults to
          {!distrib}[ ()].}
-      {- [builder], specifies the package builder.}
-      {- [installs] given a {{!Conf.t}build configuration} specifies the
-         install moves. Note that some of standard files are automatically
-         installed and don't need to be specified, see {!std_file},
-         {!meta_file} and {!opam_file}.}} *)
+      {- [build], specifies the build process, defaults to {!build}[ ()].}
+      {- [install] given a {{!Conf.t}build configuration} specifies
+         the install moves. Note that some of standard files are
+         automatically installed and don't need to be specified, see
+         {!std_file}, {!meta_file} and {!opam_file}.}} *)
 
   (** {1:distdetails Package distribution creation details}
 
