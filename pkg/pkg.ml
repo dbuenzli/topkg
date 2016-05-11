@@ -35,7 +35,7 @@ let () =
       Pkg.opam_file ~install "topkg-care.opam" ]
   in
   Pkg.describe ~metas ~opams "topkg" @@ fun c ->
-  match (* WHY ? *) Topkg_conf.pkg_name c with
+  match (* bootstrap, why Conf doesn't work ? *) Topkg_conf.pkg_name c with
   | "topkg" ->
       Ok [ Pkg.lib "pkg/META";
            Pkg.lib "topkg.opam" ~dst:"opam";
@@ -47,6 +47,6 @@ let () =
            Pkg.bin ~auto:true "src-bin/toy_github_delegate"
              ~dst:"toy-github-topkg-delegate";
            Pkg.doc "test/unsupportive-delegate";
-           Pkg.doc "test/echo-delegate"; ]
+           Pkg.doc "test/echo-delegate" ]
   | other ->
-     R.error_msgf "unknown package name: %s" other
+      R.error_msgf "unknown package name: %s" other

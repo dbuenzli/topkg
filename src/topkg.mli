@@ -891,82 +891,124 @@ module Exts : sig
   (**/**)
 end
 
-(** Package description. *)
+(** Package description.
+
+    See the {{!basics}basics}. *)
 module Pkg : sig
 
   (** {1:install Installation description}
 
-      Package install field function generate OPAM install file moves
-      from the build directory to the install directories. In turns
-      this determines the files that need to be built by the
+      The installation description generates an OPAM install file
+      which is simply a description of file moves (in the [mv] sense)
+      from the build or source directory to standard install
+      directories. Describing these moves in a given build
+      configuration effectively determines what needs to built by the
       {{!build}package build command}. *)
 
   type install
-  (** The type for install moves. *)
+  (** The type for representing a set of install moves. *)
 
   type field =
-    ?force:bool -> ?built:bool -> ?cond:bool -> ?exts:Exts.t -> ?dst:string ->
-    string -> install
-  (** The type for field install functions. A call
-      [field ~force ~built ~cond ~exts ~dst path] generates install moves as
-      follows:
+    ?force:bool -> ?built:bool -> ?cond:bool -> ?exts:Exts.t -> ?dst:fpath ->
+    fpath -> install
+  (** The type for an install field, a function that describe file
+      moves to a particular installation directory. In the simplest form
+      a call [field src] simply moves the file [src] at the root of the
+      install directory of the field.
+
+      In general [field ~force ~built ~cond ~exts ~dst src] generates install
+      moves as follows:
       {ul
-      {- If [built] is [true] (default), [path] is expressed relative
-         to the {{!build}build directory} of the package and the path
-         will be given to build system invocation for construction.
-         If [false], [path] is relative to the root of the distribution
+      {- [dst] is the path were the source is written to. Expressed
+         relative to the install directoy of the field. Defaults
+         to [Fpath.basename src], i.e. at the root of the install directory.}
+      {- If [exts] is present and non empty, generates the list of
+         paths [List.map (fun e -> src ^ e)] and a move for
+         each of these. For example [field ~exts:]{!Exts.api}[ "src/m"] would
+         generate a move for the files ["src/m.mli"], ["src/m.cmi"],
+         ["src/m.cmti"], ["src/m.cmx"].}
+      {- If [cond] is [false] (defaults to [true]) no file move is generated.
+         This provides a convenient way to conditionalize installation based
+         on the build configuration for example:
+      {[let has_jsoo = Conf.value jsoo in
+Pkg.lib ~cond:has_jsoo ~exts:Exts.module_library "src/mylib_jsoo"
+      ]}}
+      {- If [built] is [true] (default), [src] is expressed relative
+         to the {{!build}build directory} of the distribution and the path
+         [src] will be given to {{!build}build system invocation}
+         for construction.
+         If [false], [src] is relative to the root of the distribution
          and is excluded from the build system invocation; this can
          be used for installing files that don't need to be built.}
-      {- If [cond] is [false] (defaults to [true]), no move is generated.}
-      {- If [exts] is present, generates a move for each path in
-         the list: [List.map (fun e -> path ^ e) exts].}
-      {- [dst] is the path used as the move destination, relative to
-         directory corresponding to the field. If unspecified this is
-         [Fpath.basename path]}} *)
+      {- If [force] is [true] (defaults to [false]) it the automatic
+         [src] filtering performed by the library. When [false],
+         the library will automatically disable certain build artefact
+         depending on {{!Conf.OCaml}OCaml's configuration}, one such
+         example is filtering native code build artefact if the OCaml install
+         doesn't support
+         {{!Conf.OCaml.native}native code compilation}}} *)
 
-  val lib : field
-  (** [lib] package specific directory. *)
+  type exec_field = ?auto:bool -> field
+  (** The type for field that install.
 
-  val libexec : ?auto:bool -> field
-  (** [lib] global directory with executable bit set. For [auto], see
-      {!bin}. *)
+      TODO reword this and make more precise. If [auto] is [true],
+      selects the native binary over the byte code one according to
+      the value of {!Conf.OCaml.native} and adds {!Exts.exe} to the
+      destination (which does the right thing on Windows). *)
 
-  val bin : ?auto:bool -> field
-  (** [bin] global directory. If [auto] is [true], selects the native
-      binary over the byte code one according to the value of
-      {!Conf.OCaml.native} and adds {!Exts.exe} to the destination (which
-      does the right thing on Windows). *)
 
-  val sbin : ?auto:bool -> field
-  (** [sbin] global directory. For [auto] see {!bin}. *)
-
-  val toplevel : field
-  (** [toplevel] package specific directory. *)
-
-  val share : field
-  (** [share] package specific directory. *)
-
-  val share_root : field
-  (** [share_root] global share directory. *)
-
-  val etc : field
-  (** [etc] package specific directory. *)
+  val bin : exec_field
+  (** [bin] is a field that installs to a common [bin/] directory. *)
 
   val doc : field
-  (** [doc] package specific directory. *)
+  (** [doc] is a field that installs to a package specific [doc/]
+      directory *)
 
-  val stublibs : field
-  (** [stublibs] global OCaml C stub directory. *)
+  val etc : field
+  (** [etc] is a field that installs to a package specific [etc/]
+      directory. *)
 
-  val misc : field
-  (** [misc] absolute path, interactive, install,
-      see the {{:https://opam.ocaml.org/doc/manual/dev-manual.html#sec25}
-      OPAM manual} for details. *)
+  val lib : field
+  (** [lib] is a field that installs to a package specific [lib/]
+      directory. *)
+
+  val libexec : exec_field
+  (** [libexec] is a field that installs to a package specific [lib/]
+      directory but with the executable bit set. *)
 
   val man : field
-  (** [man] global directory,
+  (** [man] is a field that installs to a common [man/] directory. See
+      the {{:https://opam.ocaml.org/doc/manual/dev-manual.html#sec25}
+      OPAM manual} for details. *)
+
+  val misc : field
+  (** [misc] is a field that installs to an arbitrary absolute path,
+      the user will be prompted for authorization,
       see the {{:https://opam.ocaml.org/doc/manual/dev-manual.html#sec25}
       OPAM manual} for details. *)
+
+  val sbin : exec_field
+  (** [sbin] is a field that installs to a common [sbin/] directory. *)
+
+  val share : field
+  (** [share] is a field that installs to a package specific [share/]
+      directory. *)
+
+  val share_root : field
+  (** [share_root] is a field that installs to a common [share/]
+      directory. *)
+
+  val stublibs : field
+  (** [stublibs] is a field that install to a common [lib/stublibs/]
+      directory. Used for OCaml C stub directory. *)
+
+  val toplevel : field
+  (** [toplevel] is a field that installs to a common [lib/toplevel/]
+      directory. *)
+
+(**/**)
+  val unknown : string -> field
+(**/**)
 
   (** {2 Higher-level installs} *)
 
@@ -1002,7 +1044,7 @@ module Pkg : sig
       {ul
       {- [prepare_on_pin] if [true] (default) distribution
          preparation is performed if a [`Pin]
-         {{!Env.build}build context} is detected. This means that
+         {{!Conf.build_context}build context} is detected. This means that
          the checkout is watermarked and the massage hook is invoked,
          see step 2. of {{!distdetails}distribution creation}.}
       {- [dir] is the directory where build artefacts are generated,
@@ -1209,7 +1251,8 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
       {- [metas] the package's ocamlfind META files, defaults to
          {!meta_file} [ "pkg/META"].}
       {- [opams] the package's OPAM package files, defaults to
-         {!opam_file} [ "opam"].}
+         {!opam_file} [ "opam"]. TODO describe how OPAM files
+         are looked up according to the package name.}
       {- [lint_files] if [Some files], ensures that all files mentioned in
          [readme], [license], [change_log], [metas], [opams] and [files]
          are present in the distribution. Defaults to [Some []].
@@ -1596,6 +1639,8 @@ tool, see {!care}.
 {ul
 {- {!setup}}
 {- {!build}}
+{- {!descr}}
+{- {!old}}
 {- {!care}}
 {- Advanced topics
    {ul {- {!config_store}}
@@ -1662,7 +1707,7 @@ build: [[
 v}
 
 The ["--installer" "true"] configuration key specification is used to
-inform the package description about the {{!Pkg.build_context}build
+inform the package description about the {{!Conf.build_context}build
 context}. This invocation of [pkg/pkg.ml] executes your build system
 with a set of targets determined from the build configuration and
 generates in the root directory of your distribution an OPAM [install]
@@ -1694,11 +1739,31 @@ file [pkg/pkg.ml] will simply look like this:
 open Topkg
 
 let () =
-  Pkg.describe "mylib" [ Pkg.install_mllib "src/mylib.mllib"; ]
+  Pkg.describe "mylib" @@ fun c ->
+  Ok [ Pkg.mllib "src/mylib.mllib" ]
 ]}
-Try to test the package build with [topkg build], if it succeeds this
-will write a [mylib.install] that describes the package installation.
-You are now ready to release, see [topkg help release] for the procedure.
+Try to test the package build description with [topkg build], this
+will build the package and write a [mylib.install] that describes the
+package installation. You are now ready to release, see [topkg help
+release] for the procedure.
+
+To debug package descriptions it useful to dry run the build. This
+prevents the package from building and only writes the [mylib.install] file
+determined according to the build configuration.
+{[
+topkg build -d    # Only write the OPAM install file
+topkg build -d -v # Also print the build configuration
+]}
+Note that [topkg build] does nothing more than invoke
+[ocaml "pkg/pkg.ml" build].  If you would like to see the build
+{{!section:Conf.key}configuration
+options} of a package description you should do:
+{v
+ocaml pkg/pkg.ml help
+./pkg/pkg.ml help     # If has exec right
+v}
+
+{1:old FIXME old material whose gist should be rewritten}
 
 An OPAM [install] file is a description of a standard UNIX
 install. It has fields for each of the standard directories [lib],
@@ -1808,7 +1873,7 @@ let () =
     Pkg.doc "test/min_svg.ml"; ]
 ]}
 
-{1:exts Extension sets}
+{2:exts Extension sets}
 
 The install field functions have an optional [exts] argument. If
 present these extensions are appended to the path given to the
@@ -1830,7 +1895,7 @@ Pkg.lib "src/mylib.cmxa";
 Pkg.lib "src/mylib.cmxs";
 ]}
 
-{1:autobin Auto binaries}
+{2:autobin Auto binaries}
 
 For generating an installing native binaries if native code
 compilation is available and byte code binaries if not you can use the
@@ -1843,7 +1908,7 @@ base name as the name of the tool and ask for either a [.native] or
 Pkg.bin ~auto:true "src/mybinary"
 ]}
 
-{1:conds Conditions}
+{2:conds Conditions}
 
 Conditional installation is handled through the optional argument
 [cond] of install field functions. If [cond] is [false] it's neither
@@ -1867,7 +1932,7 @@ availability happen automatically:
 * In [Pkg.{bin,sbin}] path ending with [.native] are dropped
   if [Env.native] is false.
 
-{1:env Environment}
+{2:env Environment}
 
 New boolean keys are added to the environment by calling [Env.bool
 key]. To output a sample environment you can invoke the build script with
@@ -1875,7 +1940,7 @@ key]. To output a sample environment you can invoke the build script with
 
     ocaml pkg/pkg.ml --help
 
-{1:rename Renaming and installing in subdirectories}
+{2:rename Renaming and installing in subdirectories}
 
 By default install field functions use the basename of the path given
 to the function as the install name. If you need to rename the build
@@ -1888,7 +1953,7 @@ library that needs to be installed in a [subdir] subdirectory of
 Pkg.lib ~exts:Exts.module_library ~dst:"subdir/mylib" "src/mylib"
 ]}
 
-{1:cmt Handling cmt and cmti files}
+{2:cmt Handling cmt and cmti files}
 
 Since the OCaml tools generate [.cmt] and [.cmti] files only as a side
 effect they are treated specially: they are not built. For
@@ -1901,26 +1966,7 @@ the [$PKG.install] file generated by topkg the [cmt] and [cmti] files
 are prefixed by a ? so that if they are not built (pre OCaml 4.01 for
 [ocamlbuild]) the install doesn't fail.
 
-{1:verify Verifying the build invocation and .install generation}
-
-For verifying the build invocation and the generated [.install] file
-you can invoke [build.ml] with [explain] as the first argument:
-
-    ocaml pkg/pkg.ml explain installer false ...
-
-This will not invoke the build system but output on stdout diagnostic
-information aswell as the build invocation and the generated
-[$PKG.install] file.
-
-In contrast to the build invocation it is allowed to invoke [explain]
-with an empty or partial environment.
-
-    ocaml pkg/pkg.ml explain
-
-In that case it will use [true] for each unspecified environment
-boolean key.
-
-{1:map Map from descriptions to targets and build artefacts}
+{2:map Map from descriptions to targets and build artefacts}
 
 {!Topkg} has been designed with [ocamlbuild] in mind but it should be
 usable with any other build system as long as it is able to understand
@@ -2004,8 +2050,8 @@ directory of the install. In the package description file
 [pkg/pkg.ml] we have the following lines:
 {[
 let (* 1 *) etc_dir =
-  let doc = "path to the etc install directory" in
-  Conf.(key "etc-dir" string ~absent:"etc" ~doc)
+  let doc = "Use $(docv) as the etc install directory" in
+  Conf.(key "etc-dir" fpath ~absent:"etc" ~doc)
 
 let (* 2 *) etc_config c = match Conf.build_context c with
 | `Dev -> Ok () (* Do nothing, the repo src/mypkg_etc.ml will do *)
@@ -2042,11 +2088,32 @@ distribution. Topkg itself
 {{:https://github.com/dbuenzli/topkg/blob/master/DEVEL.md}uses this
 trick} to manage its dependencies between [topkg] and [topkg-care].
 
-To achieve this your package description file must describe for each
-package [$PKG] a correspondingly named install alternative and you should
-have a corresponding OPAM file [$PKG.opam] at the root of your
-source repository. TODO
-
+To achieve this your package description file can simply condition
+the package install description on the package name
+{{!Conf.pkg_name}communicated by the configuration}. In this setup
+you'll likely have one [$PKG.opam] per [$PKG] at the root of your source
+repository, you should declare them to the description too, so that
+they get properly linted and used by the [topkg] tool when appropriate
+(TODO describe how the OPAM file is looked up according to the package name
+in {!Pkg.describe}). Here is a blueprint:
+{[
+let () =
+  let opams =
+    let install = false in
+    [ Pkg.opam_file ~install "mypkg-main.opam";
+      Pkg.opam_file ~install "mypkg-snd.opam"; ]
+  in
+  Pkg.describe ~opams "mypkg-main" @@ fun c ->
+  match Conf.pkg_name c with
+  | "mypkg-main" ->
+      Ok [ Pkg.lib "mypkg-main.opam" ~dst:"opam";
+           (* mypkg-main install *) ]
+  | "mypkg-snd" ->
+      Ok [ Pkg.lib "mypkg-snd.opam" ~dst:"opam";
+           (* mypkg-snd install *) ]
+  | other ->
+      R.error_msgf "unknown package name: %s" other
+]}
 The build instructions of these OPAM files need to give the name of
 the package to the build invocation so that the right install description
 can be selected:
@@ -2057,9 +2124,9 @@ build:
            "--installer" "true" ]]
 v}
 
-In general you will use the default install and OPAM file to create
-and publish the distribution archive file and all packages
-will use the same distribution; they will only differ in their
+In general you will use the default, main, package name and its OPAM file to
+create and publish the distribution archive file and all packages
+will use the same distribution; the OPAM packages will only differ in their
 OPAM file. Releasing the set of packages then becomes:
 {v
 # Release the distribution and base package (use topkg bistro
@@ -2069,9 +2136,9 @@ topkg publish
 topkg opam pkg
 topkg opam submit
 
-# Create and release the other OPAM packages based on the ditrib
-topkg opam pkg --pkg-name $OTHER_PKG
-topkg opam submit --pkg-name $OTHER_PKG
+# Create and release the other OPAM package based on the ditrib
+topkg opam pkg --pkg-name mypkg-snd
+topkg opam submit --pkg-name mypkg-snd
 v}
 
 See [topkg help release] for more information about releasing
@@ -2079,24 +2146,36 @@ packages with [topkg].
 
 {1:menagerie Menagerie of [pkg.ml] files}
 
+With a description of what they showcase.
+
 {{:https://github.com/dbuenzli/hmap/blob/master/pkg/pkg.ml}Hmap}
 {ul {- Single module library. The simplest you can get.}}
 
 {{:https://github.com/dbuenzli/fpath/blob/master/pkg/pkg.ml}Fpath}
 {ul {- Single module library with toplevel support.}}
 
-{{:https://github.com/dbuenzli/carcass/blob/master/pkg/pkg.ml}Carcass}
+{{:https://github.com/dbuenzli/uucp/blob/master/pkg/pkg.ml}Uucp}
 {ul
 {- One library namespaced by a single module.}
-{- One single module library.}
+{- Generation of distribution time release artefacts.}
+{- Pin specific build preparation (download the UCD XML file).}}
+
+{{:https://github.com/dbuenzli/mtime/blob/master/pkg/pkg.ml}Mtime}
+{ul
+{- C stubs}
+{- Optional dependencies ([js_of_ocaml])}}
+
+{{:https://github.com/dbuenzli/carcass/blob/master/pkg/pkg.ml}Carcass}
+{ul
+{- One library archive namespaced by a single module.}
+{- One single module library archive.}
 {- One executable.}
 {- {{!config_store}Stores} install [etc] location in the software artefacts,
    using a {{!Pkg.build}pre-build hook}.}
-{- Adjusts the watermarking process to prevent the watermarking the files
-   in the [etc] file hierarchy of the distribution that are installed in the
-   install [etc] directory.}
-{- Install files from the source tree, i.e. files that are not built (the files
-   in the [etc] hierarchy).}}
+{- Adjusts the watermarking process to ignore the files in the [etc] file
+   hierarchy.}
+{- Install files from the source tree, i.e. files that are not built, those
+   in the [etc] hierarchy of the distribution.}}
 
 {{:https://github.com/dbuenzli/topkg/blob/master/pkg/pkg.ml}Topkg}
 {ul

@@ -29,19 +29,22 @@ module Pkg = struct
 
   type install = Topkg_install.t
   type field = Topkg_install.field
+  type exec_field = ?auto:bool -> field
 
+  let bin = Topkg_install.bin
+  let doc = Topkg_install.doc
+  let etc = Topkg_install.etc
   let lib = Topkg_install.lib
   let libexec = Topkg_install.libexec
-  let bin = Topkg_install.bin
+  let man = Topkg_install.man
+  let misc = Topkg_install.misc
   let sbin = Topkg_install.sbin
-  let toplevel = Topkg_install.toplevel
   let share = Topkg_install.share
   let share_root = Topkg_install.share_root
-  let etc = Topkg_install.etc
-  let doc = Topkg_install.doc
   let stublibs = Topkg_install.stublibs
-  let misc = Topkg_install.misc
-  let man = Topkg_install.man
+  let toplevel = Topkg_install.toplevel
+  let unknown = Topkg_install.unknown
+
   let mllib = Topkg_install.mllib
 
   (* Distrib *)
