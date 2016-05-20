@@ -1753,6 +1753,12 @@ let () =
   Pkg.describe "mylib" @@ fun c ->
   Ok [ Pkg.mllib "src/mylib.mllib" ]
 ]}
+
+{b Tip.} To allow
+{{:https://github.com/the-lambda-church/merlin}merlin} to function
+correctly in your package description, issue [M-x merlin-use topkg] in
+[emacs] or [:MerlinUse topkg] in [vim].
+
 Try to test the package build description with [topkg build], this
 will build the package and write a [mylib.install] that describes the
 package installation. You are now ready to release, see [topkg help
