@@ -4,49 +4,41 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-open Cmdliner
+open Bos_setup
 
-let cmds =
-  [ Bistro.cmd; Browse.cmd; Build.cmd; Clean.cmd; Distrib.cmd; Doc.cmd;
-    Help.cmd; Ipc.cmd; Issue.cmd; Lint.cmd; Log.cmd; Opam.cmd;
-    Publish.cmd; Status.cmd; Tag.cmd; ]
+(* Command *)
 
-let main () = `Help (`Pager, None)
+let clean () pkg_file build_dir name =
+  begin
+    let p = Topkg_care.Pkg.v ?build_dir ?name pkg_file in
+    Topkg_care.Pkg.name p
+    >>= fun name -> Fpath.of_string (name ^ ".install")
+    >>= fun install -> OS.File.delete install
+    >>= fun () -> Topkg_care.Pkg.build_dir p
+    >>= fun build_dir -> OS.Dir.delete ~recurse:true build_dir
+    >>= fun () -> Ok 0
+  end
+  |> Cli.handle_error
 
 (* Command line interface *)
 
-let doc = "Topkg package care"
+open Cmdliner
+
+let doc = "Clean the package's build"
 let man =
   [ `S "DESCRIPTION";
-    `P "$(b,$(mname)) takes care of topkg packages.";
-    `P "Use '$(b,$(mname)) help release' for help to release a package.";
-    `Noblank;
-    `P "Use '$(b,$(mname)) help delegate' for help about the topkg delegate.";
-    `Noblank;
-    `P "Use '$(b,$(mname)) help troubleshoot' for a few troubleshooting tips.";
-    `Noblank;
-    `P "Use '$(b,$(mname)) help $(i,COMMAND)' for help about $(i,COMMAND).";
+    `P "The $(b,$(tname)) command deletes the package's build directory
+        and its OPAM install file."
   ] @ Cli.common_opts_man @ [
     `S "ENVIRONMENT VARIABLES";
-    `S "BUGS";
-    `P "Report them, see $(i,%%PKG_HOMEPAGE%%) for contact information.";
-    `S "AUTHOR";
-    `P "Daniel C. Buenzli, $(i,http://erratique.ch)"; ]
+  ] @ Cli.see_also ~cmds:["topkg-build"]
 
-let main =
-  let version = "%%VERSION%%" in
-  let info = Term.info "topkg" ~version ~doc ~sdocs:Cli.common_opts ~man in
-  let t = Term.(ret (const main $ Cli.setup)) in
+let cmd =
+  let info = Term.info "clean" ~sdocs:Cli.common_opts ~doc ~man in
+  let t = Term.(pure clean $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $
+                Cli.pkg_name)
+  in
   (t, info)
-
-let main () =
-  Topkg.Private.disable_main ();
-  match Term.eval_choice main cmds with
-  | `Error _ -> exit 3
-  | `Ok ret when ret <> 0 -> exit ret
-  | _ -> if Logs.err_count () > 0 then exit 3 else exit 0
-
-let () = main ()
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

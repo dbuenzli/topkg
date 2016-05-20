@@ -34,6 +34,13 @@ let pkg_file =
   Arg.(value & opt path_arg (Fpath.v "pkg/pkg.ml") &
        info ["pkg-file"] ~docs:common_opts ~doc ~docv)
 
+let pkg_name =
+  let doc = "The name $(docv) of the OPAM package. If absent provided
+             by the package description."
+  in
+  let docv = "PKG_NAME" in
+  Arg.(value & opt (some string) None & info ["n"; "pkg-name"] ~doc ~docv)
+
 let opam =
   let doc = "The OPAM file to use. If absent uses the default OPAM file
              mentioned in the package description."

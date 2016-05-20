@@ -122,13 +122,6 @@ let pkg_opam_dir =
   let docv = "DIR" in
   Arg.(value & opt (some Cli.path_arg) None & info ["pkg-opam-dir"] ~doc ~docv)
 
-let pkg_name =
-  let doc = "The name $(docv) of the OPAM package. If absent provided
-             by the package description."
-  in
-  let docv = "PKG_NAME" in
-  Arg.(value & opt (some string) None & info ["n"; "pkg-name"] ~doc ~docv)
-
 let pkg_version =
   let doc = "The version string $(docv) of the OPAM package. If absent provided
              provided by the VCS tag description of the HEAD commit."
@@ -197,8 +190,9 @@ let cmd =
   let t = Term.(pure opam $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $
                 Cli.dist_name $ Cli.dist_version $ Cli.dist_opam $
                 Cli.dist_uri $ Cli.dist_file $
-                pkg_opam_dir $ pkg_name $ pkg_version $ pkg_opam $ pkg_descr $
-                Cli.readme $ Cli.change_log $ Cli.publish_msg $ action $ field)
+                pkg_opam_dir $ Cli.pkg_name $ pkg_version $ pkg_opam $
+                pkg_descr $ Cli.readme $ Cli.change_log $ Cli.publish_msg $
+                action $ field)
   in
   (t, info)
 

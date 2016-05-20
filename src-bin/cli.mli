@@ -29,6 +29,9 @@ val path_arg : Fpath.t Arg.converter
 val pkg_file : Fpath.t Term.t
 (** A [--pkg-file] option to specify the package description file to use. *)
 
+val pkg_name : string option Term.t
+(** A [--pkg-name] option to specify the OPAM package name. *)
+
 val opam : Fpath.t option Term.t
 (** An [--opam] option for defining an OPAM file. *)
 
