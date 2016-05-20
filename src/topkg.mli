@@ -6,7 +6,8 @@
 
 (** The transitory OCaml package builder.
 
-    See the {{!basics}basics}.
+    See the {{!basics}basics} and the {{!menagerie}menagerie} of [pkg.ml]
+    files.
 
     {e %%VERSION%% - {{:%%PKG_HOMEPAGE%% }homepage}} *)
 
@@ -2165,46 +2166,91 @@ packages with [topkg].
 
 With a description of what they showcase.
 
+In all these examples the readme, change log and license file are
+automatically installed in the [doc/] directory and the ocamlfind META
+file and OPAM file of the package are automatically installed in the
+[lib/] directory.
+
 {{:https://github.com/dbuenzli/hmap/blob/master/pkg/pkg.ml}Hmap}
-{ul {- Single module library. The simplest you can get.}}
+({{:https://github.com/dbuenzli/hmap/blob/master/pkg/META}META},
+{{:https://github.com/dbuenzli/hmap/blob/master/opam}[opam]})
+{ul {- Single module library archive ([hmap]). The simplest you can get.}}
 
 {{:https://github.com/dbuenzli/fpath/blob/master/pkg/pkg.ml}Fpath}
-{ul {- Single module library with toplevel support.}}
+({{:https://github.com/dbuenzli/fpath/blob/master/pkg/META}META},
+{{:https://github.com/dbuenzli/fpath/blob/master/opam}[opam]})
+{ul
+{- Single module library archive ([fpath]).}
+{- Private library for toplevel support ([fpath_top]).}}
 
-{{:https://github.com/dbuenzli/uucp/blob/master/pkg/pkg.ml}Uucp}
+{{:https://github.com/dbuenzli/astring/blob/master/pkg/pkg.ml}Astring}
+({{:https://github.com/dbuenzli/astring/blob/master/pkg/META}META},
+{{:https://github.com/dbuenzli/astring/blob/master/opam}[opam]})
+{ul
+{- Single library archive namespaced by one module ([astring]).}
+{- Private library for toplevel support ([astring_top]).}
+{- Installation of sample code in the [doc/] directory.}}
+
+Uucp
 {ul
 {- One library namespaced by a single module.}
 {- Generation of distribution time release artefacts.}
 {- Pin specific build preparation (download the UCD XML file).}}
 
-{{:https://github.com/dbuenzli/mtime/blob/master/pkg/pkg.ml}Mtime}
+
+{{:https://github.com/dbuenzli/ptime/blob/master/pkg/pkg.ml}Ptime}
+({{:https://github.com/dbuenzli/ptime/blob/master/pkg/META}META},
+ {{:https://github.com/dbuenzli/ptime/blob/master/opam}opam})
 {ul
-{- C stubs}
-{- Optional dependencies ([js_of_ocaml])}}
+{- Optional dependencies ([js_of_ocaml]).}
+{- One base single module library archive ([ptime]).}
+{- Private library for toplevel support of the base library ([ptime_top]).}
+{- Two backend library archives named [ptime_clock] implementing the same
+   interface ([ptime_clock.mli]).}
+{- One backend library archive targeting regular OSes using C stubs
+   and installed in the [os/] subdirectory of [lib/].}
+{- Private library for toplevel support of the OS backend ([ptime_clock_top]),
+   also installed in the [os/] subdirectory of [lib/].}
+{- One backend library targeting JavaScript installed in
+   the [jsoo/] subdirectory of [lib/] and conditional on the [js_of_ocaml]
+   optional dependency.}
+{- Installation of sample code in the [doc/] directory.}}
 
 {{:https://github.com/dbuenzli/carcass/blob/master/pkg/pkg.ml}Carcass}
+({{:https://github.com/dbuenzli/carcass/blob/master/pkg/META}META},
+ {{:https://github.com/dbuenzli/carcass/blob/master/opam}opam})
 {ul
-{- One library archive namespaced by a single module.}
-{- One single module library archive.}
-{- One executable.}
-{- {{!config_store}Stores} install [etc] location in the software artefacts,
-   using a {{!Pkg.build}pre-build hook}.}
-{- Adjusts the watermarking process to ignore the files in the [etc] file
-   hierarchy.}
-{- Install files from the source tree, i.e. files that are not built, those
-   in the [etc] hierarchy of the distribution.}}
+{- One library archive namespaced by a single module ([carcass]).}
+{- One single module library archive ([carcass_cli]).}
+{- One executable ([carcass]).}
+{- {{!config_store}Stores} install [etc] location in the software artefacts
+   with a {{!Pkg.build}pre-build hook}.}
+{- Adjusts the {{!Pkg.distrib}files to watermark} to ignore the files in the
+   [etc] file hierarchy.}
+{- {{!Pkg.field}Installs files} from the source tree, i.e. files that are not
+   built: those in the [etc] hierarchy of the distribution.}}
 
 {{:https://github.com/dbuenzli/topkg/blob/master/pkg/pkg.ml}Topkg}
+({{:https://github.com/dbuenzli/topkg/blob/master/pkg/META}META},
+{{:https://github.com/dbuenzli/topkg/blob/master/topkg.opam}topkg.opam},
+{{:https://github.com/dbuenzli/topkg/blob/master/topkg-care.opam}
+topkg-care.opam})
 {ul
 {- Ignore the funky source bootstraping ([#mod_use] directives), that's
    only for using [topkg] on itself.}
-{- Shows how to make {{!multiopam}multiple OPAM packages} for the same
+{- Makes {{!multiopam}multiple OPAM packages} for the same
    distribution.}
-{- Manual [META] install, a single one is installed for all OPAM packages
-   by the base package. This leverages the [if_exists] ocamlfind mecanism.}
 {- Multiple OPAM file declaration and dependency linting exclusions:
    the build system mentions packages that are not relevant to
-   all OPAM files.}}
+   all OPAM files. Manual, per package, [OPAM] file install in [lib/].}
+{- Manual [META] install, a single one is installed for all OPAM packages
+   by the base package [topkg]. This leverages the [if_exists] ocamlfind
+   mecanism.}
+{- The [topkg] package installs one library archive namespaced
+   by a single module ([topkg]).}
+{- The [topkg-care] package installs one library archive namespaced
+   by a single module ([topkg-care]) and two binaries ([topkg]
+   and [toy-github-topkg-delegate])}}
 *)
 
 (*---------------------------------------------------------------------------
