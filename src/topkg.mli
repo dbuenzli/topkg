@@ -152,6 +152,21 @@ module Fpath : sig
   val ( // ) : t -> t -> t
   (** [p // q] is [append p q]. *)
 
+  val is_dir_path : t -> bool
+  (** [is_dir_path p] is [true] iff [p] represents a directory. This means
+      that [p] is [.], [..] or ends with [/], [/..] or [/.]. *)
+
+  val is_file_path : t -> bool
+  (** [is_file_path p] is [not (is_dir_path true)]. *)
+
+  val basename : t -> string
+  (** [basename p] is [p]'s basename, the last non empty segment of [p]. *)
+
+  val dirname : t -> string
+  (** [dirname p] is [p]'s dirname, [p] without its  last non empty segment. *)
+
+  (** {1 File extensions} *)
+
   val get_ext : t -> string
   (** [get_ext p] is [p]'s filename extension (including the ['.']) or
       the empty string if there is no extension *)
@@ -162,11 +177,6 @@ module Fpath : sig
   val rem_ext : t -> t
   (** [rem_ext p] is [p] without its filename extension. *)
 
-  val basename : t -> string
-  (** [basename p] is [p]'s basename, the last non empty segment of [p]. *)
-
-  val dirname : t -> string
-  (** [dirname p] is [p]'s dirname, [p] without its  last non empty segment. *)
 end
 
 (** Command lines.
@@ -917,11 +927,13 @@ module Pkg : sig
       install directory of the field.
 
       In general [field ~force ~built ~cond ~exts ~dst src] generates install
-      moves as follows:
+      move as follows:
       {ul
       {- [dst] is the path were the source is written to. Expressed
-         relative to the install directoy of the field. Defaults
-         to [Fpath.basename src], i.e. at the root of the install directory.}
+         relative to the install directory of the field. Defaults
+         to [Fpath.basename src], i.e. at the root of the install directory.
+         If [dst] is a {{!Fpath.is_dir_path}directory path}, the destination
+         is [(dst ^ Fpath.basename src)].}
       {- If [exts] is present and non empty, generates the list of
          paths [List.map (fun e -> src ^ e)] and a move for
          each of these. For example [field ~exts:]{!Exts.api}[ "src/m"] would
@@ -940,7 +952,7 @@ Pkg.lib ~cond:has_jsoo ~exts:Exts.module_library "src/mylib_jsoo"
          If [false], [src] is relative to the root of the distribution
          and is excluded from the build system invocation; this can
          be used for installing files that don't need to be built.}
-      {- If [force] is [true] (defaults to [false]) it the automatic
+      {- If [force] is [true] (defaults to [false]) it disables the automatic
          [src] filtering performed by the library. When [false],
          the library will automatically disable certain build artefact
          depending on {{!Conf.OCaml}OCaml's configuration}, one such
@@ -955,7 +967,6 @@ Pkg.lib ~cond:has_jsoo ~exts:Exts.module_library "src/mylib_jsoo"
       selects the native binary over the byte code one according to
       the value of {!Conf.OCaml.native} and adds {!Exts.exe} to the
       destination (which does the right thing on Windows). *)
-
 
   val bin : exec_field
   (** [bin] is a field that installs to a common [bin/] directory. *)

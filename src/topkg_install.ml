@@ -90,7 +90,12 @@ let _field field
     ?(auto = true) ?(force = false) ?(built = true) ?(cond = true) ?(exts = [])
     ?dst src =
   if not cond then [] else
-  let dst = match dst with None -> Topkg_fpath.basename src | Some dst -> dst in
+  let dst = match dst with
+  | None -> Topkg_fpath.basename src
+  | Some dst ->
+      if Topkg_fpath.is_file_path dst then dst else
+      dst ^ (Topkg_fpath.basename src)
+  in
   [{ field; auto_bin = auto; force; built; exts; src; dst }]
 
 let field field = _field ~auto:true field

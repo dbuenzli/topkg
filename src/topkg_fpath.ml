@@ -27,6 +27,17 @@ let append =
 
 let ( // ) = append
 
+let is_dir_path p = match p with
+| "." | ".." -> true
+| _ ->
+    let is_suffix affix = Topkg_string.is_suffix ~affix p in
+    List.exists is_suffix ["/"; "/.."; "/."]
+
+let is_file_path p = not (is_dir_path p)
+
+let basename s = Filename.basename s
+let dirname s = Filename.dirname s
+
 let last_dot_index s = try Some (String.rindex s '.') with Not_found -> None
 let get_ext s = match last_dot_index s with
 | None -> ""
@@ -38,8 +49,6 @@ let rem_ext s = match last_dot_index s with
 | None -> s
 | Some i -> Topkg_string.with_index_range ~last:(i - 1) s
 
-let basename s = Filename.basename s
-let dirname s = Filename.dirname s
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli
