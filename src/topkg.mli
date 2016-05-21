@@ -962,12 +962,16 @@ Pkg.lib ~cond:has_jsoo ~exts:Exts.module_library "src/mylib_jsoo"
          {{!Conf.OCaml.native}native code compilation}}} *)
 
   type exec_field = ?auto:bool -> field
-  (** The type for field that install.
-
-      TODO reword this and make more precise. If [auto] is [true],
-      selects the native binary over the byte code one according to
-      the value of {!Conf.OCaml.native} and adds {!Exts.exe} to the
-      destination (which does the right thing on Windows). *)
+  (** The type for fields that install executable files. This is like {!field}
+      except for the additional [auto] parameter:
+      {ul
+      {- If [auto] is [true] (default) then [field src dst] will automatically
+         add the [".native"] suffix to [src] if {!Conf.OCaml.native}
+         is [true] and the [".byte"] suffix otherwise. Besides it will
+         automatically add {!Exts.exe} to [dst], which handles things
+         correctly on the various Windows ports.}
+      {- If [auto] is [false] you have full control according to
+         {!field}.}} *)
 
   val bin : exec_field
   (** [bin] is a field that installs to a common [bin/] directory. *)

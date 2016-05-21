@@ -41,20 +41,13 @@ let to_build ?header c os i =
   let native = Topkg_conf.OCaml.native ocaml_conf in
   let native_dylink = Topkg_conf.OCaml.native_dynlink ocaml_conf in
   let ext_to_string = Topkg_fexts.ext_to_string ocaml_conf in
+  let file_to_str (n, ext) = Topkg_string.strf "%s%s" n (ext_to_string ext) in
   let maybe_build = [ ".cmti"; ".cmt" ] in
   let bin_drops = List.map ext_to_string (bin_drop_exts native) in
   let lib_drops = List.map ext_to_string (lib_drop_exts native native_dylink) in
-  let file_to_str ?(build_target = false) (n, ext) =
-    let ext = match ext with
-    (* Work around https://github.com/ocaml/ocamlbuild/issues/6 *)
-    | `Exe when build_target -> `Ext ""
-    | _ -> ext
-    in
-    Topkg_string.strf "%s%s" n (ext_to_string ext)
-  in
   let add acc m =
     let mv (targets, moves) src dst =
-      let src = file_to_str ~build_target:true src in
+      let src = file_to_str src in
       let drop = not m.force && match m.field with
       | `Bin -> List.exists (Filename.check_suffix src) bin_drops
       | `Lib -> List.exists (Filename.check_suffix src) lib_drops
@@ -68,13 +61,13 @@ let to_build ?header c os i =
       let move = (m.field, Topkg_opam.Install.move ~maybe src ~dst) in
       (targets, move :: moves)
     in
-    let src =
-      if m.auto_bin && m.field = `Bin
-      then (if native then m.src ^ ".native" else m.src ^ ".byte")
-      else m.src
+    let src, dst =
+      if not m.auto_bin then m.src, m.dst else
+      ((if native then m.src ^ ".native" else m.src ^ ".byte"),
+       m.dst ^ (ext_to_string `Exe))
     in
-    if m.exts = [] then mv acc (split_ext src) (split_ext m.dst) else
-    let expand acc ext = mv acc (src, ext) (m.dst, ext) in
+    if m.exts = [] then mv acc (split_ext src) (split_ext dst) else
+    let expand acc ext = mv acc (src, ext) (dst, ext) in
     List.fold_left expand acc m.exts
   in
   let targets, moves = List.fold_left add ([], []) (flatten i) in
@@ -99,10 +92,8 @@ let _field field
   [{ field; auto_bin = auto; force; built; exts; src; dst }]
 
 let field field = _field ~auto:true field
-let field_exec
-    field ?auto ?force ?built ?cond ?(exts = Topkg_fexts.exe) ?dst src
-  =
-  _field field ?auto ?force ?built ?cond ~exts ?dst src
+let field_exec field ?auto ?force ?built ?cond ?exts ?dst src =
+  _field field ?auto ?force ?built ?cond ?exts ?dst src
 
 let bin = field_exec `Bin
 let doc = field `Doc
