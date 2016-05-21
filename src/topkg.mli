@@ -1593,13 +1593,17 @@ module Private : sig
     val codec : 'a t -> 'a Codec.t
     (** [codec ipc] is the codec used to transfer the value. *)
 
+    val answer : 'a t -> fpath
+    (** [answer ipc] is the file path from which the value can
+        be decoded from. *)
+
     (** {1 Requests} *)
 
-    val pkg : Pkg.t t
-    (** [pkg] is an IPC to get the package description. *)
+    val pkg : unit -> Pkg.t t
+    (** [pkg ()] is an IPC to get the package description. *)
 
-    val lint_custom : R.msg result list option t
-    (** [lint_custom] is an IPC to run the custom linting. *)
+    val lint_custom : unit -> R.msg result list option t
+    (** [lint_custom ()] is an IPC to run the custom linting. *)
 
     val distrib_prepare :
       dist_build_dir:fpath -> name:string -> version:string -> opam:fpath ->

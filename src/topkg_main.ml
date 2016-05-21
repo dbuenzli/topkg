@@ -70,7 +70,7 @@ let build_cmd pkg dry_run args =
   >>= fun pkg -> Topkg_pkg.build pkg ~dry_run c `Host_os
 
 let ipc_cmd pkg args =
-  Topkg_ipc.answer (Topkg_cmd.of_list args) pkg >>= fun () -> Ok 0
+  Topkg_ipc.write_answer (Topkg_cmd.of_list args) pkg >>= fun () -> Ok 0
 
 let run_cmd pkg cmd args = match cmd with
 | `Help -> help_cmd pkg

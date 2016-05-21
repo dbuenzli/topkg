@@ -25,7 +25,9 @@ let ask ~pkg_file ipc =
   let cmd = Cmd.(ocaml % p pkg_file % "ipc" % verbosity %% ipc_cmd) in
   pkg_must_exist pkg_file >>= fun pkg_file ->
   begin
-    OS.Cmd.(run_out cmd |> to_string)
+    OS.Cmd.run cmd
+    >>= fun () -> Fpath.of_string (Topkg.Private.Ipc.answer ipc)
+    >>= fun answer -> OS.File.read answer
     >>= fun data -> Topkg.Private.Codec.dec_result codec data
   end
   |> R.reword_error_msg

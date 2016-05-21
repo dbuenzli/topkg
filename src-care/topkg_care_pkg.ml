@@ -217,7 +217,7 @@ let v
     ?readme ?change_log ?license ?distrib_uri ?distrib_file ?publish_msg
     pkg_file
   =
-  let pkg = lazy (Topkg_care_ipc.ask ~pkg_file Topkg.Private.Ipc.pkg) in
+  let pkg = lazy (Topkg_care_ipc.ask ~pkg_file (Topkg.Private.Ipc.pkg ())) in
   let rec opam_fields = lazy (opam p >>= fun o -> Topkg_care_opam.File.fields o)
   and p =
     { name; version; delegate; build_dir; opam = opam_file; opam_descr;
@@ -291,7 +291,7 @@ let lint_custom p =
     pkg p >>= fun p -> match Topkg.Private.Pkg.lint_custom p with
     | None -> Ok (lint_disabled "custom linting")
     | _ ->
-        Topkg_care_ipc.ask ~pkg_file Topkg.Private.Ipc.lint_custom
+        Topkg_care_ipc.ask ~pkg_file (Topkg.Private.Ipc.lint_custom ())
         >>= function
         | None -> assert false
         | Some results -> Ok (List.fold_left report 0 results)
