@@ -1105,9 +1105,9 @@ fun c os ->
          pin builds.}
       {- [`Opam (file, field, sep)], is the values of the field
          [field] concatenated with separator [sep] of the OPAM file
-         [file], expressed relative to the source repository, if
-         [file] is [None] this is the current package's OPAM file. Not
-         all fields are supported see the value of
+         [file], expressed relative to the distribution root directory, if
+         [file] is [None] this is the package's default OPAM file, see
+         {!describe}. Not all fields are supported see the value of
          {!Topkg_care.Opam.File.field_names}.  {b Warning.} In [`Pin]
          {!Env.build}s, [`Opam] watermarks will only get substituted
          if the package [topkg-care] is installed.}}
@@ -1132,7 +1132,6 @@ fun c os ->
       In the following the {e distribution build directory} is a
       private clone of the package's source repository's [HEAD] when
       [topkg distrib] is invoked.
-
       {ul
       {- [watermarks] defines the source watermarks for the distribution,
          defaults to {!watermarks}.}
@@ -1206,7 +1205,7 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
 
   val std_file : ?install:bool -> fpath -> std_file
   (** [std_file ~install p] is a standard file [p] expressed relative
-      to the source repository root directory. The file is
+      to the distribution root directory. The file is
       automatically installed if [install] is [true] (default). *)
 
   type meta_file
@@ -1214,7 +1213,7 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
 
   val meta_file : ?lint:bool -> ?install:bool -> fpath -> meta_file
   (** [meta_file ~lint ~install p] is a META file [p] expressed relative
-      to the source repository root directory. The file is automatically
+      to the distribution root directory. The file is automatically
       installed in the {!lib} field if [install] is [true] (default).
       If [lint] is [true] (default), it is OCamlfind linted. *)
 
@@ -1225,7 +1224,7 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
     ?lint:bool -> ?lint_deps_excluding:string list option -> ?install:bool ->
     fpath -> opam_file
   (** [opam_file ~lint ~lint_deps_excluding ~install p] is an OPAM file
-      [p] expressd relative to the source repository root directory such that:
+      [p] expressd relative to the distribution root directory such that:
       {ul
       {- If [install] is [true] (default), it is automatically installed
          in the {!lib} field.}
@@ -1267,12 +1266,18 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
       {- [metas] the package's ocamlfind META files, defaults to
          {!meta_file} [ "pkg/META"].}
       {- [opams] the package's OPAM package files, defaults to
-         {!opam_file} [ "opam"]. TODO describe how OPAM files
-         are looked up according to the package name.}
+         {!opam_file} [ "opam"]. The default OPAM file used by a package
+         description depends on the package [name] (which can
+         be overriden from the command line). The OPAM file lookup
+         procedure will select the first path in [opams] whose filename is
+         [(name ^ ".opam")] and, failing
+         to do so, will fallback to an ["opam"] file at the root of the
+         distribution.}
       {- [lint_files] if [Some files], ensures that all files mentioned in
          [readme], [license], [change_log], [metas], [opams] and [files]
          are present in the distribution. Defaults to [Some []].
-         If [None] disables the test.}
+         If [None] disables the file existence tests (including readme,
+         change_log, license, metas, opams, metas.)}
       {- [lint_custom] defines a custom linting process run with the current
          directory set at the root of the distribution. Successes and errors
          in the returned list are reported as such and any error in the list
@@ -2116,7 +2121,7 @@ the package install description on the package name
 you'll likely have one [$PKG.opam] per [$PKG] at the root of your source
 repository, you should declare them to the description too, so that
 they get properly linted and used by the [topkg] tool when appropriate
-(TODO describe how the OPAM file is looked up according to the package name
+(see how the OPAM file is looked up according to the package name
 in {!Pkg.describe}). Here is a blueprint:
 {[
 let () =
