@@ -91,7 +91,7 @@ let _field field
   in
   [{ field; auto_bin = auto; force; built; exts; src; dst }]
 
-let field field = _field ~auto:true field
+let field field = _field ~auto:false field
 let field_exec field ?auto ?force ?built ?cond ?exts ?dst src =
   _field field ?auto ?force ?built ?cond ?exts ?dst src
 
