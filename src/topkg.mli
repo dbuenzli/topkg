@@ -1036,7 +1036,7 @@ Pkg.lib ~cond:has_jsoo ~exts:Exts.module_library "src/mylib_jsoo"
     fpath -> install
   (** [mllib ~field ~cond ~api ~dst_dir mllib] installs an OCaml library
       described by the
-      {{:https://github.com/ocaml/ocamlbuild/blob/master/manual/manual.adoc#19-archives-documentation}OCamlbuild .mllib file} [mllib] with:
+      {{:https://github.com/ocaml/ocamlbuild/blob/master/manual/manual.adoc#Sec_Archives_documentation}OCamlbuild .mllib file} [mllib] with:
       {ul
       {- [field] is the field where it gets installed (defaults to {!lib}).}
       {- If [cond] is [false] (defaults to [true]), no move is generated.}
@@ -1046,6 +1046,22 @@ Pkg.lib ~cond:has_jsoo ~exts:Exts.module_library "src/mylib_jsoo"
       {- [dst_dir] is the destination directory of the library
          in the field. If unspecified this is the root of the field's
          directory.}} *)
+
+  val clib :
+    ?dllfield:field ->
+    ?libfield:field ->
+    ?cond:bool -> ?lib_dst_dir:fpath -> fpath -> install
+  (** [clib clib] installs C stubs described by the {{:https://github.com/ocaml/ocamlbuild/blob/master/manual/manual.adoc#advanced-targets}OCamlbuild .clib file} [clib] with:
+      {ul
+      {- [dllfield] is the field where the C DLL archive gets installed,
+         (defaults to {!stublibs})}
+      {- [libfield] is the field where the C static archive gets installed
+         (defaults to {!libfield})}
+      {- If [cond] is [false] (defaults to [true]), no move is generated.}
+      {- [lib_dst_dir] is the destination directory of the library in the
+         [libfield] field. If unspecified this is the root of the field's
+         directory. This does not affect the [dllfield], DLLs are always
+         installed at the root directory of the [dllfield].}} *)
 
   (** {1:build Build description} *)
 
@@ -2179,9 +2195,11 @@ packages with [topkg].
 
 {1:menagerie Menagerie of [pkg.ml] files}
 
-With a description of what they showcase.
+This is a menagerie of [pkg.ml] with a description of what they
+showcase. The examples are approximatively sorted by increasing
+complexity.
 
-In all these examples the readme, change log and license file are
+In all these packages the readme, change log and license file are
 automatically installed in the [doc/] directory and the ocamlfind META
 file and OPAM file of the package are automatically installed in the
 [lib/] directory.
@@ -2189,22 +2207,33 @@ file and OPAM file of the package are automatically installed in the
 {{:https://github.com/dbuenzli/hmap/blob/master/pkg/pkg.ml}Hmap}
 ({{:https://github.com/dbuenzli/hmap/blob/master/pkg/META}META},
 {{:https://github.com/dbuenzli/hmap/blob/master/opam}[opam]})
-{ul {- Single module library archive ([hmap]). The simplest you can get.}}
+{ul {- Single module library archive [hmap]. The simplest you can get.}}
 
 {{:https://github.com/dbuenzli/fpath/blob/master/pkg/pkg.ml}Fpath}
 ({{:https://github.com/dbuenzli/fpath/blob/master/pkg/META}META},
 {{:https://github.com/dbuenzli/fpath/blob/master/opam}[opam]})
 {ul
-{- Single module library archive ([fpath]).}
-{- Private library for toplevel support ([fpath_top]).}}
+{- Single module library archive [fpath].}
+{- Private library archive [fpath_top] for toplevel support.}}
 
 {{:https://github.com/dbuenzli/astring/blob/master/pkg/pkg.ml}Astring}
 ({{:https://github.com/dbuenzli/astring/blob/master/pkg/META}META},
 {{:https://github.com/dbuenzli/astring/blob/master/opam}[opam]})
 {ul
-{- Single library archive namespaced by one module ([astring]).}
-{- Private library for toplevel support ([astring_top]).}
+{- Library archive [astring] namespaced by one module.}
+{- Private library archive for toplevel support ([astring_top]).}
 {- Installation of sample code in the [doc/] directory.}}
+
+{{:https://github.com/dbuenzli/fmt/blob/master/pkg/pkg.ml}Fmt}
+({{:https://github.com/dbuenzli/fmt/blob/master/pkg/META}META},
+{{:https://github.com/dbuenzli/fmt/blob/master/opam}[opam]})
+{ul
+{- Single module library archive ([fmt]).}
+{- Private library archive [fmt_top] for toplevel support.}
+{- Single module library archive [fmt_tty]
+   conditional on the presence of the OPAM [base-unix] package.}
+{- Single module library archive [fmt_cli] conditional
+   on the presence of the OPAM [cmdliner] package.}}
 
 Uucp
 {ul
@@ -2212,23 +2241,18 @@ Uucp
 {- Generation of distribution time release artefacts.}
 {- Pin specific build preparation (download the UCD XML file).}}
 
-
 {{:https://github.com/dbuenzli/ptime/blob/master/pkg/pkg.ml}Ptime}
 ({{:https://github.com/dbuenzli/ptime/blob/master/pkg/META}META},
  {{:https://github.com/dbuenzli/ptime/blob/master/opam}opam})
 {ul
-{- Optional dependencies ([js_of_ocaml]).}
-{- One base single module library archive ([ptime]).}
-{- Private library for toplevel support of the base library ([ptime_top]).}
-{- Two backend library archives named [ptime_clock] implementing the same
-   interface ([ptime_clock.mli]).}
-{- One backend library archive targeting regular OSes using C stubs
-   and installed in the [os/] subdirectory of [lib/].}
-{- Private library for toplevel support of the OS backend ([ptime_clock_top]),
-   also installed in the [os/] subdirectory of [lib/].}
-{- One backend library targeting JavaScript installed in
-   the [jsoo/] subdirectory of [lib/] and conditional on the [js_of_ocaml]
-   optional dependency.}
+{- Single module library archive [ptime].}
+{- Private library archive [ptime_top] for toplevel support.}
+{- Library archive [ptime_clock] targeting regular OSes using
+   C stubs and installed in the [os/] subdirectory of [lib/] along
+   with a private library [ptime_clock_top] for toplevel support.}
+{- Library archive [ptime_clock] targeting
+   JavaScript installed in the [jsoo/] subdirectory of [lib/] conditional
+   on the presence of the OPAM [js_of_ocaml] package.}
 {- Installation of sample code in the [doc/] directory.}}
 
 {{:https://github.com/dbuenzli/carcass/blob/master/pkg/pkg.ml}Carcass}

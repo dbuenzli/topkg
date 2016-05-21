@@ -38,6 +38,11 @@ val mllib :
   ?field:field -> ?cond:bool -> ?api:string list -> ?dst_dir:Topkg_fpath.t ->
   Topkg_fpath.t -> t
 
+val clib :
+  ?dllfield:field ->
+  ?libfield:field ->
+  ?cond:bool -> ?lib_dst_dir:Topkg_fpath.t -> Topkg_fpath.t -> t
+
 val codec : t Topkg_codec.t
 
 (*---------------------------------------------------------------------------

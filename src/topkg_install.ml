@@ -159,6 +159,31 @@ let mllib ?(field = lib) ?(cond = true) ?api ?dst_dir mllib =
   end
   |> Topkg_log.on_error_msg ~use:(fun () -> [])
 
+let clib
+    ?(dllfield = stublibs) ?(libfield = lib) ?(cond = true) ?lib_dst_dir clib
+  =
+  if not cond then [] else
+  let lib_dir = Topkg_fpath.dirname clib in
+  let lib_base =
+    let base = Topkg_fpath.(basename @@ rem_ext clib) in
+    if Topkg_string.is_prefix ~affix:"lib" base
+    then Ok (Topkg_string.with_index_range ~first:3 base)
+    else R.error_msgf "%s: OCamlbuild .clib file must start with 'lib'" clib
+  in
+  let lib_dst f = match lib_dst_dir with
+  | None -> None
+  | Some dir -> Some (Topkg_fpath.append dir (Topkg_fpath.basename f))
+  in
+  begin
+    lib_base >>= fun lib_base ->
+    let lib = Topkg_fpath.append lib_dir ("lib" ^ lib_base) in
+    let lib = libfield ~exts:Topkg_fexts.c_library lib ?dst:(lib_dst lib) in
+    let dll = Topkg_fpath.append lib_dir ("dll" ^ lib_base) in
+    let dll = dllfield ~exts:Topkg_fexts.c_dll_library dll in
+    Ok (flatten @@ [lib; dll])
+  end
+  |> Topkg_log.on_error_msg ~use:(fun () -> [])
+
 (* Dummy codec *)
 
 let codec : t Topkg_codec.t = (* we don't care *)

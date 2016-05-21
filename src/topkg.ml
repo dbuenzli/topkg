@@ -46,6 +46,7 @@ module Pkg = struct
   let unknown = Topkg_install.unknown
 
   let mllib = Topkg_install.mllib
+  let clib = Topkg_install.clib
 
   (* Distrib *)
 
