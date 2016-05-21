@@ -35,7 +35,7 @@ let () =
       Pkg.opam_file ~install "topkg-care.opam" ]
   in
   Pkg.describe ~metas ~opams "topkg" @@ fun c ->
-  match (* bootstrap, why Conf doesn't work ? *) Topkg_conf.pkg_name c with
+  match (* bootstrap, Conf doesn't work, eqs *) Topkg_conf.pkg_name c with
   | "topkg" ->
       Ok [ Pkg.lib "pkg/META";
            Pkg.lib "topkg.opam" ~dst:"opam";
@@ -43,8 +43,8 @@ let () =
   | "topkg-care" ->
       Ok [ Pkg.lib "topkg-care.opam" ~dst:"opam";
            Pkg.mllib ~api:["Topkg_care"] "src-care/topkg_care.mllib";
-           Pkg.bin ~auto:true "src-bin/topkg_bin" ~dst:"topkg";
-           Pkg.bin ~auto:true "src-bin/toy_github_delegate"
+           Pkg.bin "src-bin/topkg_bin" ~dst:"topkg";
+           Pkg.bin "src-bin/toy_github_delegate"
              ~dst:"toy-github-topkg-delegate";
            Pkg.doc "test/unsupportive-delegate";
            Pkg.doc "test/echo-delegate" ]

@@ -359,7 +359,8 @@ module OCaml = struct
   let host_os = lazy (read_config `Host_os)
   let build_os = lazy (read_config `Build_os)
   let v c (* We have the build configuration [c] here since we might give
-             the ability to override this info from the cli once, ou pas. *)
+             the ability to override this info from the cli in the future,
+             ou pas. *)
     = function
     | `Host_os -> Lazy.force host_os
     | `Build_os -> Lazy.force build_os
