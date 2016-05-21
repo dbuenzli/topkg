@@ -109,6 +109,10 @@ let parse_version v =
   with
   | Failure _ -> None
 
+let drop_initial_v version = match head version with
+| Some ('v' | 'V') -> with_index_range ~first:1 version
+| None | Some _ -> version
+
 (* Formatters *)
 
 let pp_text ppf s = (* was c&p from Fmt, pp_print_text is 4.02 *)

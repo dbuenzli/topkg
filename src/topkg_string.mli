@@ -30,6 +30,7 @@ val with_index_range : ?first:int -> ?last:int -> string -> string
 val uppercase : string -> string
 
 val parse_version : string -> (int * int * int * string option) option
+val drop_initial_v : string -> string
 
 val pp_text : Format.formatter -> string -> unit
 

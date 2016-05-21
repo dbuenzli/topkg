@@ -16,7 +16,7 @@ open Topkg_result
 
 type watermark =
   string *
-  [ `String of string | `Name | `Version | `Vcs of [ `Commit_id ]
+  [ `String of string | `Name | `Version | `Version_num | `Vcs of [ `Commit_id ]
   | `Opam of Topkg_fpath.t option * string * string ]
 
 val define_watermarks :

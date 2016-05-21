@@ -131,6 +131,9 @@ module String : sig
 "[v]major.minor[.patchlevel][+additional-info]"
 ]}
       into [(major, minor, patch, additiona_info)] tuples. *)
+
+  val drop_initial_v : string -> string
+  (** [drop_initial_v s] drops a leading ['v'] or ['V'] from [s]. *)
 end
 
 type fpath = string
@@ -1091,8 +1094,8 @@ fun c os ->
 
   (** {1:distrib Distribution description} *)
 
-  type watermark = string * [ `String of string | `Version | `Name
-                            | `Vcs of [`Commit_id]
+  type watermark = string * [ `String of string | `Version | `Version_num
+                            | `Name | `Vcs of [`Commit_id]
                             | `Opam of fpath option * string * string]
   (** The type for watermarks. A watermark identifier, e.g. ["ID"] and its
       definition:
@@ -1100,6 +1103,8 @@ fun c os ->
       {- [`String s], [s] is the definition.}
       {- [`Name], is the name of package.}
       {- [`Version], is the version of the distribution.}
+      {- [`Version_num], is the version of the distribution with a potential
+         leading ['v'] or ['V'] dropped.}
       {- [`Vcs `Commit_id], is the commit identifier (hash) of the
          distribution. May be post-fixed by ["dirty"] in {!Env.build}
          pin builds.}
@@ -1168,6 +1173,7 @@ fun c os ->
       {ul
       {- [("NAME", `Name)]}
       {- [("VERSION", `Version)]}
+      {- [("VERSION_NUM", `Version_num)]}
       {- [("VCS_COMMIT_ID", `Vcs [`Commit_id])]}
       {- [("PKG_MAINTAINER", `Opam (None, "maintainer", ", "))]}
       {- [("PKG_AUTHORS", `Opam (None, "authors", ", ")]}

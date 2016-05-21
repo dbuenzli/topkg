@@ -34,10 +34,6 @@ let chop_ext u = match String.cut ~rev:true ~sep:"." u with
 | None -> u
 | Some (u, _) -> u
 
-let drop_initial_v version = match String.head version with
-| Some ('v' | 'V') -> String.with_range ~first:1 version
-| None | Some _ -> version
-
 (* Package *)
 
 type t =
@@ -157,7 +153,7 @@ let distrib_uri ?(raw = false) p =
     uri
     >>= fun uri -> name p
     >>= fun name -> version p
-    >>= fun version -> Ok (drop_initial_v version)
+    >>= fun version -> Ok (Topkg.String.drop_initial_v version)
     >>= fun version_num ->
     let defs = String.Map.(empty
                           |> add "NAME" name |> add "VERSION" version
@@ -193,7 +189,7 @@ let distrib_filename ?(opam = false) p =
   let sep = if opam then '.' else '-' in
   name p
   >>= fun name -> version p
-  >>= fun version -> Ok (drop_initial_v version)
+  >>= fun version -> Ok (Topkg.String.drop_initial_v version)
   >>= fun version_num -> Fpath.of_string (strf "%s%c%s" name sep version_num)
 
 let distrib_archive_path p =

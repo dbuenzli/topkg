@@ -13,6 +13,7 @@ type watermark =
   [ `String of string
   | `Name
   | `Version
+  | `Version_num
   | `Vcs of [ `Commit_id ]
   | `Opam of Topkg_fpath.t option * string * string ]
 
@@ -51,6 +52,7 @@ let define_watermarks ~name ~version ~opam watermarks =
     let (id, v as def) = match v with
     | `String s -> (id, s)
     | `Version -> (id, version)
+    | `Version_num -> (id, Topkg_string.drop_initial_v version)
     | `Name -> (id, name)
     | `Vcs `Commit_id -> (id, vcs_commit_id ())
     | `Opam (file, field, sep) ->
@@ -78,6 +80,7 @@ let default_watermarks =
   let comma = ", " in
   [ "NAME", `Name;
     "VERSION", `Version;
+    "VERSION_NUM", `Version_num;
     "VCS_COMMIT_ID", `Vcs `Commit_id;
     "PKG_MAINTAINER", `Opam (None, "maintainer", comma);
     "PKG_AUTHORS", `Opam (None, "authors", comma);
