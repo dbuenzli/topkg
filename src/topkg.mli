@@ -1847,8 +1847,8 @@ For each OPAM install field there is a corresponding field function
 that you can use to generate install moves. The documentation of
 {!Pkg.field} and {!Pkg.exec_field} describes how you can use or omit
 their various arguments to simplify the description. Topkg also provides
-a few higher-level convience functions like {!Pkg.mllib} and
-{!Pkg.clib} that allows to reuse the description work already done
+a few higher-level convenience functions like {!Pkg.mllib} and
+{!Pkg.clib} which allow to reuse the description work already done
 for OCamlbuild.
 
 In the following we review a few basic install use cases. The
@@ -1874,7 +1874,7 @@ Pkg.mllib ~api:["Mod1"; "Mod2"] "src/myllib.mllib"
 ]}
 
 A shortcut also exists for installing C stubs: {!Pkg.clib}. Simply use
-it on an existing [src/libmystub.clib] file (N.B. [OCamlbuild]
+it on an existing [src/libmystub.clib] file (N.B. OCamlbuild
 mandates that your [clib] file name starts with [lib]):
 {[
 Pkg.clib "src/libmystub.clib"
