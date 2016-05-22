@@ -13,8 +13,8 @@
 
 (** {1 Preliminaries}
 
-    In most cases you won't need this, jump directly
-    to {{!Pkg}package description API}. *)
+    In the most simple cases you won't need this, jump directly to the
+    {{!basics}basics} or {{!Pkg}package description API}. *)
 
 val ( >>= ) :
   ('a, 'b) Result.result -> ('a -> ('c, 'b) Result.result) ->
