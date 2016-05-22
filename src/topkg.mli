@@ -69,7 +69,7 @@ val strf : ('a, Format.formatter, unit, string) format4 -> 'a
 (** Strings. *)
 module String : sig
 
-  (** {1 String additions} *)
+  (** {1:adds String additions} *)
 
   include module type of String
 
@@ -169,7 +169,7 @@ module Fpath : sig
   val dirname : t -> string
   (** [dirname p] is [p]'s dirname, [p] without its  last non empty segment. *)
 
-  (** {1 File extensions} *)
+  (** {1:exts File extensions} *)
 
   val get_ext : t -> string
   (** [get_ext p] is [p]'s filename extension (including the ['.']) or
@@ -306,7 +306,7 @@ module Log : sig
       {- [use e] if [r = Error (`Msg e)]. As a side effect [e] is logged
          with level [level] (defaults to [Error]).}} *)
 
-  (** {1 Monitoring} *)
+  (** {1:monitoring Monitoring} *)
 
   val err_count : unit -> int
   (** [err_count ()] is the number of messages logged with level [Error]. *)
@@ -323,7 +323,7 @@ module OS : sig
   (** Environment variables *)
   module Env : sig
 
-    (** {1 Variables} *)
+    (** {1:vars Variables} *)
 
     val var : string -> string option
     (** [var name] is the value of the environment variable [name], if
@@ -444,7 +444,7 @@ module OS : sig
     (** [run_status cmd] is like {!run}, but doesn't error on non-zero
         exit status. *)
 
-    (** {1 Capturing standard output} *)
+    (** {1:stdout Capturing standard output} *)
 
     type run_status = Cmd.t * [`Exited of int ]
     (** The type for run statuses, the command that was run and the run
@@ -1383,7 +1383,7 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
       replace it by the exact files you would like to watermark.  *)
 end
 
-(** {1 Private} *)
+(** {1:private Private} *)
 
 (** Private definitions.
 
@@ -1392,7 +1392,7 @@ end
     use these definitions to describe their package. *)
 module Private : sig
 
-  (** {1 Private} *)
+  (** {1:private Private} *)
 
   val disable_main : unit -> unit
   (** [disable_main ()] disables [Topkg]'s main invoked on
@@ -1423,7 +1423,7 @@ module Private : sig
     exception Error of error
     (** Raised on decode errors. *)
 
-    (** {1 Codecs} *)
+    (** {1:codecs Codecs} *)
 
     type 'a t
     (** The type for codec for OCaml values of type ['a]. *)
@@ -1455,7 +1455,7 @@ module Private : sig
     val read : fpath -> 'a t -> 'a result
     (** [read f c] reads a value with [c] from [f]. *)
 
-    (** {1 Base type codecs} *)
+    (** {1:base Base type codecs} *)
 
     val unit : unit t
     (** [unit] codecs a [()]. *)
@@ -1499,7 +1499,7 @@ module Private : sig
     val view : ?kind:string -> ('a -> 'b) * ('b -> 'a) -> 'b t -> 'a t
     (** [view kind t c] views [t] as [c] for codecing. *)
 
-    (** {1 Topkg types} *)
+    (** {1:topkg Topkg types} *)
 
     val msg : [`Msg of string ] t
     (** [msg] codecs error messages. *)
@@ -1580,7 +1580,7 @@ module Private : sig
   (** Topkg interprocess communication. *)
   module Ipc : sig
 
-    (** {1 Interprocess communication} *)
+    (** {1:ipc Interprocess communication} *)
 
     type 'a t
     (** The type for interpocess communication transfering values of
@@ -1597,7 +1597,7 @@ module Private : sig
     (** [answer ipc] is the file path from which the value can
         be decoded from. *)
 
-    (** {1 Requests} *)
+    (** {1:req Requests} *)
 
     val pkg : unit -> Pkg.t t
     (** [pkg ()] is an IPC to get the package description. *)
@@ -1620,7 +1620,7 @@ module Private : sig
   (** OPAM helpers. *)
   module Opam : sig
 
-    (** {1 OPAM} *)
+    (** {1:opam OPAM} *)
 
     (** OPAM package file access.
 
@@ -1642,7 +1642,7 @@ module Private : sig
         unavailable the watermarks are simply undefined). *)
     module File : sig
 
-      (** {1 OPAM file} *)
+      (** {1:file OPAM file} *)
 
       type t = (string * string list) list
       (** The type for a simplified model the fields of an OPAM
