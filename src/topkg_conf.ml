@@ -164,8 +164,8 @@ let with_pkg ?(default = true) pkg =
 (* Predefined keys *)
 
 let pkg_name =
-  let doc = "The name $(docv) of the package (and hence the OPAM file). \
-             If absent provided by the package description."
+  let doc = "The name $(docv) of the package (and hence the OPAM install \
+             file). If absent provided by the package description."
   in
   let absent () = assert false (* handled specially by [of_cli_args] *) in
   discovered_key "pkg-name" string ~absent ~doc ~docv:"NAME"

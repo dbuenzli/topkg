@@ -25,7 +25,7 @@ val ( >>| ) : ('a, 'b) Result.result -> ('a -> 'c) -> ('c, 'b) Result.result
 (** [r >>| f] is [Ok (f v)] if [r = Ok v] and [r] if [r = Error _]. *)
 
 (** This definition re-export [result]'s constructors so that an
-    [open Topkg] will get them in scope. *)
+    [open Topkg] gets them in scope. *)
 type ('a, 'b) r = ('a, 'b) Result.result = Ok of 'a | Error of 'b
 
 type 'a result = ('a, [ `Msg of string]) r
@@ -190,7 +190,7 @@ end
 
     When a command line is {{!section:OS.Cmd.run}run}, the first
     element of the line defines the program name and each other
-    element is an argument that will be passed {e as is} in the
+    element is an argument that is passed {e as is} in the
     program's [argv] array: no shell interpretation or any form of
     argument quoting and/or concatenation occurs. *)
 module Cmd : sig
@@ -705,14 +705,14 @@ module Conf : sig
 
       [doc] is a documentation string for the key. [docv] is a meta
       is a documentation to stand for the key value, defaults to the
-      [docv] of [conv]. In [doc] occurences of the substring $(docv)
+      [docv] of [conv]. In [doc] occurences of the substring ["$(docv)"]
       are replaced by the value of [docv]. *)
 
   val discovered_key :
     ?docv:string -> ?doc:string -> ?env:string -> string -> 'a conv ->
     absent:(unit -> 'a result) -> 'a key
   (** [discovered_key] is like {!key} but the absent value is discovered,
-      {e if needed}, with [discover]. *)
+      {e if needed}, with [absent]. *)
 
   val with_pkg : ?default:bool -> string -> bool key
   (** [with_pkg ~default pkg] is a boolean configuration key named
@@ -946,19 +946,19 @@ module Pkg : sig
       {- If [cond] is [false] (defaults to [true]) no file move is generated.
          This provides a convenient way to conditionalize installation based
          on the build configuration for example:
-      {[let has_jsoo = Conf.value jsoo in
-Pkg.lib ~cond:has_jsoo ~exts:Exts.module_library "src/mylib_jsoo"
+      {[let jsoo = Conf.value jsoo in
+Pkg.mllib ~cond:jsoo "src/mylib_jsoo.mllib"
       ]}}
       {- If [built] is [true] (default), [src] is expressed relative
          to the {{!build}build directory} of the distribution and the path
-         [src] will be given to {{!build}build system invocation}
+         [src] is be given to {{!build}build system invocation}
          for construction.
          If [false], [src] is relative to the root of the distribution
          and is excluded from the build system invocation; this can
          be used for installing files that don't need to be built.}
       {- If [force] is [true] (defaults to [false]) it disables the automatic
          [src] filtering performed by the library. When [false],
-         the library will automatically disable certain build artefact
+         the library automatically disable certain build artefact
          depending on {{!Conf.OCaml}OCaml's configuration}, one such
          example is filtering native code build artefact if the OCaml install
          doesn't support
@@ -968,11 +968,12 @@ Pkg.lib ~cond:has_jsoo ~exts:Exts.module_library "src/mylib_jsoo"
   (** The type for fields that install executable files. This is like {!field}
       except for the additional [auto] parameter:
       {ul
-      {- If [auto] is [true] (default) then [field src dst] will automatically
-         add the [".native"] suffix to [src] if {!Conf.OCaml.native}
-         is [true] and the [".byte"] suffix otherwise. Besides it will
-         automatically add {!Exts.exe} to [dst], which handles things
-         correctly on the various Windows ports.}
+      {- If [auto] is [true] (default) then [field src dst]
+         automatically adds the [".native"] suffix to [src] if
+         {!Conf.OCaml.native} is [true] and the [".byte"] suffix
+         otherwise. Besides it automatically adds {!Exts.exe} to
+         [dst], which handles things correctly on the various Windows
+         ports.}
       {- If [auto] is [false] you have full control according to
          {!field}.}} *)
 
@@ -1002,7 +1003,7 @@ Pkg.lib ~cond:has_jsoo ~exts:Exts.module_library "src/mylib_jsoo"
 
   val misc : field
   (** [misc] is a field that installs to an arbitrary absolute path,
-      the user will be prompted for authorization,
+      the user is prompted for authorization,
       see the {{:https://opam.ocaml.org/doc/manual/dev-manual.html#sec25}
       OPAM manual} for details. *)
 
@@ -1089,12 +1090,12 @@ Pkg.lib ~cond:has_jsoo ~exts:Exts.module_library "src/mylib_jsoo"
          distribution preparation if applicable, but before the build
          command. It can be used to adapt the build setup according to
          the build configuration. Default is a nop.}
-      {- [cmd] determines the build command that will be invoked with the
+      {- [cmd] determines the build command that is invoked with the
          targets to build as determined by {{!install}install} moves.
          It is given the build configuration an {{!Conf.os}OS specification}
-         and and must return a command line to run that will buid the targets
-         in the {{!Conf.build_dir}build directory} of the build configuration.
-         Defaults to:
+         and and must return a command line to run that builds the targets
+         given as arguments in the {{!Conf.build_dir}build directory} of the
+         build configuration. Defaults to:
 {[
 fun c os ->
   let ocamlbuild = Conf.tool "ocamlbuild" os in
@@ -1130,7 +1131,7 @@ fun c os ->
          [file] is [None] this is the package's default OPAM file, see
          {!describe}. Not all fields are supported see the value of
          {!Topkg_care.Opam.File.field_names}.  {b Warning.} In [`Pin]
-         {!Env.build}s, [`Opam] watermarks will only get substituted
+         {!Env.build}s, [`Opam] watermarks are only substituted
          if the package [topkg-care] is installed.}}
 
       When a file is watermarked with an identifier ["ID"], any occurence of
@@ -1198,7 +1199,7 @@ fun c os ->
       {- [("PKG_DOC", `Opam (None, "doc", " "))]}
       {- [("PKG_LICENSE", `Opam (None, "license", ", ")]}
       {- [("PKG_REPO", `Opam (None, "dev-repo", " "))]}}
-      Prepending to the list will override default definitions. *)
+      Prepending to the list overrides default definitions. *)
 
   val files_to_watermark : unit -> fpath list result
   (** [files_to_watermark ()] is the default list of files to
@@ -1291,9 +1292,9 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
          {!opam_file} [ "opam"]. The default OPAM file used by a package
          description depends on the package [name] (which can
          be overriden from the command line). The OPAM file lookup
-         procedure will select the first path in [opams] whose filename is
+         procedure selects the first path in [opams] whose filename is
          [(name ^ ".opam")] and, failing
-         to do so, will fallback to an ["opam"] file at the root of the
+         to do so, it fallbacks to an ["opam"] file at the root of the
          distribution.}
       {- [lint_files] if [Some files], ensures that all files mentioned in
          [readme], [license], [change_log], [metas], [opams] and [files]
@@ -1372,7 +1373,7 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
 
       Watermarking by default all the non binary files of the
       distribution allows one to write %‌%VERSION%% in any context and
-      be sure it will be substituted with the right version number in
+      be sure it is be substituted with the right version number in
       pin and distribution {{!Conf.build_context}build contexts}
       (this occurence was not subsituted
       because a ZERO WIDTH NON-JOINER U+200C was introduced between
@@ -1637,9 +1638,9 @@ module Private : sig
         [opam] currently doesn't allow to consult the fields of arbitrary
         OPAM files (see
         {{:https://github.com/ocaml/opam/issues/2446} issue #2446}) we
-        assume a pin build will have the [topkg] tool installed and call
+        assume a pin build has the [topkg] tool installed and call
         to it to get the OPAM fields for watermarking (if [topkg] is
-        unavailable the watermarks will simply be undefined). *)
+        unavailable the watermarks are simply undefined). *)
     module File : sig
 
       (** {1 OPAM file} *)
@@ -1660,11 +1661,11 @@ end
 
 (** {1:basics Basics}
 
-{!Topkg} is a packager for distributing OCaml software. At
-its heart it provides a simple and flexible mechanism to describe
-an OPAM {{:http://opam.ocaml.org/doc/manual/dev-manual.html#sec25}[install]
-file} according to the build configuration and make one corresponding
-invocation in your build system.
+{!Topkg} is a packager for distributing OCaml software. Fundamentally
+it only provides a simple and flexible mechanism to describe an OPAM
+{{:http://opam.ocaml.org/doc/manual/dev-manual.html#sec25}[install]
+file} according to the build configuration which is used to infer one
+corresponding invocation of your build system.
 
 This simple idea brings the following advantages:
 {ol
@@ -1672,11 +1673,11 @@ This simple idea brings the following advantages:
    system: this task is delegated to {{:http://opam.ocaml.org}OPAM},
    to the [opam-installer] tool or anything that understands an OPAM
    install file.}
-{- It doesn't reclaim control over your build system. It will only
-   invoke it {e once} with a list of targets determined by the package
-   description according to a build configuration explicitely specified
-   on the command line.}
-{- It is very flexible and supports a wide range of installation scenarios.}}
+{- It doesn't reclaim control over your build system. It only invokes
+   it {e once} with a list of targets determined by the package
+   {{!section:Pkg.install}install description}.}
+{- It is very flexible, supports a wide range of installation scenarios
+   and is expressed in the reasonable language.}}
 
 Beyond this a [Topkg] package description provides information about
 the package's distribution creation and publication procedures. This
@@ -1687,7 +1688,7 @@ tool, see {!care}.
 {- {!setup}}
 {- {!build}}
 {- {!descr}}
-{- {!old}}
+{- {!installdescr}}
 {- {!care}}
 {- Advanced topics
    {ul {- {!config_store}}
@@ -1702,8 +1703,7 @@ The root of you source repository should have the following layout:
    See {{!descr}package description.}}
 {- [pkg/META], an
     {{:http://projects.camlcity.org/projects/findlib.html}ocamlfind}
-    META file describing your package. This file is automatically installed
-    in the lib directory. See {!Pkg.describe} to configure this.}
+    META file describing your package. See {!Pkg.describe} to configure this.}
 {- [_tags], ocamlbuild file with at least a [true : bin_annot] line.
    See {{!cmt}handling cmt and cmti} files for details.}
 {- [opam], the package's OPAM metadata. See {!build}.}
@@ -1715,7 +1715,8 @@ The root of you source repository should have the following layout:
 
 If you start a new library
 {{:http://erratique.ch/software/carcass}[carcass]} can generate
-the structural boilerplate with your personal information. Invoke:
+the structural boilerplate with your personal information and preferences.
+Invoke:
 {v
 carcass body topkg/pkg mypkg
 (cd mypkg && git init && git add . && git commit -m "First commit.")
@@ -1726,7 +1727,7 @@ and you have a library that is [{opam,ocamlfind}]-able with correct
 version watermarks on releases and opam pins. You are now only a few
 invocations away to release it in the OCaml OPAM repository, see
 [topkg help release] for doing so; but don't forget to document it and
-make it provide something useful.
+make it do something useful.
 
 {1:build OPAM and package build instructions}
 
@@ -1761,9 +1762,10 @@ generates in the root directory of your distribution an OPAM [install]
 file that OPAM uses to install and uninstall your package.
 
 This is all you need to specify. Do not put anything in the remove
-field of the OPAM file. Likewise there is no need to invoke [ocamlfind] with
-your [META] file. Your [META] file should simply be installed in the
-[lib] directory which happens automatically by default.
+field of the OPAM file. Likewise there is no need to invoke
+[ocamlfind] with your [META] file. Your [META] file should simply be
+installed in the directory of the [lib] field which happens
+automatically by default.
 
 {b Beyond OPAM.} If you need to support another package system you
 can invoke [pkg/pkg.ml] as above and then manage the installation and
@@ -1775,10 +1777,12 @@ these files.
 
 The {!Pkg.describe} function has a daunting number of arguments and
 configuration options. However if you keep things simple and stick to
-the defaults not much of this will need to be specified. In fact if we
-consider the basic default {{!setup}setup} mentioned above for a library
-described to OCamlbuild in a [src/mylib.mllib] file your package description
-file [pkg/pkg.ml] will simply look like this:
+the defaults not much of this does not need to be specified.
+
+In fact if we consider the basic default {{!setup}setup} mentioned
+above for a library described to OCamlbuild in a [src/mylib.mllib]
+file your package description file [pkg/pkg.ml] simply looks like
+this:
 {[
 #!/usr/bin/env ocaml
 #use "topfind"
@@ -1795,10 +1799,19 @@ let () =
 correctly in your package description, issue [M-x merlin-use topkg] in
 [emacs] or [:MerlinUse topkg] in [vim].
 
+This simple description builds and installs the library described by
+the [src/mylib.mllib] file. It works correctly if native code
+compilation or native dynamic linking is not available. It
+automatically installs the package's META file in the directory of the
+[lib] field and your readme, change log and license file in the
+directory of the [doc] field.
+
 Try to test the package build description with [topkg build], this
-will build the package and write a [mylib.install] that describes the
-package installation. You are now ready to release, see [topkg help
-release] for the procedure.
+builds the package according to the description and build
+configuration and writes a [mylib.install] at the root of the
+distribution that describes the package installation. If everything
+went well, you are now ready to release, see [topkg help release] for
+the procedure.
 
 To debug package descriptions it useful to dry run the build. This
 prevents the package from building and only writes the [mylib.install] file
@@ -1806,6 +1819,7 @@ determined according to the build configuration.
 {[
 topkg build -d    # Only write the OPAM install file
 topkg build -d -v # Also print the build configuration
+topkg help troubleshoot # More troubleshooting tips
 ]}
 Note that [topkg build] does nothing more than invoke
 [ocaml "pkg/pkg.ml" build].  If you would like to see the build
@@ -1816,220 +1830,172 @@ ocaml pkg/pkg.ml help
 ./pkg/pkg.ml help     # If has exec right
 v}
 
-{1:old FIXME old material whose gist should be rewritten}
+{1:installdescr Install description}
 
-An OPAM [install] file is a description of a standard UNIX
-install. It has fields for each of the standard directories [lib],
-[bin], [man], [etc], etc. Each of these fields lists the files to
-install in the corresponding directory (or subdirectories). See the
-{{:http://opam.ocaml.org/doc/manual/dev-manual.html#sec25}install
-file specification} in the OPAM developer manual for more information.
+An OPAM [install] file is a description of a standard UNIX install. It
+has fields for each of the standard directories [lib], [bin], [man],
+[etc], etc. Each of these fields lists the files to install in the
+corresponding directory (or subdirectories). See the
+{{:http://opam.ocaml.org/doc/manual/dev-manual.html#sec25}install file
+specification} in the OPAM developer manual for more information.
 
-In its simplest form, the package description file [pkg/pkg.ml] is simply
-In {!Topkg}, the package description file  is simply:
-{ol
-{- A {{!section:Pkg.builder}builder specification}. It specifies the
-   build tool that is invoked once with the files to build and install
-   as determined by the current build configuration.}
-{- A specification of the files to install according to the build
-   configuration by specifying invoking install field functions.
+A topkg install description is just a convenient and compact way to
+describe an OPAM install file according to the build configuration. In
+turn this also describes what needs to be built which allows topkg to
+call the build system appropriately.
 
-one wants build to put in each field
-   of the package's [.install] file by invoking install field
-   functions [Pkg.{lib,bin,doc,...}]}}
+For each OPAM install field there is a corresponding field function
+that you can use to generate install moves. The documentation of
+{!Pkg.field} and {!Pkg.exec_field} describes how you can use or omit
+their various arguments to simplify the description. Topkg also provides
+a few higher-level convience functions like {!Pkg.mllib} and
+{!Pkg.clib} that allows to reuse the description work already done
+for OCamlbuild.
 
-Here is an example of a [pkg/build.ml] description for a single module
-library that also installs a command line tool called [jsontrip]. Don't
-worry about the sheer length of the description we'll soon cut down
-on the number of lines.
+In the following we review a few basic install use cases. The
+{{!menagerie}menagerie} provides links to full and more complex examples.
+
+{2:installlib Installing libraries and C stubs}
+
+It is possible to use the {!lib} field function and appropriate
+{{!Exts}file extensions} to manually install a library, but this
+quickly becomes tedious. The higher-level {!mllib} install function brings
+this to a single line by reading from a OCamlbuild [mllib] file.
+Given a library described in [src/mylib.mllib] file use:
 {[
-#!/usr/bin/env ocaml
-#use "topfind"
-#require "topkg"
-open Topkg
-
-let () =
-  Pkg.describe "jsonm" ~builder:(`OCamlbuild []) [
-    Pkg.lib "pkg/META";
-    Pkg.lib "src/jsonm.mli";
-    Pkg.lib "src/jsonm.cmti";
-    Pkg.lib "src/jsonm.cmi";
-    Pkg.lib "src/jsonm.cma";
-    Pkg.lib "src/jsonm.cmx";
-    Pkg.lib "src/jsonm.a";
-    Pkg.lib "src/jsonm.cmxa";
-    Pkg.lib "src/jsonm.cmxs";
-    Pkg.bin "test/jsontrip.byte";
-    Pkg.bin "test/jsontrip.native";
-    Pkg.doc "README.md";
-    Pkg.doc "CHANGES.md"; ]
+Pkg.mllib "src/mylib.mllib"
+]}
+This will make all the modules mentioned in the [mllib] file part of
+the API (i.e. install its [cmi] files). You can restrict
+the API by using the [~api] optional argument. In the following, only
+[Mod1] and [Mod2] define the API, the other modules of [mllib] remain hidden
+to the end user (but unfortunately not to the linkers...):
+{[
+Pkg.mllib ~api:["Mod1"; "Mod2"] "src/myllib.mllib"
 ]}
 
-This says that we are declaring a package named [jsonm] which means
-that the generated install file will be [jsonm.install]. It also says
-that we are using [ocamlbuild] as a build tool and that we want all the
-files specified with [Pkg.lib] to be installed the [lib] directory,
-those with [Pkg.bin] in [bin], those with [Pkg.doc] in [doc] etc.
-
-{b Tip.} If you are using
-{{:https://github.com/the-lambda-church/merlin}[merlin]} and [emacs],
-issue a [M-x merlin-use topkg], to get merlin support for editing
-the package description.
-
-Now there are two things that are unsatisfactory with the above
-declaration.
-
-{ol
-{- The set of files to generate for a library is usually always the
-   same and it's painful to write them down explicitely. This
-   is solved by [extension sets](#extension-sets).}
-{- For the binaries, we usually don't want to install both byte and
-   native code. We want to install one tool without the [byte] or
-   [native] suffix, and the native one if available. This is solved
-   by [auto binaries](#auto-binaries)}}
-
-Using these features the above declaration can be reduced to:
+A shortcut also exists for installing C stubs: {!Pkg.clib}. Simply use
+it on an existing [src/libmystub.clib] file (N.B. [OCamlbuild]
+mandates that your [clib] file name starts with [lib]):
 {[
-let () =
-  Pkg.describe "jsonm" ~builder:(`OCamlbuild []) [
-    Pkg.lib "pkg/META";
-    Pkg.lib ~exts:Exts.module_library "src/jsonm";
-    Pkg.bin ~auto:true "test/jsontrip";
-    Pkg.doc "README.md";
-    Pkg.doc "CHANGES.md"; ]
+Pkg.clib "src/libmystub.clib"
 ]}
-Optional builds and installs are handled by declaring boolean keys
-specified on the command line (see [Environment](#environment)) and
-using the [cond] optional argument of install field functions (see
-[Conditions](#conditions)). The following example compiles the
-[vgr_pdf] library only if both Uutf and Otfm are present and
-[vgr_htmlc] only if js_of_ocaml is present:
+This will generate the appropriate install moves in the [lib] and [stublib]
+fields.
 
+{2:installbin Installing binaries}
+
+In OPAM, binaries can only be installed by using the [bin], [sbin] and
+[libexec] fields. Trying to install a binary in other fields will not
+set its executable bit
+({{:https://github.com/ocaml/opam/issues/2430}discussion}).
+
+Most of the time one wants to install native binaries if native code
+compilation is available and bytecode ones if it is not. The [auto]
+argument of {!Pkg.exec_field} does exactly this if omited.
+
+So if you have an executable to install in the [bin] field whose [main]
+is in [src/myexec.ml], describe it with:
 {[
-let uutf = Env.bool "uutf"
-let otfm = Env.bool "otfm"
-let jsoo = Env.bool "jsoo"
-let vgr_pdf = uutf && otfm
+Pkg.bin "src/myexec"
+]}
+As with any other field it easy to rename the executable along the
+way with the [dst] argument:
+{[
+Pkg.bin "src/myexec" ~dst:"my-exec"
+]}
+Note that using the default value of [auto] also automatically handles
+the extension business for Windows platforms.
+
+{2:installcond Conditional install}
+
+An easy and readable way to handle conditional installs is to use the
+[cond] argument of {{!Pkg.field}field functions}. The following shows
+how to conditionaly build and install a binary depending on the OPAM
+[cmdliner] package being installed:
+{[
+let cmdliner = Conf.with_pkg "cmdliner"
 let () =
-  Pkg.describe "vg" ~builder:(`OCamlbuild []) [
-    Pkg.lib "pkg/META";
-    Pkg.lib ~exts:Exts.module_library "src/vg";
-    Pkg.lib ~exts:Exts.module_library "src/vgr_svg";
-    Pkg.lib ~cond:vgr_pdf ~exts:Exts.module_library "src/vgr_pdf";
-    Pkg.bin ~cond:vgr_pdf ~auto:true "test/vecho";
-    Pkg.lib ~cond:jsoo ~exts:Exts.module_library "src/vgr_htmlc";
-    Pkg.doc "README.md";
-    Pkg.doc "CHANGES.md";
-    Pkg.doc "test/min_htmlc.html";
-    Pkg.doc "test/min_htmlc.ml";
-    Pkg.doc "test/min_pdf.ml";
-    Pkg.doc "test/min_svg.ml"; ]
+  Pkg.describe "mypkg" @@ fun c ->
+  let cmdliner = Conf.value c cmdliner in
+  Ok [ Pkg.bin ~cond:cmdliner "src/myexec" ]
+]}
+Note that {{!Conf.key}configuration keys} must be created before the
+call to {!Pkg.describe}. Their value can then be accessed with the
+{!Conf.value} from the configuration given to the install move
+function you specify.
+
+For this conditional install the OPAM build instructions look like this:
+{[
+depopts: [ "cmdliner" ]
+build: [[
+  "ocaml" "pkg/pkg.ml" "build"
+          "--installer" "true"
+          "--with-cmdliner" "%{cmdliner:installed}%" ]]
 ]}
 
-{2:exts Extension sets}
+{2:installautoconds Automatic install conditions}
 
-The install field functions have an optional [exts] argument. If
-present these extensions are appended to the path given to the
-function. The module [[Exts]](pkg/topkg.ml#L23) defines a few
-predefined extension sets. For example a module library implemented in
+Some conditions related to native code and native code dynamic linking
+happen automatically. For example moves with paths ending with [.cmxs]
+are automatically dropped if {!Conf.OCaml.native_dynlink} is [false]
+in the current build configuration. This behaviour can be disabled by
+using the [force] argument of {{!Pkg.field}field functions}.
+
+{2:installexts Extension sets and platform dependent extensions}
+
+The {{!field}field functions} have an optional [exts] argument. If
+present these extensions are appended to the [src] path given to the
+function. The module {!Exts} defines a few predefined extension
+sets. For example a single module library archive implemented in
 [src/mylib.ml] can be declared by:
 {[
 Pkg.lib ~exts:Exts.module_library "src/mylib"
 ]}
 which is, effectively, a shortcut for:
 {[
-Pkg.lib "src/mylib.mli";
-Pkg.lib "src/mylib.cmti";
-Pkg.lib "src/mylib.cmi";
-Pkg.lib "src/mylib.cmx";
-Pkg.lib "src/mylib.cma";
-Pkg.lib "src/mylib.a";
-Pkg.lib "src/mylib.cmxa";
-Pkg.lib "src/mylib.cmxs";
+[ Pkg.lib "src/mylib.mli";
+  Pkg.lib "src/mylib.cmti";
+  Pkg.lib "src/mylib.cmi";
+  Pkg.lib "src/mylib.cmx";
+  Pkg.lib "src/mylib.cma";
+  Pkg.lib "src/mylib.a";
+  Pkg.lib "src/mylib.cmxa";
+  Pkg.lib "src/mylib.cmxs"; ]
 ]}
 
-{2:autobin Auto binaries}
-
-For generating an installing native binaries if native code
-compilation is available and byte code binaries if not you can use the
-[auto] optional argument of [Pkg.bin] and [Pkg.sbin]. Using it with
-[true] you can simply specify the binary name prefix. It will use the
-base name as the name of the tool and ask for either a [.native] or
-[.byte] target depending if native compilation is available or not.
-
+Extensions sets are also used to support platform independent installs.
+For example to install a static C library archive you should use
+the second invocation, not the first one:
 {[
-Pkg.bin ~auto:true "src/mybinary"
+Pkg.lib "src/libmylib.a" (* DON'T do this *)
+Pkg.lib ~exts:Exts.c_library "src/libmylib" (* Do this *)
 ]}
+this ensures that the correct, platform dependent, suffix is used.
 
-{2:conds Conditions}
+{2:installrename Renaming and installing in subdirectories}
 
-Conditional installation is handled through the optional argument
-[cond] of install field functions. If [cond] is [false] it's neither
-built nor installed. For example for a library that depends on the
-presence of another:
-
+By default install moves simply install the file at the root directory
+of the field. Using the [dst] optional argument you can rename the file and/or
+install it to subdirectories.
 {[
-let otherlib = Env.bool "otherlib"
-...
-Pkg.lib ~cond:otherlib ~exts:Exts.module_library "src/mylib"
-]}
-
-Conditions related to native code and native code dynamic linking
-availability happen automatically:
-
-* In [Pkg.lib] paths ending with [.cmxs] are dropped if
-  [Env.native_dynlink] is [false] and paths ending with
-  [.a], [.cmx], [.cmxa] and [.cmxs] are dropped if
-  [Env.native] is [false].
-
-* In [Pkg.{bin,sbin}] path ending with [.native] are dropped
-  if [Env.native] is false.
-
-{2:env Environment}
-
-New boolean keys are added to the environment by calling [Env.bool
-key]. To output a sample environment you can invoke the build script with
-[--help]:
-
-    ocaml pkg/pkg.ml --help
-
-{2:rename Renaming and installing in subdirectories}
-
-By default install field functions use the basename of the path given
-to the function as the install name. If you need to rename the build
-artefact or install to a subdirectory you can use the [dst]
-optional argument of install field functions. For example for a
-library that needs to be installed in a [subdir] subdirectory of
-[lib] use:
-
-{[
-Pkg.lib ~exts:Exts.module_library ~dst:"subdir/mylib" "src/mylib"
+Pkg.lib "src/b.cmo" ~dst:"hey"  (* Install as [hey] file. *)
+Pkg.lib "src/b.cmo" ~dst:"hey/" (* Install in [hey] subdirectory *)
+Pkg.lib "src/b.cmo" ~dst:"hey/ho.cmo"  (* Install as [ho.cmo] in [hey]. *)
 ]}
 
 {2:cmt Handling cmt and cmti files}
 
 Since the OCaml tools generate [.cmt] and [.cmti] files only as a side
 effect they are treated specially: they are not built. For
-[ocamlbuild] you should add this line to your [_tags] file:
+OCamlbuild you should add this line to your [_tags] file:
 {[
 true : bin_annot
 ]}
 this will build them as a side effect of other build invocations. In
-the [$PKG.install] file generated by topkg the [cmt] and [cmti] files
-are prefixed by a ? so that if they are not built (pre OCaml 4.01 for
-[ocamlbuild]) the install doesn't fail.
-
-{2:map Map from descriptions to targets and build artefacts}
-
-{!Topkg} has been designed with [ocamlbuild] in mind but it should be
-usable with any other build system as long as it is able to understand
-the targets topkg {{!map}generates}.
-
-
-Given an invocation [Pkg.{lib,bin,...} "$PATH"], the system generates
-a target [$PATH] for your build system and expects to find the build
-artefact in [$BUILD/$PATH] where [$BUILD] is the build directory of
-the build tool (e.g. [_build] for [ocamlbuild]).
+the generated OPAM install file the [cmt] and [cmti] files are
+prefixed by a ? so that if they are not built the install does not
+fail.
 
 {1:care Package care}
 
@@ -2047,7 +2013,7 @@ with details in [topkg]'s help system, invoke:
 {v
 topkg help release
 topkg help
- v}
+v}
 
 to get an extended introduction and pointers to these features.
 
