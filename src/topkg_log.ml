@@ -74,10 +74,10 @@ let msg level msgf = match !_level with
 | Some _ ->
     (if level = Error then incr _err_count else
      if level = Warning then incr _warn_count else ());
+    let pr = if level = App then Format.printf else Format.eprintf in
     msgf @@
     (fun ?header fmt ->
-       Format.eprintf ("%s: %a@[" ^^ fmt ^^ "@]@.")
-         exec pp_level_header (header, level))
+       pr ("%s: %a@[" ^^ fmt ^^ "@]@.") exec pp_level_header (header, level))
 
 let app msgf = msg App msgf
 let err msgf = msg Error msgf
