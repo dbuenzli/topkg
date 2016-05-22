@@ -81,7 +81,7 @@ let dev =
 let doc = "Build the package's API documentation"
 let man =
   [ `S "DESCRIPTION";
-    `P "The $(b,$(tname)) build the package's API documentation. Use
+    `P "The $(b,$(tname)) command builds the package's API documentation. Use
         the option $(b,-r) to open or refresh the documentation in
         a WWW browser (see $(b,--browser) for details).";
     `P "$(b,WARNING.) The way this command works is at the moment
