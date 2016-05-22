@@ -6,7 +6,7 @@
 
 (** Results
 
-    Abbridged  [rresult]. See {!section:Topkg.res} for documention. *)
+    Abbridged  [rresult]. See {!section:Topkg.prels} for documention. *)
 
 val ( >>= ) :
   ('a, 'b) Result.result -> ('a -> ('c, 'b) Result.result) ->

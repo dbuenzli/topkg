@@ -11,7 +11,7 @@
 
     {e %%VERSION%% - {{:%%PKG_HOMEPAGE%% }homepage}} *)
 
-(** {1 Preliminaries}
+(** {1:prels Preliminaries}
 
     In the most simple cases you won't need this, jump directly to the
     {{!basics}basics} or {{!Pkg}package description API}. *)
@@ -34,7 +34,7 @@ type 'a result = ('a, [ `Msg of string]) r
 (** Result value combinators. *)
 module R : sig
 
-  (** {1 Errors} *)
+  (** {1:err Errors} *)
 
   val reword_error : ('b -> 'c) -> ('a, 'b) Result.result ->
     ('a, 'c) Result.result
@@ -43,7 +43,7 @@ module R : sig
       {- [r] if [r = Ok v]}
       {- [Error (reword e)] if [r = Error e]}} *)
 
-  (** {1 Error messages} *)
+  (** {1:errmsg Error messages} *)
 
   type msg = [ `Msg of string ]
   (** The type for (error) messages. *)
@@ -142,7 +142,7 @@ type fpath = string
 (** File system paths *)
 module Fpath : sig
 
-  (** {1 File system paths} *)
+  (** {1:fpath File system paths} *)
 
   type t = fpath
   (** The type for file system paths. *)
@@ -255,7 +255,7 @@ end
 (** Topkg log. *)
 module Log : sig
 
-  (** {1 Reporting levels} *)
+  (** {1:level Reporting levels} *)
 
   (** The type for reporting levels. *)
   type level = App | Error | Warning | Info | Debug
@@ -274,7 +274,7 @@ module Log : sig
   (** [level_of_string s] parses the representation of {!level_to_string}
       from [s]. *)
 
-  (** {1 Log functions} *)
+  (** {1:logf Log functions} *)
 
   type 'a msgf =
     (?header:string ->
@@ -304,7 +304,7 @@ module Log : sig
       {ul
       {- [v] if [r = Ok v]}
       {- [use e] if [r = Error (`Msg e)]. As a side effect [e] is logged
-         with level [level] (defaults to {!Log.Error}).}} *)
+         with level [level] (defaults to [Error]).}} *)
 
   (** {1 Monitoring} *)
 
@@ -313,13 +313,12 @@ module Log : sig
 
   val warn_count : unit -> int
   (** [warn_count ()] is the number of messages logged with level [Warning]. *)
-
 end
 
 (** OS interaction. *)
 module OS : sig
 
-  (** {1 OS} *)
+  (** {1:os OS} *)
 
   (** Environment variables *)
   module Env : sig
@@ -608,7 +607,7 @@ module Vcs : sig
   (** [delete_tag r t] deletes tag [t] in repo [r]. *)
 end
 
-(** {1 Package description} *)
+(** {1:pkgdescr Package description} *)
 
 (** Build configuration. *)
 module Conf : sig
@@ -862,7 +861,7 @@ end
 (** Exts defines sets of file extensions. *)
 module Exts : sig
 
-  (** {1 File extensions} *)
+  (** {1:fexts File extensions} *)
 
   type ext
   (** The type for file extensions. *)
@@ -1057,7 +1056,7 @@ Pkg.mllib ~cond:jsoo "src/mylib_jsoo.mllib"
       {- [dllfield] is the field where the C DLL archive gets installed,
          (defaults to {!stublibs})}
       {- [libfield] is the field where the C static archive gets installed
-         (defaults to {!libfield})}
+         (defaults to {!lib})}
       {- If [cond] is [false] (defaults to [true]), no move is generated.}
       {- [lib_dst_dir] is the destination directory of the library in the
          [libfield] field. If unspecified this is the root of the field's
@@ -1123,16 +1122,16 @@ fun c os ->
       {- [`Version_num], is the version of the distribution with a potential
          leading ['v'] or ['V'] dropped.}
       {- [`Vcs `Commit_id], is the commit identifier (hash) of the
-         distribution. May be post-fixed by ["dirty"] in {!Env.build}
-         pin builds.}
+         distribution. May be post-fixed by ["dirty"] in
+         {{!Conf.build_context}pin builds}.}
       {- [`Opam (file, field, sep)], is the values of the field
          [field] concatenated with separator [sep] of the OPAM file
          [file], expressed relative to the distribution root directory, if
          [file] is [None] this is the package's default OPAM file, see
          {!describe}. Not all fields are supported see the value of
-         {!Topkg_care.Opam.File.field_names}.  {b Warning.} In [`Pin]
-         {!Env.build}s, [`Opam] watermarks are only substituted
-         if the package [topkg-care] is installed.}}
+         {!Topkg_care.Opam.File.field_names}.  {b Warning.} In
+         {{!Conf.build_context}pin builds}, [`Opam] watermarks are only
+         substituted if the package [topkg-care] is installed.}}
 
       When a file is watermarked with an identifier ["ID"], any occurence of
       the sequence [%%ID%%] in its content is substituted by its definition. *)
@@ -1857,10 +1856,10 @@ In the following we review a few basic install use cases. The
 
 {2:installlib Installing libraries and C stubs}
 
-It is possible to use the {!lib} field function and appropriate
+It is possible to use the {!Pkg.lib} field function and appropriate
 {{!Exts}file extensions} to manually install a library, but this
-quickly becomes tedious. The higher-level {!mllib} install function brings
-this to a single line by reading from a OCamlbuild [mllib] file.
+quickly becomes tedious. The higher-level {!Pkg.mllib} install function
+brings this to a single line by reading from a OCamlbuild [mllib] file.
 Given a library described in [src/mylib.mllib] file use:
 {[
 Pkg.mllib "src/mylib.mllib"
@@ -1944,7 +1943,7 @@ using the [force] argument of {{!Pkg.field}field functions}.
 
 {2:installexts Extension sets and platform dependent extensions}
 
-The {{!field}field functions} have an optional [exts] argument. If
+The {{!Pkg.field}field functions} have an optional [exts] argument. If
 present these extensions are appended to the [src] path given to the
 function. The module {!Exts} defines a few predefined extension
 sets. For example a single module library archive implemented in

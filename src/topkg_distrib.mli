@@ -6,7 +6,7 @@
 
 (** {1 Distribution description}
 
-    See {!section:Topkg.distrib}. *)
+    See {!section:Topkg.Pkg.distrib}. *)
 
 (** {1 Distribution} *)
 
