@@ -6,10 +6,15 @@
 
 open Bos_setup
 
+let unixy_path p =
+  (* ocamlbuild doesn't like Windows paths it seems. Try to do our best here. *)
+  let volume, p = Fpath.split_volume p in
+  volume ^ (String.concat ~sep:"/" (Fpath.segs p))
+
 let ocamlbuild build_dir =
   let ocamlbuild = Topkg_care.OCamlbuild.cmd in
   Cmd.(ocamlbuild % "-classic-display" % "-use-ocamlfind" % "-no-links" %
-       "-build-dir" % p build_dir)
+       "-build-dir" % unixy_path build_dir)
 
 let docflags = Cmd.(v "-docflags" % "-colorize-code,-charset,utf-8")
 
@@ -36,7 +41,7 @@ let build_doc dev build_dir =
   OS.Cmd.must_exist ocamlbuild
   >>= fun _ -> OS.File.must_exist odocl
   >>= fun _ -> Ok Fpath.(set_ext ".docdir" odocl / "index.html")
-  >>= fun target -> OS.Cmd.run Cmd.(ocamlbuild %% docflags % p target)
+  >>= fun target -> OS.Cmd.run Cmd.(ocamlbuild %% docflags % unixy_path target)
   >>= fun () -> Ok Fpath.(build_dir // parent target)
   >>= fun dst_dir -> copy_assets doc_dir dst_dir
   >>= fun () -> Ok dst_dir
