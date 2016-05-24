@@ -187,9 +187,11 @@ module Cmd = struct
     if Topkg_cmd.is_empty cmd then failwith err_empty_line else
     let cmd = List.rev_map Filename.quote (Topkg_cmd.to_rev_list cmd) in
     let cmd = String.concat " " cmd in
-    let stdout = match stdout with None -> "" | Some f -> strf " 1>%s" f in
-    let stderr = match stderr with None -> "" | Some f -> strf " 2>%s" f in
-    strf "%s%s%s" cmd stdout stderr
+    let redirect fd f = strf " %d>%s" fd (Filename.quote f) in
+    let stdout = match stdout with None -> "" | Some f -> redirect 1 f in
+    let stderr = match stderr with None -> "" | Some f -> redirect 2 f in
+    let win_quote = if Sys.win32 then "\"" else "" in
+    strf "%s%s%s%s%s" win_quote cmd stdout stderr win_quote
 
   let exec ?stdout ?stderr cmd =
     try
