@@ -264,7 +264,8 @@ let distrib_archive p ~keep_dir =
 
 let build p ~dir ~args ~out =
   let pkg_file = p.pkg_file in
-  let build () = OS.Cmd.run_out Cmd.(v (p pkg_file) % "build" %% args) |> out in
+  let build_cmd = Cmd.(v "ocaml" % p pkg_file % "build" %% args) in
+  let build () = OS.Cmd.run_out build_cmd |> out in
   R.join @@ OS.Dir.with_current dir build ()
 
 (* Lint *)
