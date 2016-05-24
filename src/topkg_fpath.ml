@@ -23,7 +23,7 @@ let append =
       | q ->
           if dir_sep_prefix q then q else
           if dir_sep_suffix p then (p ^ q) else
-          (p ^ Filename.dir_sep ^ q)
+          (p ^ "/" ^ q)
 
 let ( // ) = append
 

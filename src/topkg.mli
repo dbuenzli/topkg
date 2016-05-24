@@ -139,7 +139,10 @@ end
 type fpath = string
 (** The type for file system paths. *)
 
-(** File system paths *)
+(** File system paths.
+
+    {b Note.} Only use ["/"] as a directory separator, even on
+    Windows platforms. *)
 module Fpath : sig
 
   (** {1:fpath File system paths} *)
@@ -151,7 +154,7 @@ module Fpath : sig
   (** [append p q] appends [q] to [p] as follows:
       {ul
       {- If [q] is absolute then [q] is returned}
-      {- Otherwise appends [q]'s segments to [p] using {!Filename.dir_sep}}} *)
+      {- Otherwise appends [q]'s segments to [p] using a ["/"] if needed.}} *)
 
   val ( // ) : t -> t -> t
   (** [p // q] is [append p q]. *)
@@ -916,7 +919,10 @@ module Pkg : sig
       from the build or source directory to standard install
       directories. Describing these moves in a given build
       configuration effectively determines what needs to built by the
-      {{!build}package build command}. *)
+      {{!build}package build command}.
+
+      {b Note.} Always use ["/"] as a directory seperator for paths, even
+      on Windows. *)
 
   type install
   (** The type for representing a set of install moves. *)
