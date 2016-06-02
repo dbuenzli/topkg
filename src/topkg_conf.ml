@@ -177,7 +177,7 @@ let build_dir =
 
 let vcs =
   let doc = "Specifies if the package directory is VCS managed." in
-  let absent () = Topkg_vcs.find () >>= function
+  let absent () = Topkg_vcs.find ~dir:"." () >>= function
   | None -> Ok false
   | Some _ -> Ok true
   in
