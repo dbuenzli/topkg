@@ -39,9 +39,11 @@ val opam_field : t -> string -> (string list option, R.msg) result
 val opam_field_hd : t -> string -> (string option, R.msg) result
 val opam_fields : t -> (string list String.map, R.msg) result
 val opam_descr : t -> (Topkg_care_opam.Descr.t, R.msg) result
+val readmes : t -> (Fpath.t list, R.msg) result
 val readme : t -> (Fpath.t, R.msg) result
+val change_logs : t -> (Fpath.t list, R.msg) result
 val change_log : t -> (Fpath.t, R.msg) result
-val license : t -> (Fpath.t, R.msg) result
+val licenses : t -> (Fpath.t list, R.msg) result
 val distrib_uri : ?raw:bool -> t -> (string, R.msg) result
 val distrib_file : t -> (Fpath.t, R.msg) result
 val publish_msg : t -> (string, R.msg) result

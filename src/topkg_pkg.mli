@@ -28,9 +28,9 @@ val with_name_and_build_dir : t -> string -> Topkg_fpath.t -> t
 
 val v :
   ?delegate:Topkg_cmd.t ->
-  ?readme:std_file ->
-  ?license:std_file ->
-  ?change_log:std_file ->
+  ?readmes:std_file list ->
+  ?licenses:std_file list ->
+  ?change_logs:std_file list ->
   ?metas:meta_file list ->
   ?opams:opam_file list ->
   ?lint_files:Topkg_fpath.t list option ->
@@ -41,9 +41,9 @@ val v :
 
 val name : t -> string
 val delegate : t -> Topkg_cmd.t option
-val readme : t -> Topkg_fpath.t
-val change_log : t -> Topkg_fpath.t
-val license : t -> Topkg_fpath.t
+val readmes : t -> Topkg_fpath.t list
+val change_logs : t -> Topkg_fpath.t list
+val licenses : t -> Topkg_fpath.t list
 val distrib : t -> Topkg_distrib.t
 val build : t -> Topkg_build.t
 val install : t -> Topkg_conf.t -> Topkg_install.t list result

@@ -12,9 +12,9 @@ open Topkg_result
 
 val describe :
   ?delegate:Topkg_cmd.t ->
-  ?readme:Topkg_pkg.std_file ->
-  ?license:Topkg_pkg.std_file ->
-  ?change_log:Topkg_pkg.std_file ->
+  ?readmes:Topkg_pkg.std_file list ->
+  ?licenses:Topkg_pkg.std_file list ->
+  ?change_logs:Topkg_pkg.std_file list ->
   ?metas:Topkg_pkg.meta_file list ->
   ?opams:Topkg_pkg.opam_file list ->
   ?lint_files:Topkg_fpath.t list option ->

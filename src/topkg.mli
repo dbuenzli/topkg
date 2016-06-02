@@ -1270,9 +1270,9 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
 
   val describe :
     ?delegate:Cmd.t ->
-    ?readme:std_file ->
-    ?license:std_file ->
-    ?change_log:std_file ->
+    ?readmes:std_file list ->
+    ?licenses:std_file list ->
+    ?change_logs:std_file list->
     ?metas:meta_file list ->
     ?opams:opam_file list ->
     ?lint_files:fpath list option ->
@@ -1285,16 +1285,19 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
       {- [delegate], the package delegate command to use. If unspecfied
          determined by the delegate lookup procedure, see
          [topkg help delegate] for more information.}
-      {- [readme] is a readme file, defaults to {!std_file}
-         [ "README.md"].  Automatic install is in the {!doc} field.}
-      {- [license] is a license file, defaults to {!std_file}
-         [ "LICENSE.md"].  Automatic install is in the {!doc} field.}
-      {- [change_log] the change log, defaults to {!std_file}
-         [ "CHANGES.md"].  Automatic install is in the {!doc} field.}
+      {- [readmes] are readme files, defaults to
+         [[std_file "README.md"]].  Automatic install is in the
+         {!doc} field.}
+      {- [licenses] are license files, defaults to
+         [[std_file "LICENSE.md"]].  Automatic install is in the {!doc} field.}
+      {- [change_logs] are change logs, defaults to
+         [[std_file "CHANGES.md"]]. The first file of the list is the
+         one that is acted upon by the [topkg log] command.
+         Automatic install is in the {!doc} field.}
       {- [metas] the package's ocamlfind META files, defaults to
-         {!meta_file} [ "pkg/META"].}
+         [[ meta_file "pkg/META" ]].}
       {- [opams] the package's OPAM package files, defaults to
-         {!opam_file} [ "opam"]. The default OPAM file used by a package
+         [[opam_file "opam"]]. The default OPAM file used by a package
          description depends on the package [name] (which can
          be overriden from the command line). The OPAM file lookup
          procedure selects the first path in [opams] whose filename is
@@ -1538,14 +1541,14 @@ module Private : sig
     val build_dir : t -> fpath
     (** [build_dir p] is [p]'s build directory. *)
 
-    val readme : t -> fpath
-    (** [readme p] is [p]'s readme file. *)
+    val readmes : t -> fpath list
+    (** [readme p] is [p]'s readme files. *)
 
-    val change_log : t -> fpath
-    (** [change_log p] is [p]'s change log file. *)
+    val change_logs : t -> fpath list
+    (** [change_logs p] is [p]'s change logs. *)
 
-    val license : t -> fpath
-    (** [license p] is [p]'s license file. *)
+    val licenses : t -> fpath list
+    (** [licenses p] is [p]'s license files. *)
 
     val opam : name:string -> t -> fpath
     (** [opam name p] is [p]'s OPAM file for OPAM package [name]. *)

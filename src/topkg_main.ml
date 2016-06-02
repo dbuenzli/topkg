@@ -191,14 +191,14 @@ let disable () = must_run_main := false
 
 let pkg = ref None
 let describe
-    ?delegate ?readme ?license ?change_log ?metas ?opams ?lint_files
+    ?delegate ?readmes ?licenses ?change_logs ?metas ?opams ?lint_files
     ?lint_custom ?distrib ?build name installs
   =
   match !pkg with
   | Some _ -> invalid_arg "Topkg.Pkg.describe already called once"
   | None ->
       let p =
-        Topkg_pkg.v ?delegate ?readme ?license ?change_log ?metas ?opams
+        Topkg_pkg.v ?delegate ?readmes ?licenses ?change_logs ?metas ?opams
           ?lint_files ?lint_custom ?distrib ?build name installs
       in
       pkg := Some p;

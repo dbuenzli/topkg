@@ -17,11 +17,11 @@ type opam_file = std_file * bool * string list option
 let opam_file ?(lint = true) ?(lint_deps_excluding = Some []) ?install file =
   std_file ?install file, lint, lint_deps_excluding
 
-let std_files_installs readme license change_log metas opams =
+let std_files_installs readmes licenses change_logs metas opams =
   let add field (p, install) acc = if install then field p :: acc else acc in
-  add Topkg_install.doc readme @@
-  add Topkg_install.doc license @@
-  add Topkg_install.doc change_log @@
+  List.fold_right (add Topkg_install.doc) readmes @@
+  List.fold_right (add Topkg_install.doc) licenses @@
+  List.fold_right (add Topkg_install.doc) change_logs @@
   List.fold_right (fun (m, _) -> add Topkg_install.lib m) metas @@
   List.fold_right (fun (o, _, _) -> add Topkg_install.lib o) opams @@
   []
@@ -29,9 +29,9 @@ let std_files_installs readme license change_log metas opams =
 type t =
   { name : string;
     delegate : Topkg_cmd.t option;
-    readme : std_file;
-    license : std_file;
-    change_log : std_file;
+    readmes : std_file list;
+    licenses : std_file list;
+    change_logs : std_file list;
     metas : meta_file list;
     opams : opam_file list;
     lint_files : Topkg_fpath.t list option;
@@ -42,9 +42,9 @@ type t =
 
 let v
     ?delegate
-    ?(readme = ("README.md", true))
-    ?(license = ("LICENSE.md", true))
-    ?(change_log = ("CHANGES.md", true))
+    ?(readmes = [("README.md", true)])
+    ?(licenses = [("LICENSE.md", true)])
+    ?(change_logs = [("CHANGES.md", true)])
     ?(metas = [meta_file "pkg/META"])
     ?(opams = [opam_file "opam"])
     ?(lint_files = Some [])
@@ -53,7 +53,7 @@ let v
     ?(build = Topkg_build.v ())
     name installs
   =
-  { name; delegate; readme; license; change_log; metas; opams; lint_files;
+  { name; delegate; readmes; licenses; change_logs; metas; opams; lint_files;
     lint_custom; distrib; build; installs }
 
 let empty = v "" (fun _ -> Ok [])
@@ -63,20 +63,21 @@ let with_name_and_build_dir p name build_dir =
 
 let name p = p.name
 let delegate p = p.delegate
-let readme p = fst p.readme
-let change_log p = fst p.change_log
-let license p = fst p.license
+let readmes p = List.map fst p.readmes
+let change_logs p = List.map fst p.change_logs
+let licenses p = List.map fst p.licenses
 let distrib p = p.distrib
 let build p = p.build
 let install p c =
   p.installs c >>= fun installs ->
   let std_files =
-    std_files_installs p.readme p.license p.change_log p.metas p.opams
+    std_files_installs p.readmes p.licenses p.change_logs p.metas p.opams
   in
   Ok (List.rev_append std_files installs)
 
 let std_files p =
-  fst (p.readme) :: fst (p.license) :: fst (p.change_log) ::
+  List.map fst p.readmes @ List.map fst p.licenses @
+  List.map fst p.change_logs @
   List.(rev_append (rev_map (fun (m, _) -> fst m) p.metas)
     (rev (rev_map (fun (o, _, _) -> fst o) p.opams)))
 
@@ -101,9 +102,9 @@ let codec =
   (* fields *)
   let name = Topkg_codec.(with_kind "name" @@ string) in
   let delegate = Topkg_codec.(with_kind "delegate" @@ option cmd) in
-  let readme = Topkg_codec.(with_kind "readme" @@ std_file) in
-  let license = Topkg_codec.(with_kind "license" @@ std_file) in
-  let change_log = Topkg_codec.(with_kind "change_log" @@ std_file) in
+  let readmes = Topkg_codec.(with_kind "readmes" @@ list std_file) in
+  let licenses = Topkg_codec.(with_kind "licenses" @@ list std_file) in
+  let change_logs = Topkg_codec.(with_kind "change_logs" @@ list std_file) in
   let metas = Topkg_codec.(with_kind "metas" @@ list meta_file) in
   let opams = Topkg_codec.(with_kind "opams" @@ list opam_file) in
   let lint_files = Topkg_codec.(with_kind "lint_files" @@ string_list_option) in
@@ -117,20 +118,20 @@ let codec =
   let distrib = Topkg_codec.(with_kind "distrib" @@ Topkg_distrib.codec) in
   let build = Topkg_codec.(with_kind "build" @@ Topkg_build.codec) in
   let fields =
-    (fun p -> (p.name, p.delegate, p.readme, p.license, p.change_log),
+    (fun p -> (p.name, p.delegate, p.readmes, p.licenses, p.change_logs),
               (p.metas, p.opams, p.lint_files, p.lint_custom, p.distrib),
               (p.build)),
-    (fun ((name, delegate, readme, license, change_log),
+    (fun ((name, delegate, readmes, licenses, change_logs),
           (metas, opams, lint_files, lint_custom, distrib),
           (build)) ->
-       { name; delegate; readme; license; change_log;
+       { name; delegate; readmes; licenses; change_logs;
          metas; opams; lint_files; lint_custom; distrib;
          build; installs = stub })
   in
   Topkg_codec.version 0 @@
   Topkg_codec.(view ~kind: "package" fields
                  (t3
-                    (t5 name delegate readme license change_log)
+                    (t5 name delegate readmes licenses change_logs)
                     (t5 metas opams lint_files lint_custom distrib)
                     build))
 (* Distrib *)

@@ -18,6 +18,16 @@ let path_set_of_strings ps =
   with
   Failure msg -> R.error_msg msg
 
+let rec path_list_of_strings ps =
+  let rec loop acc = function
+  | [] -> Ok (List.rev acc)
+  | p :: ps ->
+      match Fpath.of_string p with
+      | Error _ as e -> e
+      | Ok p -> loop (p :: acc) ps
+  in
+  loop [] ps
+
 let uri_sld uri = match Topkg_care_text.split_uri uri with
 | None -> None
 | Some (_, host, _) ->
@@ -44,9 +54,9 @@ type t =
     opam : Fpath.t option;
     opam_descr : Fpath.t option;
     opam_fields : (string list String.map, R.msg) result Lazy.t;
-    readme : Fpath.t option;
-    change_log : Fpath.t option;
-    license : Fpath.t option;
+    readmes : Fpath.t list option;
+    change_logs : Fpath.t list option;
+    licenses : Fpath.t list option;
     distrib_uri : string option;
     distrib_file : Fpath.t option;
     publish_msg : string option;
@@ -106,9 +116,13 @@ let build_dir p = match p.build_dir with
 | Some b -> Ok b
 | None -> pkg p >>| Topkg.Private.Pkg.build_dir >>= Fpath.of_string
 
-let readme p = match p.readme with
+let readmes p = match p.readmes with
 | Some f -> Ok f
-| None -> pkg p >>| Topkg.Private.Pkg.readme >>= Fpath.of_string
+| None -> pkg p >>| Topkg.Private.Pkg.readmes >>= path_list_of_strings
+
+let readme p = readmes p >>= function
+| [] -> R.error_msgf "No readme file specified in the package description"
+| r :: _ -> Ok r
 
 let opam p = match p.opam with
 | Some f -> Ok f
@@ -140,13 +154,17 @@ let opam_descr p =
             (fun m -> m "Extracting OPAM descr from %a" Fpath.pp readme);
           Topkg_care_opam.Descr.of_readme_file readme
 
-let change_log p = match p.change_log with
+let change_logs p = match p.change_logs with
 | Some f -> Ok f
-| None -> pkg p >>| Topkg.Private.Pkg.change_log >>= Fpath.of_string
+| None -> pkg p >>| Topkg.Private.Pkg.change_logs >>= path_list_of_strings
 
-let license p = match p.license with
+let change_log p = change_logs p >>= function
+| [] -> R.error_msgf "No change log specified in the package description."
+| l :: _ -> Ok l
+
+let licenses p = match p.licenses with
 | Some f -> Ok f
-| None -> pkg p >>| Topkg.Private.Pkg.license >>= Fpath.of_string
+| None -> pkg p >>| Topkg.Private.Pkg.licenses >>= path_list_of_strings
 
 let distrib_uri ?(raw = false) p =
   let subst_uri p uri =
@@ -217,11 +235,14 @@ let v
     ?readme ?change_log ?license ?distrib_uri ?distrib_file ?publish_msg
     pkg_file
   =
+  let readmes = match readme with Some r -> Some [r] | None -> None in
+  let change_logs = match change_log with Some c -> Some [c] | None -> None in
+  let licenses = match license with Some l -> Some [l] | None -> None in
   let pkg = lazy (Topkg_care_ipc.ask ~pkg_file (Topkg.Private.Ipc.pkg ())) in
   let rec opam_fields = lazy (opam p >>= fun o -> Topkg_care_opam.File.fields o)
   and p =
     { name; version; delegate; build_dir; opam = opam_file; opam_descr;
-      opam_fields; readme; change_log; license; distrib_uri; distrib_file;
+      opam_fields; readmes; change_logs; licenses; distrib_uri; distrib_file;
       publish_msg; pkg_file; pkg }
   in
   p
