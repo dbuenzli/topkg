@@ -1,3 +1,5 @@
+v0.7.2 2016-06-02 Cambridge (UK)
+--------------------------------
 
 - `Pkg.describe`, allow multiple readme, change log and license files.
   The optional arguments `readme`, `change_log` and `license` become
