@@ -402,19 +402,19 @@ module Pkg : sig
   (** [opam_fields p] are [p]'s OPAM file fields. *)
 
   val readmes : t -> (Fpath.t list, R.msg) result
-  (** [readme p] is [p]'s readme file. *)
+  (** [readmes p] are [p]'s readme files. *)
 
   val readme : t -> (Fpath.t, R.msg) result
   (** [readme p] is the first element of [readmes p]. *)
 
   val change_logs : t -> (Fpath.t list, R.msg) result
-  (** [change_log p] is [p]'s change log. *)
+  (** [change_logs p] are [p]'s change logs. *)
 
   val change_log : t -> (Fpath.t, R.msg) result
   (** [change_log p] is the first element of [change_logs p]. *)
 
   val licenses : t -> (Fpath.t list, R.msg) result
-  (** [licenses p] is [p]'s license file. *)
+  (** [licenses p] are [p]'s license files. *)
 
   val distrib_uri : ?raw:bool -> t -> (string, R.msg) result
   (** [distrib_uri p] is [p]'s distribution URI. If [raw] is [true]
