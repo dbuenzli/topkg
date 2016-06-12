@@ -759,30 +759,40 @@ module Conf : sig
       automatically by using {!Topkg.Vcs.find} and used to determine
       the {!build_context}. *)
 
+  val pinned : t -> bool
+  (** [pinned c] is the value of a predefined key [--pinned].
+      It is [true] if the build is initiated by an installer like OPAM
+      and the package is pinned. If absent defaults to [false].
+      Usually specified in OPAM build instructions with
+      ["--pinned" "%{pinned}%"]. *)
+
+(**/**)
+  (* FIXME remove deprecated *)
   val installer : t -> bool
   (** [installer c] is the value of a predefined key [--installer].
       It is [true] if the build is initiated by an installer like OPAM.
       If absent defaults to [false]. Usually specified in OPAM build
       instructions with ["--installer" "true"]. This is used to
       determine the {!build_context}. *)
+(**/**)
 
   type build_context = [`Dev | `Distrib | `Pin ]
   (** The type for build contexts. See {!val:build_context} for semantics. *)
 
   val build_context : t -> [`Dev | `Distrib | `Pin ]
   (** [build_context c] is the build context of [c]. This is derived from
-      {!vcs} and {!installer} as follows.
+      {!vcs} and {!pinned} as follows.
       {ul
       {- [`Distrib] iff [not (vcs c)]. No VCS is present, this is a build from
          a distribution. If there are configuration bits they should
          be setup according to the build configuration.}
-      {- [`Dev] iff [vcs c && not (installer c)]. This is a development
+      {- [`Dev] iff [vcs c && not (pinned c)]. This is a development
          build invoked manually in a source repository. The repository checkout
          should likely not be touched and configuration bits not be setup.
          This is happening for example if the developer is testing the package
          description in her working source repository by invoking
          [pkg/pkg.ml] or [topkg build].}
-      {- [`Pin] iff [vcs c && installer c]. This is a package manager pin build.
+      {- [`Pin] iff [vcs c && pinned c]. This is a package manager pin build.
          In this case the repository checkout may need to be massaged
          into a pseudo-distribution for the package to be installed. This means
          that distribution watermarking and massaging should be performed,
@@ -1759,10 +1769,10 @@ down to:
 {v
 build: [[
   "ocaml" "pkg/pkg.ml" "build"
-          "--installer" "true" ]]
+          "--pinned" "%{pinned}%" ]]
 v}
 
-The ["--installer" "true"] configuration key specification is used to
+The ["--pinned" "%{pinned}%"] configuration key specification is used to
 inform the package description about the {{!Conf.build_context}build
 context}. This invocation of [pkg/pkg.ml] executes your build system
 with a set of targets determined from the build configuration and
@@ -1938,7 +1948,7 @@ For this conditional install the OPAM build instructions look like this:
 depopts: [ "cmdliner" ]
 build: [[
   "ocaml" "pkg/pkg.ml" "build"
-          "--installer" "true"
+          "--pinned" "%{pinned}%"
           "--with-cmdliner" "%{cmdliner:installed}%" ]]
 ]}
 
@@ -2104,7 +2114,7 @@ The OPAM build instructions for the package are:
 {v
 build:
 [[ "ocaml" "pkg/pkg.ml" "build"
-           "--installer" "true"
+           "--pinned" "%{pinned}%"
            "--etc-dir" "%{mypkg:etc}%" ]]
 v}
 
@@ -2148,7 +2158,7 @@ can be selected:
 build:
 [[ "ocaml" "pkg/pkg.ml" "build"
            "--pkg-name" "%{name}%"
-           "--installer" "true" ]]
+           "--pinned" "%{pinned}%" ]]
 v}
 
 In general you will use the default, main, package name and its OPAM file to

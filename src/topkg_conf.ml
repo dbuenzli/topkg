@@ -183,8 +183,13 @@ let vcs =
   in
   discovered_key "vcs" bool ~absent ~doc
 
-let installer =
-  let doc = "Specifies if the build is initiated by an installer (e.g. OPAM)" in
+let pinned =
+  let doc = "Specifies that the build is a pinned package build (e.g. in OPAM)"
+  in
+  key "pinned" bool ~absent:false ~doc
+
+let installer = (* FIXME remove deprecated *)
+  let doc = "Deprecated (has no effect)." in
   key "installer" bool ~absent:false ~doc
 
 (* Key documentation *)
@@ -309,12 +314,13 @@ let of_cli_args ~pkg_name:name ~build_dir:bdir args =
 let pkg_name c = value c pkg_name
 let build_dir c = value c build_dir
 let vcs c = value c vcs
+let pinned c = value c pinned
 let installer c = value c installer
 
 type build_context = [`Dev | `Distrib | `Pin ]
 let build_context c =
   if not (vcs c) then `Distrib else
-  if (installer c) then `Pin else
+  if (pinned c) then `Pin else
   `Dev
 
 (* OCaml configuration, as communicated by ocamlc -config  *)
