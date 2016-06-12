@@ -1,9 +1,11 @@
 
+v0.7.3 2016-02-12 Cambridge (UK)
+--------------------------------
 
-- Change pin build detection (#44). This changes the way package
-  should be build in in OPAM files. Substitute `"--installer" "true"`
-  with `"--pinned" "%{pinned}%"` in your package descriptions. The
-  `--installer` option is deprecated and has no longer any effect.
+- Change pin build detection (#44). This changes OPAM build
+  instruction for packages. Substitute `"--installer" "true"` by
+  `"--pinned" "%{pinned}%"` in build instructions. The
+  `--installer` option is deprecated and has no effect.
 
 v0.7.2 2016-06-02 Cambridge (UK)
 --------------------------------
