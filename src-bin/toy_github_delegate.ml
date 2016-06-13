@@ -11,17 +11,19 @@ open Bos_setup
 let repo_docdir_path_from_doc_uri uri =
   (* Parses the $PATH of $SCHEME://$HOST/$REPO/$PATH *)
   let uri_error uri =
-    R.error_msgf "Could not derive publication directory $PATH from OPAM doc \
-                  field value %a; expected the pattern \
-                  $SCHEME://$HOST/$REPO/$PATH" String.dump uri
+    R.msgf "Could not derive publication directory $PATH from OPAM doc \
+            field value %a; expected the pattern \
+            $SCHEME://$HOST/$REPO/$PATH" String.dump uri
   in
   match Topkg_care.Text.split_uri ~rel:true uri with
-  | None -> uri_error uri
+  | None -> Error (uri_error uri)
   | Some (_, _, path) ->
-      if path = "" then uri_error uri else
+      if path = "" then Error (uri_error uri) else
       match String.cut ~sep:"/" path with
       | None | Some (_, "") -> Ok (Fpath.v ".")
-      | Some (project, path) -> Fpath.of_string path >>| Fpath.rem_empty_seg
+      | Some (project, path) ->
+          (Fpath.of_string path >>| Fpath.rem_empty_seg)
+          |> R.reword_error_msg (fun _ -> uri_error uri)
 
 let publish_doc_gh_pages uri name version docdir =
   Fpath.of_string docdir
