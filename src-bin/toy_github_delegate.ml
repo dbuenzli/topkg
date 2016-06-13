@@ -28,7 +28,7 @@ let repo_docdir_path_from_doc_uri uri =
 let publish_doc_gh_pages uri name version docdir =
   Fpath.of_string docdir
   >>= fun docdir -> repo_docdir_path_from_doc_uri uri
-  >>= fun dir -> (Topkg_care.Delegate.publish_in_git_branch
+  >>= fun dir -> (Topkg_care.Delegate.publish_in_git_branch ~remote:"origin"
                     ~branch:"gh-pages" ~name ~version ~docdir ~dir)
   >>= fun () -> Ok 0
 

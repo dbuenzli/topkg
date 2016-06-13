@@ -486,20 +486,21 @@ module Delegate : sig
   (** {2 Helpers} *)
 
   val publish_in_git_branch :
-    branch:string -> name:string -> version:string -> docdir:Fpath.t ->
+    remote:string -> branch:string ->
+    name:string -> version:string -> docdir:Fpath.t ->
     dir:Fpath.t -> (unit, R.msg) result
-  (** [publish_in_git_branch ~branch ~name ~version ~docdir ~dir]
+  (** [publish_in_git_branch ~remote ~branch ~name ~version ~docdir ~dir]
       publishes the documentation directory [docdir] of a package
       named [name] at version [version] by replacing the [dir]
       sub-directory of the branch [branch] of the current working
       directory git repository (use ["."] to copy the docdir at the
-      root directory of the branch).
+      root directory of the branch) and pushes the branch to [remote].
 
       {b Note.} The publication procedure first checkouts the
       [gh-pages] in a temporary clone located in the {!Fpath.parent}
       directory of [docdir]. The [branch] branch of this clone is then
       pushed to the current working git repository, whose [branch]
-      branch is then pushed to the remote repository. *)
+      branch is then pushed to the [remote] repository. *)
 
   (** {1 Issues} *)
 
