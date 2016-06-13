@@ -104,8 +104,8 @@ let man =
         generate the same archive.";
     `P "More precisely, files are added to the archive using a well
         defined order on path names. Their file permissions are either
-        755 for directories and files that are executable for the user
-        in the HEAD repository checkout or 644 for those that are not.
+        0o775 for directories and files that are executable for the user
+        in the HEAD repository checkout or 0o664 for those that are not.
         Their modification times are set to the commit date (note that if
         git is used, git-log(1) shows the author date which may not
         coincide). No other file metadata is recorded.";

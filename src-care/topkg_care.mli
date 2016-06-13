@@ -323,8 +323,8 @@ module Archive : sig
       hierarchies present in [exclude_paths]. In the archive, members
       of [dir] are rerooted at [root] and sorted according to
       {!Fpath.compare}. They have their modification time set to
-      [mtime] and their file permissions are [755] for directories
-      and files executable by the user and [644] for other files. No other
+      [mtime] and their file permissions are [0o775] for directories
+      and files executable by the user and [0o664] for other files. No other
       file metadata is preserved.
 
       {b Note.} This is a pure OCaml implementation, no [tar] tool is needed. *)

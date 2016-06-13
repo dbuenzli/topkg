@@ -117,12 +117,12 @@ let tar dir ~exclude_paths ~root ~mtime =
     tar
     >>= fun tar -> OS.Dir.exists file
     >>= function
-    | true -> Tar.add tar fname ~mode:0o755 ~mtime `Dir
+    | true -> Tar.add tar fname ~mode:0o775 ~mtime `Dir
     | false ->
         OS.Path.Mode.get file
         >>= fun mode -> OS.File.read file
         >>= fun contents ->
-        let mode = if 0o100 land mode > 0 then 0o755 else 0o644 in
+        let mode = if 0o100 land mode > 0 then 0o775 else 0o664 in
         Tar.add tar fname ~mode ~mtime (`File contents)
   in
   path_set_of_dir dir ~exclude_paths
