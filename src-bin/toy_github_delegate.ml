@@ -34,23 +34,26 @@ let publish_doc_gh_pages uri name version docdir =
 
 let repo_and_owner_of_uri uri =
   let uri_error uri =
-    R.error_msgf "Could not derive owner and repo from OPAM dev-repo \
-                  field value %a; expected the pattern \
-                  $SCHEME://$HOST/$OWNER/$REPO[.$EXT][/$DIR]" String.dump uri
+    R.msgf "Could not derive owner and repo from OPAM dev-repo \
+            field value %a; expected the pattern \
+            $SCHEME://$HOST/$OWNER/$REPO[.$EXT][/$DIR]" String.dump uri
   in
   match Topkg_care.Text.split_uri ~rel:true uri with
-  | None -> uri_error uri
+  | None -> Error (uri_error uri)
   | Some (_, _, path) ->
-      if path = "" then uri_error uri else
+      if path = "" then Error (uri_error uri) else
       match String.cut ~sep:"/" path with
-      | None -> uri_error uri
+      | None -> Error (uri_error uri)
       | Some (owner, path) ->
           let repo = match String.cut ~sep:"/" path with
           | None -> path
           | Some (repo, path) -> repo
           in
-          Fpath.of_string repo
-          >>= fun repo -> Ok (owner, Fpath.(to_string @@ rem_ext repo))
+          begin
+            Fpath.of_string repo
+            >>= fun repo -> Ok (owner, Fpath.(to_string @@ rem_ext repo))
+          end
+          |> R.reword_error_msg (fun _ -> uri_error uri)
 
 let github_auth ~owner =
   OS.Env.(value "TOPKG_GITHUB_AUTH" string ~absent:owner)
