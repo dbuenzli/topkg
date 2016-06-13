@@ -103,11 +103,12 @@ let man =
         and the version string, the $(b,$(tname)) command should always
         generate the same archive.";
     `P "More precisely, files are added to the archive using a well
-        defined order on path names. Their file permissions are those
-        determined by the HEAD repository checkout and their modification
-        times are set to the commit date (note that if git is used,
-        git-log(1) shows the author date which may not coincide). No other
-        file metadata is recorded.";
+        defined order on path names. Their file permissions are either
+        755 for directories and files that are executable for the user
+        in the HEAD repository checkout or 644 for those that are not.
+        Their modification times are set to the commit date (note that if
+        git is used, git-log(1) shows the author date which may not
+        coincide). No other file metadata is recorded.";
     `P "This should ensure that the resulting archive is bit-wise
         identical regardless of the context in which it is
         created. However this may fail for one or more of the

@@ -115,13 +115,15 @@ let tar dir ~exclude_paths ~root ~mtime =
     in
     Logs.info (fun m -> m "Archiving %a" Fpath.pp fname);
     tar
-    >>= fun tar -> OS.Path.Mode.get file
-    >>= fun mode -> OS.Dir.exists file
+    >>= fun tar -> OS.Dir.exists file
     >>= function
-    | true -> Tar.add tar fname ~mode ~mtime `Dir
+    | true -> Tar.add tar fname ~mode:0o755 ~mtime `Dir
     | false ->
-        OS.File.read file
-        >>= fun cont -> Tar.add tar fname ~mode ~mtime (`File cont)
+        OS.Path.Mode.get file
+        >>= fun mode -> OS.File.read file
+        >>= fun contents ->
+        let mode = if 0o100 land mode > 0 then 0o755 else 0o644 in
+        Tar.add tar fname ~mode ~mtime (`File contents)
   in
   path_set_of_dir dir ~exclude_paths
   >>= fun fset -> Fpath.Set.fold tar_add fset (Ok Tar.empty)
