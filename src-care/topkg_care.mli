@@ -133,9 +133,9 @@ module Opam : sig
   (** [ensure_publish ()] makes sure [opam-publish] is in the executable
       search PATH. *)
 
-  val submit : pkg_dir:Fpath.t -> (unit, R.msg) result
+  val submit : ?msg:string -> pkg_dir:Fpath.t -> (unit, R.msg) result
   (** [submit ~pkg_dir] submits the package [pkg_dir] with [opam-publish]
-      to the OCaml OPAM repository. *)
+      and submission message [msg] (if any) to the OCaml OPAM repository. *)
 
   (** {1:pkgs Packages} *)
 

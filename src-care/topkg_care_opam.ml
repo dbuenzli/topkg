@@ -18,7 +18,9 @@ let publish =
   OS.Env.(value "TOPKG_OPAM_PUBLISH" cmd ~absent)
 
 let ensure_publish () = OS.Cmd.must_exist publish >>| fun _ -> ()
-let submit ~pkg_dir = OS.Cmd.run Cmd.(publish % "submit" % p pkg_dir)
+let submit ?msg ~pkg_dir =
+  let msg = match msg with None -> Cmd.empty | Some m -> Cmd.(v "--msg" % m) in
+  OS.Cmd.run Cmd.(publish % "submit" %% msg % p pkg_dir)
 
 (* Packages *)
 
