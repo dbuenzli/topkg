@@ -13,9 +13,57 @@ module Env = struct
   let opt_var name ~absent = match var name with None -> absent | Some v -> v
 end
 
+(* Directory operations *)
+
+module Dir = struct
+
+  (* Existence *)
+
+  let exists dir =
+    try Ok (Sys.(file_exists dir && is_directory dir)) with
+    | Sys_error e -> R.error_msg e
+
+  let must_exist dir = exists dir >>= function
+  | true -> Ok dir
+  | false -> R.error_msgf "%s: no such directory" dir
+
+  (* Current working directory *)
+
+  let current () = try Ok (Sys.getcwd ()) with Sys_error e -> R.error_msg e
+  let set_current d = try Ok (Sys.chdir d) with Sys_error e -> R.error_msg e
+
+  (* Directory contents *)
+
+  let contents ?(dotfiles = false) ?(rel = false) p =
+    try
+      let files = Array.to_list @@ Sys.readdir p in
+      if rel && dotfiles then Ok files else
+      let rec loop acc = function
+      | [] -> List.rev acc
+      | f :: fs ->
+          let acc =
+            if not dotfiles && Topkg_string.is_prefix "." f then acc else
+            if rel then f :: acc else Topkg_fpath.append p f :: acc
+          in
+          loop acc fs
+      in
+      Ok (loop [] files)
+    with Sys_error e -> R.error_msg e
+end
+
 (* File system operations *)
 
 module File = struct
+
+  let strf = Printf.sprintf
+
+  let err_no_parent op_name file =
+    strf "%s: Cannot %s file, parent directory does not exist" file op_name
+
+  let with_parent_check op op_name file =
+    (Dir.must_exist (Topkg_fpath.dirname file)
+     |> R.reword_error @@ fun _ -> `Msg (err_no_parent op_name file))
+    >>= fun _ -> Ok (op file)
 
   (* Famous file paths *)
 
@@ -68,9 +116,12 @@ module File = struct
 
   (* Reading and writing *)
 
+  let safe_open_in_bin = with_parent_check open_in_bin "read"
+
   let read file =
     try
-      let ic = if file = dash then stdin else open_in_bin file in
+      let ic = if file = dash then Ok stdin else safe_open_in_bin file in
+      ic >>= fun ic ->
       let close ic = if file = dash then () else close_in_noerr ic in
       try
         let len = in_channel_length ic in
@@ -80,9 +131,12 @@ module File = struct
       with exn -> close ic; raise exn
     with Sys_error e -> R.error_msg e
 
+  let safe_open_out = with_parent_check open_out "create"
+
   let write file s =
     try
-      let oc = if file = dash then stdout else open_out file in
+      let oc = if file = dash then Ok stdout else safe_open_out file in
+      oc >>= fun oc ->
       let close oc = if file = dash then () else close_out_noerr oc in
       try output_string oc s; flush oc; close oc; Ok ()
       with exn -> close oc; raise exn
@@ -90,7 +144,8 @@ module File = struct
 
   let write_subst file vars s = (* very ugly mister, too lazy to rewrite *)
     try
-      let oc = if file = dash then stdout else open_out file in
+      let oc = if file = dash then Ok stdout else safe_open_out file in
+      oc >>= fun oc ->
       let close oc = if file = dash then () else close_out_noerr oc in
       try
         let start = ref 0 in
@@ -135,44 +190,6 @@ module File = struct
     try
       let f = Filename.temp_file (Filename.basename Sys.argv.(0)) "topkg" in
       at_exit (fun () -> ignore (delete f)); Ok f
-    with Sys_error e -> R.error_msg e
-end
-
-(* Directory operations *)
-
-module Dir = struct
-
-  (* Existence *)
-
-  let exists dir =
-    try Ok (Sys.(file_exists dir && is_directory dir)) with
-    | Sys_error e -> R.error_msg e
-
-  let must_exist dir = exists dir >>= function
-  | true -> Ok dir
-  | false -> R.error_msgf "%s: no such directory" dir
-
-  (* Current working directory *)
-
-  let current () = try Ok (Sys.getcwd ()) with Sys_error e -> R.error_msg e
-  let set_current d = try Ok (Sys.chdir d) with Sys_error e -> R.error_msg e
-
-  (* Directory contents *)
-
-  let contents ?(dotfiles = false) ?(rel = false) p =
-    try
-      let files = Array.to_list @@ Sys.readdir p in
-      if rel && dotfiles then Ok files else
-      let rec loop acc = function
-      | [] -> List.rev acc
-      | f :: fs ->
-          let acc =
-            if not dotfiles && Topkg_string.is_prefix "." f then acc else
-            if rel then f :: acc else Topkg_fpath.append p f :: acc
-          in
-          loop acc fs
-      in
-      Ok (loop [] files)
     with Sys_error e -> R.error_msg e
 end
 
