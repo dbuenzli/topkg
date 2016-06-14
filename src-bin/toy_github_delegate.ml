@@ -91,8 +91,28 @@ let repo_and_owner_of_uri uri =
           end
           |> R.reword_error_msg (fun _ -> uri_error uri)
 
+let steal_opam_publish_github_auth () =
+  let opam = Cmd.(v "opam") in
+  let publish = Fpath.v "plugins/opam-publish" in
+  OS.Cmd.exists opam >>= function
+  | false -> Ok None
+  | true ->
+      OS.Cmd.(run_out Cmd.(opam % "config" % "var" % "root") |> to_string)
+      >>= fun root -> Fpath.of_string root
+      >>= fun root -> OS.Path.query Fpath.(root // publish / "$(user).token")
+      >>= function
+      | [] -> Ok None
+      | (file, defs) :: _ ->
+          OS.File.read file >>= fun token ->
+          Ok (Some (strf "%s:%s" (String.Map.get "user" defs) token))
+
 let github_auth ~owner =
-  OS.Env.(value "TOPKG_GITHUB_AUTH" string ~absent:owner)
+  match
+    steal_opam_publish_github_auth ()
+    |> Logs.on_error_msg ~use:(fun _ -> None)
+  with
+  | Some auth -> auth
+  | None -> OS.Env.(value "TOPKG_GITHUB_AUTH" string ~absent:owner)
 
 let create_release_json version msg =
   let escape_for_json s =
