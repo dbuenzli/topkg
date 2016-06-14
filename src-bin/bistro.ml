@@ -8,11 +8,12 @@ open Bos_setup
 
 let bistro () =
   begin
+    let verb = Cmd.(v "--verbosity" % Logs.(level_to_string (level ()))) in
     let topkg = Cmd.(v "topkg") in
-    OS.Cmd.run Cmd.(topkg % "distrib")
-    >>= fun () -> OS.Cmd.run Cmd.(topkg % "publish")
-    >>= fun () -> OS.Cmd.run Cmd.(topkg % "opam" % "pkg")
-    >>= fun () -> OS.Cmd.run Cmd.(topkg % "opam" % "submit")
+    OS.Cmd.run Cmd.(topkg % "distrib" %% verb)
+    >>= fun () -> OS.Cmd.run Cmd.(topkg % "publish" %% verb)
+    >>= fun () -> OS.Cmd.run Cmd.(topkg % "opam" %% verb % "pkg")
+    >>= fun () -> OS.Cmd.run Cmd.(topkg % "opam" %% verb % "submit")
     >>= fun () -> Ok 0
   end
   |> Cli.handle_error
