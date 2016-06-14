@@ -8,28 +8,64 @@ open Bos_setup
 
 (* Publish documentation *)
 
-let repo_docdir_path_from_doc_uri uri =
+let repo_docdir_owner_repo_and_path_from_doc_uri uri =
   (* Parses the $PATH of $SCHEME://$HOST/$REPO/$PATH *)
   let uri_error uri =
     R.msgf "Could not derive publication directory $PATH from OPAM doc \
             field value %a; expected the pattern \
-            $SCHEME://$HOST/$REPO/$PATH" String.dump uri
+            $SCHEME://$OWNER.github.io/$REPO/$PATH" String.dump uri
   in
   match Topkg_care.Text.split_uri ~rel:true uri with
   | None -> Error (uri_error uri)
-  | Some (_, _, path) ->
+  | Some (_, host, path) ->
       if path = "" then Error (uri_error uri) else
+      (match String.cut ~sep:"." host with
+      | Some (owner, g) when String.equal g "github.io" -> Ok owner
+      | _ -> Error (uri_error uri))
+      >>= fun owner ->
       match String.cut ~sep:"/" path with
-      | None | Some (_, "") -> Ok (Fpath.v ".")
-      | Some (project, path) ->
-          (Fpath.of_string path >>| Fpath.rem_empty_seg)
+      | None -> Error (uri_error uri)
+      | Some (repo, "") -> Ok (owner, repo, Fpath.v ".")
+      | Some (repo, path) ->
+          (Fpath.of_string path >>| fun p -> owner, repo, Fpath.rem_empty_seg p)
           |> R.reword_error_msg (fun _ -> uri_error uri)
 
 let publish_doc_gh_pages uri name version docdir =
   Fpath.of_string docdir
-  >>= fun docdir -> repo_docdir_path_from_doc_uri uri
-  >>= fun dir -> (Topkg_care.Delegate.publish_in_git_branch
-                    ~branch:"gh-pages" ~name ~version ~docdir ~dir)
+  >>= fun docdir -> repo_docdir_owner_repo_and_path_from_doc_uri uri
+  >>= fun (owner, repo, dir) ->
+  let remote = strf "git@github.com:%s/%s.git" owner repo in
+  let git_for_repo r = Cmd.of_list (Topkg.Cmd.to_list @@ Topkg.Vcs.cmd r) in
+  let create_empty_gh_pages git =
+    let msg = "Initial commit by topkg." in
+    let create () =
+      OS.Cmd.run Cmd.(v "git" % "init")
+      >>= fun () -> Topkg.Vcs.get ()
+      >>= fun repo -> Ok (git_for_repo repo)
+      >>= fun git -> OS.Cmd.run Cmd.(git % "checkout" % "--orphan" % "gh-pages")
+      >>= fun () -> (OS.Cmd.run_out Cmd.(v "echo" % msg)
+                     |> OS.Cmd.out_file (Fpath.v "README")
+                     |> OS.Cmd.success)
+      >>= fun () -> OS.Cmd.run Cmd.(git % "add" % "README")
+      >>= fun () -> OS.Cmd.run Cmd.(git % "commit" % "README" % "-m" % msg)
+    in
+    OS.Dir.with_tmp "gh-pages-%s.tmp" (fun dir () ->
+        OS.Dir.with_current dir create () |> R.join
+        >>= fun () -> OS.Cmd.run Cmd.(git % "fetch" % Fpath.to_string dir
+                                      % "gh-pages")
+      ) () |> R.join
+  in
+  Topkg.Vcs.get ()
+  >>= fun repo -> Ok (git_for_repo repo)
+  >>= fun git ->
+  (match OS.Cmd.run Cmd.(git % "fetch" % remote % "gh-pages") with
+  | Ok () -> Ok ()
+  | Error _ -> create_empty_gh_pages git)
+  >>= fun () -> (OS.Cmd.run_out Cmd.(git % "rev-parse" % "FETCH_HEAD")
+                 |> OS.Cmd.to_string)
+  >>= fun id -> OS.Cmd.run Cmd.(git % "branch" % "-f" % "gh-pages" % id)
+  >>= fun () -> Topkg_care.Delegate.publish_in_git_branch ~remote
+                  ~branch:"gh-pages" ~name ~version ~docdir ~dir
   >>= fun () -> Ok 0
 
 (* Publish releases *)
@@ -215,10 +251,10 @@ let main_cmd =
          information about topkg delegates, see topkg-delegate(7).";
      `P "This delegate only supports the following delegations:";
      `I ("$(b,topkg publish doc)",
-         "Commits and pushes the documentation to the gh-branch of the
+         "Commits and pushes the documentation to the gh-pages of the
           source repository. The publication directory PATH in the branch is
           determined by matching the OPAM 'doc' field against the
-          pattern SCHEME://HOST/REPO/PATH.");
+          pattern SCHEME://OWNER.github.io/REPO/PATH.");
      `I ("$(b,topkg publish distrib)",
          "This requires curl(1). Creates a GitHub release with the
          version and publication message given to the delegate and

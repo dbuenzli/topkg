@@ -50,7 +50,7 @@ let publish_alt p ~kind ~msg ~archive =
   run_delegate p Cmd.(v "publish" % "alt" % distrib_uri % kind %
                       name % version % msg % p archive)
 
-let publish_in_git_branch ~branch ~name ~version ~docdir ~dir =
+let publish_in_git_branch ~remote ~branch ~name ~version ~docdir ~dir =
   let pp_distrib ppf (name, version) =
     Fmt.pf ppf "%a %a"
       Topkg_care_text.Pp.name name Topkg_care_text.Pp.version version
@@ -110,7 +110,7 @@ let publish_in_git_branch ~branch ~name ~version ~docdir ~dir =
   | true ->
       let push_spec = strf "%s:%s" branch branch in
       Ok (git_for_repo repo) >>= fun git ->
-      OS.Cmd.run Cmd.(git % "push" % "origin" % push_spec)
+      OS.Cmd.run Cmd.(git % "push" % remote % push_spec)
       >>= fun () -> OS.Dir.delete ~recurse:true clonedir
       >>= fun () ->
       log_publish_result "Published documentation for" (name, version) dir;

@@ -25,7 +25,8 @@ val publish_alt :
   (unit, R.msg) Result.result
 
 val publish_in_git_branch :
-  branch:string -> name:string -> version:string -> docdir:Fpath.t ->
+  remote:string -> branch:string ->
+  name:string -> version:string -> docdir:Fpath.t ->
   dir:Fpath.t -> (unit, R.msg) result
 
 (** {1 Delegate} *)
