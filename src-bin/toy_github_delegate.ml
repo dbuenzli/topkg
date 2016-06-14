@@ -34,7 +34,7 @@ let publish_doc_gh_pages uri name version docdir =
   Fpath.of_string docdir
   >>= fun docdir -> repo_docdir_owner_repo_and_path_from_doc_uri uri
   >>= fun (owner, repo, dir) ->
-  let remote = strf "git@github.com:%s/%s.git" owner repo in
+  let remote = strf "git@@github.com:%s/%s.git" owner repo in
   let git_for_repo r = Cmd.of_list (Topkg.Cmd.to_list @@ Topkg.Vcs.cmd r) in
   let create_empty_gh_pages git =
     let msg = "Initial commit by topkg." in
