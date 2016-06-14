@@ -166,7 +166,7 @@ let man =
     `S "ACTIONS";
     `I ("$(b,descr)",
         "extract and print an OPAM descr file. This is used by the
-         $(b,pkg) action. See the $(b,--descr) option for details.");
+         $(b,pkg) action. See the $(b,--pkg-descr) option for details.");
     `I ("$(b,pkg)",
         "create an OPAM package description for a distribution.
          The action needs a distribution archive to operate, see
