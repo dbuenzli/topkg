@@ -275,21 +275,36 @@ let main_cmd =
           pattern SCHEME://OWNER.github.io/REPO/PATH.");
      `I ("$(b,topkg publish distrib)",
          "This requires curl(1). Creates a GitHub release with the
-         version and publication message given to the delegate and
-         uploads the distribution archive as a release artefact. By
-         default the username used for authentication is the name of
-         the GitHub owner of the repo (determined from the
-         $(i,DISTRIB_URI) URI, itself determined from the 'dev-repo'
-         field of the OPAM file, see topkg-delegate(7) and topkg's API
-         documentation for more details); in this case your GitHub
-         password will be prompted twice on the cli by curl (ugh). You
-         can use another user and/or specify the password using the
-         TOPKG_GITHUB_AUTH environment variable with a username:token
-         value, see $(i,https://developer.github.com/v3/auth/); the
-         token or password will be given to curl via stdin.  Also bear
-         in mind that error reporting (e.g. if the release already
-         exists) is made of raw JSON responses and thus very
-         user-unfriendly.")]
+          version and publication message given to the delegate and
+          uploads the distribution archive as a release artefact. This
+          requires GitHub authentication, see section GITHUB AUTHENTICATION
+          for details. Also bear in mind that error reporting
+          (e.g. if the release already exists) is made of raw JSON
+          responses and thus very user-unfriendly.");
+     `S "GITHUB AUTHENTICATION";
+     `P  "This being a toy delegate, you get toy authentication. Here
+          are the steps, in order, that are tried to authenticate you on
+          GitHub.";
+     `I ("1. opam-publish token stealing.",
+          "If you have already used opam-publish, an authorization token
+           was generated for it that is keept in
+           \\$(opam config root)/plugins/opam-publish/\\$(user).token. If
+           such a file exists, \\$(user) and the corresponding token will
+           be used for authentication.");
+     `I ("2. Environment variable.",
+         "You scan specify the user and the password or token using
+          the TOPKG_GITHUB_AUTH environment variable with a username:token
+          value, see $(i,https://developer.github.com/v3/auth/).");
+     `I ("3. Cli prompt.",
+         "As a last resort the username used for authentication is
+          the name of the GitHub owner of the repo (determined from
+          the $(i,DISTRIB_URI) URI, itself determined from the 'dev-repo'
+          field of the OPAM file, see topkg-delegate(7) and topkg's API
+          documentation for more details); in this case your GitHub
+          password will be prompted twice on the command line by curl (ugh).");
+     `S "ENVIRONMENT VARIABLES";
+     `I ("TOPKG_GITHUB_AUTH", "GitHub authentication data, see
+          the section GITHUB AUTHENTICATION for details."); ]
   in
   let version = "%%VERSION%%" in
   let info = Term.info "toy-github-topkg-delegate" ~version ~doc ~man in
