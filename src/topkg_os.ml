@@ -13,6 +13,44 @@ module Env = struct
   let opt_var name ~absent = match var name with None -> absent | Some v -> v
 end
 
+(* Directory operations *)
+
+module Dir = struct
+
+  (* Existence *)
+
+  let exists dir =
+    try Ok (Sys.(file_exists dir && is_directory dir)) with
+    | Sys_error e -> R.error_msg e
+
+  let must_exist dir = exists dir >>= function
+  | true -> Ok dir
+  | false -> R.error_msgf "%s: no such directory" dir
+
+  (* Current working directory *)
+
+  let current () = try Ok (Sys.getcwd ()) with Sys_error e -> R.error_msg e
+  let set_current d = try Ok (Sys.chdir d) with Sys_error e -> R.error_msg e
+
+  (* Directory contents *)
+
+  let contents ?(dotfiles = false) ?(rel = false) p =
+    try
+      let files = Array.to_list @@ Sys.readdir p in
+      if rel && dotfiles then Ok files else
+      let rec loop acc = function
+      | [] -> List.rev acc
+      | f :: fs ->
+          let acc =
+            if not dotfiles && Topkg_string.is_prefix "." f then acc else
+            if rel then f :: acc else Topkg_fpath.append p f :: acc
+          in
+          loop acc fs
+      in
+      Ok (loop [] files)
+    with Sys_error e -> R.error_msg e
+end
+
 (* File system operations *)
 
 module File = struct
@@ -135,44 +173,6 @@ module File = struct
     try
       let f = Filename.temp_file (Filename.basename Sys.argv.(0)) "topkg" in
       at_exit (fun () -> ignore (delete f)); Ok f
-    with Sys_error e -> R.error_msg e
-end
-
-(* Directory operations *)
-
-module Dir = struct
-
-  (* Existence *)
-
-  let exists dir =
-    try Ok (Sys.(file_exists dir && is_directory dir)) with
-    | Sys_error e -> R.error_msg e
-
-  let must_exist dir = exists dir >>= function
-  | true -> Ok dir
-  | false -> R.error_msgf "%s: no such directory" dir
-
-  (* Current working directory *)
-
-  let current () = try Ok (Sys.getcwd ()) with Sys_error e -> R.error_msg e
-  let set_current d = try Ok (Sys.chdir d) with Sys_error e -> R.error_msg e
-
-  (* Directory contents *)
-
-  let contents ?(dotfiles = false) ?(rel = false) p =
-    try
-      let files = Array.to_list @@ Sys.readdir p in
-      if rel && dotfiles then Ok files else
-      let rec loop acc = function
-      | [] -> List.rev acc
-      | f :: fs ->
-          let acc =
-            if not dotfiles && Topkg_string.is_prefix "." f then acc else
-            if rel then f :: acc else Topkg_fpath.append p f :: acc
-          in
-          loop acc fs
-      in
-      Ok (loop [] files)
     with Sys_error e -> R.error_msg e
 end
 
