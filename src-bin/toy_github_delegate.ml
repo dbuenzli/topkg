@@ -43,9 +43,7 @@ let publish_doc_gh_pages uri name version docdir =
       >>= fun () -> Topkg.Vcs.get ()
       >>= fun repo -> Ok (git_for_repo repo)
       >>= fun git -> OS.Cmd.run Cmd.(git % "checkout" % "--orphan" % "gh-pages")
-      >>= fun () -> (OS.Cmd.run_out Cmd.(v "echo" % msg)
-                     |> OS.Cmd.out_file (Fpath.v "README")
-                     |> OS.Cmd.success)
+      >>= fun () -> OS.File.write (Fpath.v "README") "" (* need some file *)
       >>= fun () -> OS.Cmd.run Cmd.(git % "add" % "README")
       >>= fun () -> OS.Cmd.run Cmd.(git % "commit" % "README" % "-m" % msg)
     in
