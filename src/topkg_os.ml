@@ -116,7 +116,7 @@ module File = struct
     |> R.reword_error @@ fun _ -> `Msg (err_no_parent op_name file)
 
   let safe_open_in_bin = with_parent_check open_in_bin "read"
-  let safe_open_out = with_parent_check open_out "write"
+  let safe_open_out_bin = with_parent_check open_out_bin "write"
 
   let read file =
     try
@@ -133,7 +133,7 @@ module File = struct
   let write file s =
     try
       let close oc = if file = dash then () else close_out_noerr oc in
-      (if file = dash then Ok stdout else safe_open_out file) >>= fun oc ->
+      (if file = dash then Ok stdout else safe_open_out_bin file) >>= fun oc ->
       try output_string oc s; flush oc; close oc; Ok ()
       with exn -> close oc; raise exn
     with Sys_error e -> R.error_msg e
@@ -141,7 +141,7 @@ module File = struct
   let write_subst file vars s = (* very ugly mister, too lazy to rewrite *)
     try
       let close oc = if file = dash then () else close_out_noerr oc in
-      (if file = dash then Ok stdout else safe_open_out file) >>= fun oc ->
+      (if file = dash then Ok stdout else safe_open_out_bin file) >>= fun oc ->
       try
         let start = ref 0 in
         let last = ref 0 in
