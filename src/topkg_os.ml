@@ -55,16 +55,6 @@ end
 
 module File = struct
 
-  let strf = Printf.sprintf
-
-  let err_no_parent op_name file =
-    strf "%s: Cannot %s file, parent directory does not exist" file op_name
-
-  let with_parent_check op op_name file =
-    (Dir.must_exist (Topkg_fpath.dirname file)
-     |> R.reword_error @@ fun _ -> `Msg (err_no_parent op_name file))
-    >>= fun _ -> Ok (op file)
-
   (* Famous file paths *)
 
   let null = match Sys.os_type with
@@ -116,13 +106,22 @@ module File = struct
 
   (* Reading and writing *)
 
+  let with_parent_check op op_name file =
+    let err_no_parent op_name file =
+      Topkg_string.strf
+        "%s: Cannot %s file, parent directory does not exist" file op_name
+    in
+    (Dir.must_exist (Topkg_fpath.dirname file)
+     >>= fun _ -> Ok (op file))
+    |> R.reword_error @@ fun _ -> `Msg (err_no_parent op_name file)
+
   let safe_open_in_bin = with_parent_check open_in_bin "read"
+  let safe_open_out = with_parent_check open_out "write"
 
   let read file =
     try
-      let ic = if file = dash then Ok stdin else safe_open_in_bin file in
-      ic >>= fun ic ->
       let close ic = if file = dash then () else close_in_noerr ic in
+      (if file = dash then Ok stdin else safe_open_in_bin file) >>= fun ic ->
       try
         let len = in_channel_length ic in
         let buf = Bytes.create len in
@@ -131,22 +130,18 @@ module File = struct
       with exn -> close ic; raise exn
     with Sys_error e -> R.error_msg e
 
-  let safe_open_out = with_parent_check open_out "create"
-
   let write file s =
     try
-      let oc = if file = dash then Ok stdout else safe_open_out file in
-      oc >>= fun oc ->
       let close oc = if file = dash then () else close_out_noerr oc in
+      (if file = dash then Ok stdout else safe_open_out file) >>= fun oc ->
       try output_string oc s; flush oc; close oc; Ok ()
       with exn -> close oc; raise exn
     with Sys_error e -> R.error_msg e
 
   let write_subst file vars s = (* very ugly mister, too lazy to rewrite *)
     try
-      let oc = if file = dash then Ok stdout else safe_open_out file in
-      oc >>= fun oc ->
       let close oc = if file = dash then () else close_out_noerr oc in
+      (if file = dash then Ok stdout else safe_open_out file) >>= fun oc ->
       try
         let start = ref 0 in
         let last = ref 0 in
