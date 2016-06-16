@@ -61,6 +61,11 @@ val distrib_prepare :
   t -> dist_build_dir:Topkg_fpath.t -> name:string -> version:string ->
   opam:Topkg_fpath.t -> Topkg_fpath.t list result
 
+(* Test *)
+
+val test :
+  t -> list:bool -> tests:string list -> args:Topkg_cmd.t option -> int result
+
 (* Build *)
 
 val build : t -> dry_run:bool -> Topkg_conf.t -> Topkg_conf.os -> int result

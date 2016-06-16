@@ -10,23 +10,36 @@ let lint_distrib pkg ~dir =
   Logs.app (fun m -> m "@.Linting distrib in %a" Fpath.pp dir);
   Topkg_care.Pkg.lint pkg ~dir Topkg_care.Pkg.lint_all
 
-let build_distrib pkg ~dir =
-  Logs.app (fun m -> m "@.Building distrib in %a" Fpath.pp dir);
-  let args = Cmd.(v "--pinned" % "false" % "--vcs" % "false") in
+let build_distrib pkg ~dir skip_tests =
+  Logs.app (fun m -> m "@.Building package in %a" Fpath.pp dir);
+  let tests = if skip_tests then Cmd.empty else Cmd.(v "--tests" % "true") in
+  let args = Cmd.(v "--pinned" % "false" % "--vcs" % "false" %% tests) in
   let out = OS.Cmd.out_string in
   Topkg_care.Pkg.build pkg ~dir ~args ~out >>= function
   | (_, (_, `Exited 0)) ->
-      Logs.app (fun m -> m "%a distrib builds" Topkg_care.Pp.status `Ok); Ok 0
+      Logs.app (fun m -> m "%a package builds" Topkg_care.Pp.status `Ok); Ok 0
   | (stdout, _) ->
-      Logs.app (fun m -> m "%s@\n%a distrib builds"
-                   stdout Topkg_care.Pp.status `Fail);
-      Ok 1
+      Logs.app (fun m -> m "%s@\n%a package builds"
+                   stdout Topkg_care.Pp.status `Fail); Ok 1
 
-let check_archive pkg ar ~skip_lint ~skip_build =
+let test_distrib pkg ~dir =
+  Logs.app (fun m -> m "@.Running package tests in %a" Fpath.pp dir);
+  let out = OS.Cmd.out_string in
+  Topkg_care.Pkg.test pkg ~dir ~args:Cmd.empty ~out >>= function
+  | (_, (_, `Exited 0)) ->
+      Logs.app (fun m -> m "%a package tests"
+                   Topkg_care.Pp.status `Ok); Ok 0
+  | (stdout, _) ->
+      Logs.app (fun m -> m "%s@\n%a package tests"
+                   stdout Topkg_care.Pp.status `Fail); Ok 1
+
+let check_archive pkg ar ~skip_lint ~skip_build ~skip_tests =
   Topkg_care.Archive.untbz ~clean:true ar
   >>= fun dir -> (if skip_lint then Ok 0 else lint_distrib pkg ~dir)
-  >>= fun c0 -> (if skip_build then Ok 0 else build_distrib pkg ~dir)
-  >>= fun c1 -> match c0 + c1 with
+  >>= fun c0 -> (if skip_build then Ok 0 else build_distrib pkg ~dir skip_tests)
+  >>= fun c1 -> (if skip_tests || skip_build then Ok 0 else
+                 test_distrib pkg ~dir)
+  >>= fun c2 -> match c0 + c1 + c2 with
   | 0 -> OS.Dir.delete ~recurse:true dir >>= fun () -> Ok 0
   | n -> Ok 1
 
@@ -50,12 +63,14 @@ let log_wrote_archive ar =
   Logs.app (fun m -> m "Wrote archive %a" Topkg_care.Pp.path ar); Ok ()
 
 let distrib
-    () pkg_file opam build_dir name version keep_dir skip_lint skip_build =
+    () pkg_file opam build_dir name version keep_dir skip_lint skip_build
+    skip_tests
+  =
   begin
     let pkg = Topkg_care.Pkg.v ?name ?version ?build_dir ?opam pkg_file in
     Topkg_care.Pkg.distrib_archive pkg ~keep_dir
     >>= fun ar -> log_wrote_archive ar
-    >>= fun () -> check_archive pkg ar ~skip_lint ~skip_build
+    >>= fun () -> check_archive pkg ar ~skip_lint ~skip_build ~skip_tests
     >>= fun errs -> log_footprint pkg ar
     >>= fun () -> warn_if_vcs_dirty ()
     >>= fun () -> Ok errs
@@ -76,8 +91,14 @@ let skip_lint =
   Arg.(value & flag & info ["skip-lint"] ~doc)
 
 let skip_build =
-  let doc = "Do not try to build the distribution from the archive." in
+  let doc = "Do not try to build the package from the archive." in
   Arg.(value & flag & info ["skip-build"] ~doc)
+
+let skip_tests =
+  let doc = "Do not try to build and run the package tests from the archive.
+             Implied by $(b,--skip-build)."
+  in
+  Arg.(value & flag & info ["skip-tests"] ~doc)
 
 let doc = "Create a package distribution archive"
 let man =
@@ -140,7 +161,8 @@ let cmd =
   let info = Term.info "distrib" ~sdocs:Cli.common_opts ~doc ~man in
   let t = Term.(pure distrib $ Cli.setup $ Cli.pkg_file $
                 Cli.dist_opam $ Cli.build_dir $ Cli.dist_name $
-                Cli.dist_version $ keep_build_dir $ skip_lint $ skip_build)
+                Cli.dist_version $ keep_build_dir $ skip_lint $ skip_build $
+                skip_tests)
   in
   (t, info)
 

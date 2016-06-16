@@ -9,7 +9,7 @@ open Cmdliner
 let cmds =
   [ Bistro.cmd; Browse.cmd; Build.cmd; Clean.cmd; Distrib.cmd; Doc.cmd;
     Help.cmd; Ipc.cmd; Issue.cmd; Lint.cmd; Log.cmd; Opam.cmd;
-    Publish.cmd; Status.cmd; Tag.cmd; ]
+    Publish.cmd; Status.cmd; Tag.cmd; Test.cmd; ]
 
 let main () = `Help (`Pager, None)
 

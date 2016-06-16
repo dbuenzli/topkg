@@ -427,6 +427,12 @@ module Pkg : sig
   val publish_msg : t -> (string, R.msg) result
   (** [publish_msg p] is [p]'s distribution publication message. *)
 
+  (** {1 Test} *)
+
+  val test :
+    t -> dir:Fpath.t -> args:Cmd.t ->
+    out:(OS.Cmd.run_out -> ('a, R.msg) result) -> ('a, R.msg) result
+
   (** {1 Build} *)
 
   val build :

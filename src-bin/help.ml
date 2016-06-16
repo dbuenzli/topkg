@@ -39,10 +39,11 @@ topkg opam submit   # Submit it to OCaml's OPAM repository";
     `P "Basic checks are performed on the distribution archive when it is
         created, but save time by catching errors early. Hence test that
         your source repository lints and that it builds in the current build
-        environment. You may want to run your test suite too.";
+        environment and that the package tests pass.";
     `Pre "\
 topkg lint
-topkg build # Check out the generated OPAM install file too";
+topkg build # Check out the generated OPAM install file too
+topkg test";
     `S "WRITE THE RELEASE NOTES";
     `P "Carefully write the release notes in the package's change log, these
         are essential time savers for users of the package. It may help to

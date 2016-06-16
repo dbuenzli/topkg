@@ -800,6 +800,12 @@ module Conf : sig
          Besides exisiting configuration bits should be setup according to the
          build environment.}} *)
 
+  val build_tests : t -> bool
+  (** [build_tests c] is the value of a predefined key [--tests] that
+      indicates if the tests should be built. If absent the value
+      depends on the {!build_context}, it is [true] in the [`Dev]
+      context and [false] in the other contexts. *)
+
   val dump : Format.formatter -> t -> unit
   (** [dump ppf c] formats an unspecified representation of [c] on [ppf]. *)
 
@@ -1044,6 +1050,16 @@ Pkg.mllib ~cond:jsoo "src/mylib_jsoo.mllib"
 (**/**)
   val unknown : string -> field
 (**/**)
+
+  (** {2:tests Test executable description} *)
+
+  val test : ?run:bool -> ?args:Cmd.t -> exec_field
+  (** [test] is a special {{!exec_field}executable field}: it doesn't
+      install the described executable (as such the [dst] argument is
+      ignored at the moment). If [run] is [true] (default) executes
+      the test with [args] when [ocaml pkg/pkg.ml test] is run; this
+      will notably run to test the distribution tarball. If
+      [run] is [false] the test needs to be invoked explicitely. *)
 
   (** {2 Higher-level installs} *)
 
@@ -1374,10 +1390,11 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
          discarded in the archive.}
       {- Test the distribution. Unpack it in directory [$BUILD/$NAME-$VERSION],
          lint the distribution, build the package in the current
-         build environment, on success delete [$BUILD/$NAME-$VERSION].
-         Note that this uses the archive's [pkg/pkg.ml] file, which
-         should not be different from the source's repository file
-         if the latter was clean when [topkg distrib] was invoked.}}
+         build environment with its tests, run the tests, on success
+         delete [$BUILD/$NAME-$VERSION]. Note that this uses the archive's
+         [pkg/pkg.ml] file, which should not be different from the source's
+         repository file if the latter was clean when [topkg distrib] was
+         invoked.}}
 
       {2 Note on watermarking}
 
@@ -1784,6 +1801,16 @@ field of the OPAM file. Likewise there is no need to invoke
 [ocamlfind] with your [META] file. Your [META] file should simply be
 installed in the directory of the [lib] field which happens
 automatically by default.
+
+If you described {{!Pkg.tests}tests} then you can also add the
+following field to the OPAM file to instruct how to build and execute
+them (unfortunately this involves the repetition of the build line
+at the moment with OPAM but might change in the future):
+{v
+build-test: [[
+  "ocaml" "pkg/pkg.ml" "build" "--pinned" "%{pinned}%" "--tests" "true"
+  "ocaml" "pkg/pkg.ml" "test" ]]
+v}
 
 {b Beyond OPAM.} If you need to support another package system you
 can invoke [pkg/pkg.ml] as above and then manage the installation and

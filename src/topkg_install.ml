@@ -7,7 +7,7 @@
 open Topkg_result
 
 type move_scheme =
-  { field : Topkg_opam.Install.field;
+  { field : [ `Test of bool * Topkg_cmd.t | Topkg_opam.Install.field ];
     auto_bin : bool;
     force : bool;
     built : bool;
@@ -37,6 +37,7 @@ let lib_drop_exts native native_dynlink =
 
 let to_build ?header c os i =
   let bdir = Topkg_conf.build_dir c in
+  let build_tests = Topkg_conf.build_tests c in
   let ocaml_conf = Topkg_conf.OCaml.v c os in
   let native = Topkg_conf.OCaml.native ocaml_conf in
   let native_dylink = Topkg_conf.OCaml.native_dynlink ocaml_conf in
@@ -46,20 +47,26 @@ let to_build ?header c os i =
   let bin_drops = List.map ext_to_string (bin_drop_exts native) in
   let lib_drops = List.map ext_to_string (lib_drop_exts native native_dylink) in
   let add acc m =
-    let mv (targets, moves) src dst =
+    let mv (targets, moves, tests as acc) src dst =
       let src = file_to_str src in
       let drop = not m.force && match m.field with
       | `Bin -> List.exists (Filename.check_suffix src) bin_drops
       | `Lib -> List.exists (Filename.check_suffix src) lib_drops
       | _ -> false
       in
-      if drop then (targets, moves) else
+      if drop then (targets, moves, tests) else
       let dst = file_to_str dst in
       let maybe = List.exists (Filename.check_suffix src) maybe_build in
       let targets = if m.built && not maybe then src :: targets else targets in
       let src = if m.built then Topkg_string.strf "%s/%s" bdir src else src in
-      let move = (m.field, Topkg_opam.Install.move ~maybe src ~dst) in
-      (targets, move :: moves)
+      match m.field with
+      | `Test (run, args) ->
+          if not build_tests then acc else
+          let test = Topkg_test.v src ~args ~run in
+          (targets, moves, test :: tests)
+      | #Topkg_opam.Install.field as field ->
+          let move = (field, Topkg_opam.Install.move ~maybe src ~dst) in
+          (targets, move :: moves, tests)
     in
     let src, dst =
       if not m.auto_bin then m.src, m.dst else
@@ -70,8 +77,9 @@ let to_build ?header c os i =
     let expand acc ext = mv acc (src, ext) (dst, ext) in
     List.fold_left expand acc m.exts
   in
-  let targets, moves = List.fold_left add ([], []) (flatten i) in
-  targets, ((`Header header), moves)
+  let targets, moves, tests = List.fold_left add ([], [], []) (flatten i) in
+  let tests = if build_tests then Some (List.rev tests) else None in
+  targets, ((`Header header), moves), tests
 
 (* Install fields *)
 
@@ -108,6 +116,8 @@ let share_root = field `Share_root
 let stublibs = field `Stublibs
 let toplevel = field `Toplevel
 let unknown name = field (`Unknown name)
+let test ?(run = true) ?(args = Topkg_cmd.empty) =
+  field_exec (`Test (run, args))
 
 (* Higher-level installs *)
 

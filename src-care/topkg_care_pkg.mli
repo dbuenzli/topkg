@@ -48,6 +48,12 @@ val distrib_uri : ?raw:bool -> t -> (string, R.msg) result
 val distrib_file : t -> (Fpath.t, R.msg) result
 val publish_msg : t -> (string, R.msg) result
 
+(** {1 Test} *)
+
+val test :
+  t -> dir:Fpath.t -> args:Cmd.t ->
+  out:(OS.Cmd.run_out -> ('a, R.msg) result) -> ('a, R.msg) result
+
 (** {1 Build} *)
 
 val build :

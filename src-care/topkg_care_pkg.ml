@@ -281,13 +281,16 @@ let distrib_archive p ~keep_dir =
   (if keep_dir then Ok () else OS.Dir.delete ~recurse:true dist_build_dir)
   >>= fun () -> Ok archive
 
-(* Build *)
+(* Test & build *)
 
-let build p ~dir ~args ~out =
+let run p ~dir cmd ~args ~out =
   let pkg_file = p.pkg_file in
-  let build_cmd = Cmd.(v "ocaml" % p pkg_file % "build" %% args) in
-  let build () = OS.Cmd.run_out build_cmd |> out in
-  R.join @@ OS.Dir.with_current dir build ()
+  let cmd = Cmd.(v "ocaml" % p pkg_file % cmd %% args) in
+  let run () = OS.Cmd.run_out cmd |> out in
+  R.join @@ OS.Dir.with_current dir run ()
+
+let test p ~dir ~args ~out = run p ~dir "test" ~args ~out
+let build p ~dir ~args ~out = run p ~dir "build" ~args ~out
 
 (* Lint *)
 

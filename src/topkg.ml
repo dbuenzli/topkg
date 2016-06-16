@@ -44,6 +44,7 @@ module Pkg = struct
   let stublibs = Topkg_install.stublibs
   let toplevel = Topkg_install.toplevel
   let unknown = Topkg_install.unknown
+  let test = Topkg_install.test
 
   let mllib = Topkg_install.mllib
   let clib = Topkg_install.clib

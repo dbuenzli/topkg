@@ -22,10 +22,13 @@ let pp_help ppf () =
   prf ppf "Commands:@,";
   prf ppf "  build [OPTION]...@,";
   prf ppf "      @[Build the package, see `Build options' below.@]@,";
+  prf ppf "  test [OPTION]... [TEST]... [-- [ARG]...]@,";
+  prf ppf "      @[Run all or the given built package tests, \
+                   see `Test options' below.@]@,";
   prf ppf "  help@,";
   prf ppf "      @[Show this help.@]@,";
   prf ppf "  ipc VERBOSITY [ARG]...@,";
-  prf ppf "     @[Interprocess communication with topkg care tools.@]@,@,";
+  prf ppf "      @[Interprocess communication with topkg care tools.@]@,@,";
   prf ppf "Options:@,";
   prf ppf "  -h, -help, --help@,";
   prf ppf "      Show this help.@,";
@@ -39,7 +42,12 @@ let pp_help ppf () =
   prf ppf "  -d, --dry-run@,";
   prf ppf "      @[Do not run build instructions,@ only@ determine@ and@ \
                    write@ the@ OPAM@ install@ file.@]@,@,";
-  prf ppf "  @[%a@]@]" Topkg_conf.pp_keys_cli_opts ();
+  prf ppf "  @[%a@]@,@," Topkg_conf.pp_keys_cli_opts ();
+  prf ppf "Test options:@,";
+  prf ppf "  --build-dir BUILD_DIR (absent=discovered)@,";
+  prf ppf "      @[Specifies the build directory BUILD_DIR.@]@,";
+  prf ppf "  -l, --list@,";
+  prf ppf "      @[Do not run the tests, list them.@]@,";
   ()
 
 (* Commands *)
@@ -69,6 +77,14 @@ let build_cmd pkg dry_run args =
   >>= fun c -> Ok (log_conf c; adjust_pkg_to_conf pkg c)
   >>= fun pkg -> Topkg_pkg.build pkg ~dry_run c `Host_os
 
+let test_cmd pkg build_dir list tests args =
+  let pkg = match build_dir with
+  | None -> pkg
+  | Some build_dir ->
+      Topkg_pkg.with_name_and_build_dir pkg Topkg_pkg.(name pkg) build_dir
+  in
+  Topkg_pkg.test pkg list tests args
+
 let ipc_cmd pkg args =
   Topkg_ipc.write_answer (Topkg_cmd.of_list args) pkg >>= fun () -> Ok 0
 
@@ -76,6 +92,7 @@ let run_cmd pkg cmd args = match cmd with
 | `Help -> help_cmd pkg
 | `Version -> version_cmd pkg
 | `Build dry_run -> build_cmd pkg dry_run args
+| `Test (bdir, list, tests, args) -> test_cmd pkg bdir list tests args
 | `Ipc -> ipc_cmd pkg args
 
 (* Cli interface *)
@@ -85,6 +102,8 @@ let incr_verb = function
 | Some Topkg_log.Warning -> Some Topkg_log.Info
 | Some Topkg_log.Info -> Some Topkg_log.Debug
 | v -> v
+
+let is_opt s = Topkg_string.(is_prefix "-" s || is_prefix "--" s)
 
 let parse_cli_help_version_verbosity args =
   let is_help = function "-h" | "--help" | "-help" -> true | _ -> false in
@@ -98,8 +117,8 @@ let parse_cli_help_version_verbosity args =
   | a :: args when is_version a ->
       let cmd = if cmd = `Help then `Help else `Version in
       loop cmd verb acc args
+  | ("--" :: _ | [] as rest) -> cmd, verb, List.rev (List.rev_append rest acc)
   | a :: args -> loop cmd verb (a :: acc) args
-  | [] -> cmd, verb, List.rev acc
   in
   match args with
   | "help" :: args -> loop `Help default_verb [] args
@@ -113,6 +132,19 @@ let parse_build_args args =
   | [] -> dry_run, List.rev acc
   in
   loop false [] args
+
+let parse_test_args args =
+  let rec loop build_dir list tests = function
+  | ("--" :: args) ->
+      Ok (build_dir, list, List.rev tests, Some (Topkg_cmd.of_list args))
+  | [] -> Ok (build_dir, list, List.rev tests, None)
+  | "--build-dir" :: bdir :: args -> loop (Some bdir) list tests args
+  | ("--list" | "-l") :: args -> loop build_dir true tests args
+  | a :: args ->
+      if is_opt a then R.error_msgf "unknown option `%s'" a else
+      loop build_dir list (a :: tests) args
+  in
+  loop None false [] args
 
 let parse_ipc_args args =
   begin match args with
@@ -139,6 +171,9 @@ let parse_cli () =
           | "build" :: args ->
               let dry_run, args = parse_build_args args in
               Ok (`Build dry_run, verbosity, args)
+          | "test" :: args ->
+              parse_test_args args >>= fun (bdir, list, tests, args) ->
+              Ok (`Test (bdir, list, tests, args), verbosity, [])
           | cmd :: _ -> R.error_msgf "Unknown command '%s'" cmd
           | [] -> R.error_msg "No command specified"
   end
@@ -169,7 +204,9 @@ let main pkg =
     parse_cli ()
     >>= fun (cmd, log_level, args) -> setup_log_level log_level
     >>= fun () -> run_cmd pkg cmd args
-    >>= fun ret -> check_log ret
+    >>= fun ret -> match cmd with
+    | `Build _ -> (check_log ret)
+    | _ -> Ok ret
   end
   |> Topkg_log.on_error_msg ~use:(fun () -> 1)
 

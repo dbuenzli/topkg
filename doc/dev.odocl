@@ -26,6 +26,7 @@ Topkg_os
 Topkg_pkg
 Topkg_result
 Topkg_string
+Topkg_test
 Topkg_vcs
 
 Bistro
@@ -42,3 +43,4 @@ Log
 Publish
 Status
 Tag
+Test

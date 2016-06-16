@@ -159,6 +159,75 @@ let distrib_prepare_pin p =
   >>= fun files -> Topkg_distrib.watermark_files ws_defs files
   >>= fun () -> Topkg_distrib.massage d ()
 
+(* Test *)
+
+let tests_file p = Topkg_fpath.(build_dir p // "_topkg.tests")
+let tests_file_codec = Topkg_codec.(option @@ list Topkg_test.codec)
+let write_tests_file p tests =
+  Topkg_codec.write (tests_file p) tests_file_codec tests
+
+let tests_run tests ~args =
+  let run_test acc t =
+    let exec = Topkg_test.exec t in
+    let args = match args with Some args -> args | None -> Topkg_test.args t in
+    let cmd = Topkg_cmd.(v exec %% args) in
+    Topkg_log.info (fun m -> m "Running test %s" exec);
+    acc + ((Topkg_os.Cmd.run_status cmd >>| fun (`Exited c) -> c)
+           |> Topkg_log.on_error_msg ~use:(fun _ -> 1))
+  in
+  match List.fold_left run_test 0 tests with
+  | 0 -> Ok 0
+  | n -> Topkg_log.err (fun m -> m "Some tests failed."); Ok 1
+
+let tests_list tests =
+  let list_test t =
+    let args = Topkg_cmd.to_list (Topkg_test.args t) in
+    let args = String.concat " " (List.map Filename.quote args) in
+    let exec = Topkg_test.exec t in
+    let run = if Topkg_test.run t then "[default]" else "" in
+    print_endline (Topkg_string.strf "%s %s %s" exec args run)
+  in
+  List.iter list_test tests
+
+let tests_select queries tests = match queries with
+| [] -> List.filter (fun t -> Topkg_test.run t) tests
+| qs ->
+    let query q =
+      let add_test acc t =
+        let exec = Topkg_test.exec t in
+        if q = exec then t :: acc else
+        let exec = Topkg_fpath.basename exec in
+        if q = exec then t :: acc else
+        let exec = Topkg_fpath.rem_ext exec in
+        if q = exec then t :: acc else acc
+      in
+      match List.fold_left add_test [] tests with
+      | [] -> Topkg_log.warn (fun m -> m "No test matching `%s'" q); []
+      | acc -> List.rev acc
+    in
+    List.flatten (List.map query queries)
+
+let test p ~list ~tests:queries ~args =
+  let tests_file = tests_file p in
+  Topkg_os.File.exists tests_file >>= function
+  | false ->
+      R.error_msgf "%s: no such file. Did you forget to build the package ?"
+        tests_file
+  | true ->
+      Topkg_codec.read tests_file tests_file_codec
+      >>= function
+      | None ->
+          R.error_msgf "The tests were not built."
+      | Some tests ->
+          match list with
+          | true -> tests_list tests; Ok 0
+          | false ->
+              let no_test = format_of_string "No tests to run." in
+              match tests_select queries tests with
+              | [] when queries = [] -> Topkg_log.app (fun m -> m no_test); Ok 0
+              | [] -> Topkg_log.err (fun m -> m no_test); Ok 1
+              | tests -> tests_run tests ~args
+
 (* Build *)
 
 let write_opam_install_file p install =
@@ -175,7 +244,7 @@ let run_build_hook kind hook c =
 let build p ~dry_run c os =
   install p c
   >>= fun is -> Ok (Topkg_install.to_build ~header:p.name c os is)
-  >>= fun (targets, install) -> match dry_run with
+  >>= fun (targets, install, tests) -> match dry_run with
   | true -> write_opam_install_file p install >>= fun () -> Ok 0
   | false ->
       let build_cmd = (Topkg_build.cmd p.build) c os in
@@ -191,6 +260,7 @@ let build p ~dry_run c os =
       >>= fun () -> run_build_hook "Pre" (Topkg_build.pre p.build) c
       >>= fun () -> Topkg_os.Cmd.run Topkg_cmd.(build_cmd %% of_list targets)
       >>= fun () -> write_opam_install_file p install
+      >>= fun () -> write_tests_file p tests
       >>= fun () -> run_build_hook "Post" (Topkg_build.post p.build) c
       >>= fun () -> Ok 0
 

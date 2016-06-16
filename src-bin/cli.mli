@@ -75,6 +75,14 @@ val setup : unit Term.t
     setup does, by side effect, set {!Logs} log verbosity, adjusts
     colored output and sets the current working directory. *)
 
+(** {1 Verbosity propagation} *)
+
+val propagate_verbosity_to_pkg_file : unit -> Bos.Cmd.t
+(** [propagate_verbosity_to_pkg_file ()] is
+    a command line fragment that has the option to propagate
+    the current log verbosity to an invocation of the package
+    description. *)
+
 (** {1 Warnings and errors} *)
 
 val warn_if_vcs_dirty : string -> (unit, R.msg) result

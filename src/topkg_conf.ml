@@ -188,6 +188,13 @@ let pinned =
   in
   key "pinned" bool ~absent:false ~doc
 
+let tests =
+  let doc = "Specifies whether tests should be built. If absent depends \
+             on the build context, true for development and false otherwise."
+  in
+  let absent () = Ok None in
+  discovered_key "tests" (some bool) ~absent ~doc
+
 let installer = (* FIXME remove deprecated *)
   let doc = "Deprecated (has no effect)." in
   key "installer" bool ~absent:false ~doc
@@ -322,6 +329,13 @@ let build_context c =
   if not (vcs c) then `Distrib else
   if (pinned c) then `Pin else
   `Dev
+
+let build_tests c = match value c tests with
+| Some b -> b
+| None ->
+    match build_context c with
+    | `Dev -> true
+    | _ -> false
 
 (* OCaml configuration, as communicated by ocamlc -config  *)
 

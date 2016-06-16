@@ -164,6 +164,14 @@ let setup =
   in
   Term.(ret (const setup $ style_renderer $ log_level $ cwd))
 
+(* Verbosity propagation. *)
+
+let propagate_verbosity_to_pkg_file () = match Logs.level () with
+| None -> Cmd.(v "-q")
+| Some Logs.Info -> Cmd.(v "-v")
+| Some Logs.Debug -> Cmd.(v "-v" % "-v")
+| Some _ -> Cmd.empty
+
 (* Error handling *)
 
 let warn_if_vcs_dirty msg =

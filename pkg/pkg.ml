@@ -16,6 +16,7 @@
 #mod_use "topkg_fexts.ml"
 #mod_use "topkg_codec.ml"
 #mod_use "topkg_opam.ml"
+#mod_use "topkg_test.ml"
 #mod_use "topkg_install.ml"
 #mod_use "topkg_build.ml"
 #mod_use "topkg_distrib.ml"
@@ -39,7 +40,8 @@ let () =
   | "topkg" ->
       Ok [ Pkg.lib "pkg/META";
            Pkg.lib "topkg.opam" ~dst:"opam";
-           Pkg.mllib ~api:["Topkg"] "src/topkg.mllib" ]
+           Pkg.mllib ~api:["Topkg"] "src/topkg.mllib";
+           Pkg.test "test/test"; ]
   | "topkg-care" ->
       Ok [ Pkg.lib "topkg-care.opam" ~dst:"opam";
            Pkg.mllib ~api:["Topkg_care"] "src-care/topkg_care.mllib";

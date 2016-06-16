@@ -17,7 +17,7 @@ action ()
                     $OCAMLBUILD toy_github_delegate.native ;;
         lib-byte)   $OCAMLBUILD topkg.cma topkg_care.cma ;;
         lib-native) $OCAMLBUILD topkg.cmxa topkg_care.cmxa ;;
-        test|tests) $OCAMLBUILD test/tests.otarget ;;
+        test|tests) shift; topkg build && topkg test $* ;;
         doc)        shift; topkg doc --dev $*;;
         api-doc)    shift; topkg doc $* ;;
         clean)      $OCAMLBUILD -clean ;;

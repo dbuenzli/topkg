@@ -6,26 +6,21 @@
 
 open Bos_setup
 
-let propagate_verbosity () = match Logs.level () with
-| None -> Cmd.(v "-q")
-| Some Logs.Info -> Cmd.(v "-v")
-| Some Logs.Debug -> Cmd.(v "-v" % "-v")
-| Some _ -> Cmd.empty
-
-let build_args pkg_name build_dir dry_run args =
+let build_args pkg_name build_dir dry_run tests args =
   let on_some_use_opt opt to_arg = function
   | None -> Cmd.empty
   | Some value -> Cmd.(v opt % to_arg value)
   in
-  let verb = propagate_verbosity () in
+  let verb = Cli.propagate_verbosity_to_pkg_file () in
   let pkg_name = on_some_use_opt "--pkg-name" (fun x -> x) pkg_name in
   let build_dir = on_some_use_opt "--build-dir" Cmd.p build_dir in
   let dry_run = if dry_run then Cmd.(v "--dry-run") else Cmd.empty in
-  Cmd.(verb %% dry_run %% pkg_name %% build_dir %% Cmd.of_list args)
+  let tests = on_some_use_opt "--tests" String.of_bool tests in
+  Cmd.(verb %% dry_run %% pkg_name %% build_dir %% tests %% Cmd.of_list args)
 
-let build () pkg_file pkg_name build_dir dry_run args =
+let build () pkg_file pkg_name build_dir dry_run tests args =
   let pkg = Topkg_care.Pkg.v pkg_file in
-  let args = build_args pkg_name build_dir dry_run args in
+  let args = build_args pkg_name build_dir dry_run tests args in
   let out = OS.Cmd.out_stdout in
   begin
     OS.Dir.current ()
@@ -68,12 +63,19 @@ let dry_run =
   in
   Arg.(value & flag & info ["d"; "dry-run"] ~doc)
 
+let tests =
+  let doc = "Specifies whether tests should be built. If absent depends on the
+             build context, true for development and false otherwise. This is
+             equivalent to specify the same option after the -- token."
+  in
+  Arg.(value & opt (some bool) None  & info ["tests"] ~doc ~docv:"BOOL")
+
 let doc = "Build the package"
 let man =
   [ `S "SYNOPSIS";
     `P "$(b,$(mname)) $(b,$(tname)) [$(i,OPTION)]... [-- $(i,BUILD_CONF)...]";
     `S "DESCRIPTION";
-    `P "The $(b,$(tname)) builds the package. This is equivalent to
+    `P "The $(b,$(tname)) command builds the package. This is equivalent to
         invoke:";
     `Pre "ocaml ./pkg/pkg.ml build $(i,BUILD_CONF)...";
   ] @ Cli.common_opts_man @ [
@@ -88,7 +90,7 @@ let man =
 let cmd =
   let info = Term.info "build" ~sdocs:Cli.common_opts ~doc ~man in
   let t = Term.(pure build $ Cli.setup $ Cli.pkg_file $ pkg_name $ build_dir $
-                dry_run $ args)
+                dry_run $ tests $ args)
   in
   (t, info)
 
