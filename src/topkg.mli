@@ -1375,6 +1375,8 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
          {- Invoke the [files_to_watermark] function of [distrib] in the
             distribution build directory to determine the files to watermark
             with [watermarks] and perform the watermarking process.}
+         {- Adds a version field with value [$VERSION] to the OPAM files
+            mentioned by {!Pkg.describe}.}
          {- Run the [massage] function of [distrib] in the distribution
             build directory. This can be used to create distribution time
             build artefacts.}}}
@@ -1396,7 +1398,7 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
          repository file if the latter was clean when [topkg distrib] was
          invoked.}}
 
-      {2 Note on watermarking}
+      {2:watnote Note on watermarking}
 
       It is right to doubt the beauty and be concerned about the
       watermarking process. However experience shows that alternatives
