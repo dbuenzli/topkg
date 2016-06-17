@@ -58,10 +58,16 @@ let unit =
   let dec = function "\x00" -> () | s -> err ~kind s in
   v ~kind ~enc ~dec
 
+let const c =
+  let kind = "const" in
+  let enc = function _ -> "" in
+  let dec = function "" -> c | s -> err ~kind s in
+  v ~kind ~enc ~dec
+
 let bool =
   let kind = "bool" in
   let enc = function false -> "\x00" | true -> "\x01" in
-  let dec = function "\x00" -> false | "\x01" -> true |  s -> err ~kind s in
+  let dec = function "\x00" -> false | "\x01" -> true | s -> err ~kind s in
   v ~kind ~enc ~dec
 
 let int =
@@ -190,6 +196,22 @@ let t5 c0 c1 c2 c3 c4 =
   | [v0; v1; v2; v3; v4] ->
       (dec c0 v0), (dec c1 v1), (dec c2 v2), (dec c3 v3), (dec c4 v4)
   | _ -> err ~kind s
+  in
+  v ~kind ~enc ~dec
+
+let alt ~kind tag cs =
+  let l = Array.length cs in
+  if l > 256 then invalid_arg @@ Topkg_string.strf "too many codecs (%d)" l;
+  let enc v =
+    let tag = tag v in
+    Printf.sprintf "%c%s" (Char.chr tag) (enc cs.(tag) v)
+  in
+  let dec s = match Topkg_string.head s with
+  | None -> err ~kind s
+  | Some tag ->
+      let tag = Char.code tag in
+      if tag < Array.length cs then dec cs.(tag) (tail s) else
+      err ~kind s
   in
   v ~kind ~enc ~dec
 

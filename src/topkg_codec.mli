@@ -29,6 +29,7 @@ val write : Topkg_fpath.t -> 'a t -> 'a -> unit result
 val read : Topkg_fpath.t -> 'a t -> 'a result
 
 val unit : unit t
+val const : 'a -> 'a t
 val bool : bool t
 val int : int t
 val string : string t
@@ -40,6 +41,7 @@ val t2 : 'a t -> 'b t -> ('a * 'b) t
 val t3 : 'a t -> 'b t -> 'c t -> ('a * 'b * 'c) t
 val t4 : 'a t -> 'b t -> 'c t -> 'd t -> ('a * 'b * 'c * 'd) t
 val t5 : 'a t -> 'b t -> 'c t -> 'd t -> 'e t -> ('a * 'b * 'c * 'd * 'e) t
+val alt : kind:string -> ('a -> int) -> 'a t array -> 'a t
 val version : int -> 'a t -> 'a t
 val view : ?kind:string -> ('a -> 'b) * ('b -> 'a) -> 'b t -> 'a t
 

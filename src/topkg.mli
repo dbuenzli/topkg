@@ -1498,6 +1498,9 @@ module Private : sig
     val unit : unit t
     (** [unit] codecs a [()]. *)
 
+    val const : 'a -> 'a t
+    (** [const v] codecs the constant [v]. *)
+
     val bool : bool t
     (** [bool] codecs booleans. *)
 
@@ -1528,6 +1531,12 @@ module Private : sig
     val t5 : 'a t -> 'b t -> 'c t -> 'd t -> 'e t ->
       ('a * 'b * 'c * 'd * 'e) t
     (** [t5] is like {!pair} but for qintuples. *)
+
+    val alt : kind:string -> ('a -> int) -> 'a t array -> 'a t
+    (** [alt tag cs] codecs values by tagging them with [tag] and
+        using the corresponding codec in [cs].
+
+        @raise Invalid_argument if [Array.length cs > 256]. *)
 
     val version : int -> 'a t -> 'a t
     (** [version num c] versions codec [c] with number [num].
