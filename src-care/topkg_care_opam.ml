@@ -19,8 +19,14 @@ let publish =
 
 let ensure_publish () = OS.Cmd.must_exist publish >>| fun _ -> ()
 let submit ?msg ~pkg_dir =
-  let msg = match msg with None -> Cmd.empty | Some m -> Cmd.(v "--msg" % m) in
-  OS.Cmd.run Cmd.(publish % "submit" %% msg % p pkg_dir)
+  let msg = match msg with
+  | None -> Ok (Cmd.empty)
+  | Some msg ->
+      OS.File.tmp "topkg-opam-submit-msg-%s"
+      >>= fun m -> OS.File.write m msg
+      >>= fun () -> Ok Cmd.(v "--msg" % p m)
+  in
+  msg >>= fun msg -> OS.Cmd.run Cmd.(publish % "submit" %% msg % p pkg_dir)
 
 (* Packages *)
 
