@@ -1,5 +1,25 @@
+v0.7.4 2016-06-17 Cambridge (UK)
+--------------------------------
 
-v0.7.3 2016-02-12 Cambridge (UK)
+- Add test description and run support. New `topkg test` command.
+- Add distribution publication description support. Allows to define the
+  set of default publication artefacts in the package description. The cli
+  syntax of `topkg publish` for alternative artefacts changes from
+  `alt KIND` to `alt-KIND`.
+- Distributed (and thus installed) OPAM files are now properly
+  versioned via the `version:` field.
+- Improve tarball reproducibility across systems by not relying on the
+  VCS checkout state for determining the read and write rights (#43).
+- OPAM package submission: use the `opam-publish` submit message
+  to append the release notes to the submission.
+- Toy GitHub delegate: improve user authentication by trying to steal
+  an existing opam-publish token.
+- Toy GitHub delegate: improve package documentation publication. Thanks
+  to Thomas Gazagnaire for the patches.
+- Error message and IPC logging level propagation improvements. Thanks to
+  Thomas Gazagnaire for the help.
+
+v0.7.3 2016-06-12 Cambridge (UK)
 --------------------------------
 
 - Change pin build detection (#44). This changes OPAM build
