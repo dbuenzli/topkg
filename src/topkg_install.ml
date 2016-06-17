@@ -78,7 +78,7 @@ let to_build ?header c os i =
     List.fold_left expand acc m.exts
   in
   let targets, moves, tests = List.fold_left add ([], [], []) (flatten i) in
-  let tests = if build_tests then Some (List.rev tests) else None in
+  let tests = if build_tests then Some tests else None in
   targets, ((`Header header), moves), tests
 
 (* Install fields *)
