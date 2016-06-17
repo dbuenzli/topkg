@@ -20,6 +20,7 @@
 #mod_use "topkg_install.ml"
 #mod_use "topkg_build.ml"
 #mod_use "topkg_distrib.ml"
+#mod_use "topkg_publish.ml"
 #mod_use "topkg_pkg.ml"
 #mod_use "topkg_ipc.ml"
 #mod_use "topkg_main.ml"

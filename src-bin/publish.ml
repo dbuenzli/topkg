@@ -8,10 +8,6 @@ open Bos_setup
 
 let absolute path = OS.Dir.current () >>| fun cwd -> Fpath.(cwd // path)
 
-let get_kind = function
-| Some k -> Ok k
-| None -> R.error_msgf "No alternate artefact KIND specified"
-
 let gen_doc dir =
   let do_doc () =
     OS.Cmd.run Cmd.(v "topkg" % "doc")
@@ -34,28 +30,33 @@ let publish_distrib pkg =
   >>= fun archive -> Topkg_care.Delegate.publish_distrib pkg ~msg ~archive
 
 let publish_alt pkg kind =
-  get_kind kind
-  >>= fun kind -> Topkg_care.Pkg.distrib_file pkg
+  Topkg_care.Pkg.distrib_file pkg
   >>= fun distrib_file -> Topkg_care.Pkg.publish_msg pkg
   >>= fun msg -> absolute distrib_file
   >>= fun archive -> Topkg_care.Delegate.publish_alt pkg ~kind ~msg ~archive
 
 let publish ()
     pkg_file build_dir name version opam delegate change_log distrib_uri
-    distrib_file publish_msg artefact kind
+    distrib_file publish_msg publish_artefacts
   =
   begin
-    let pkg = Topkg_care.Pkg.v ?name ?version ?build_dir ?opam ?delegate
-        ?change_log ?distrib_uri ?distrib_file ?publish_msg pkg_file
+    let publish_artefacts = match publish_artefacts with
+    | [] -> None
+    | v -> Some v
     in
-    let todo = match artefact with None -> [`Doc; `Distrib] | Some a -> [a] in
+    let pkg = Topkg_care.Pkg.v ?name ?version ?build_dir ?opam ?delegate
+        ?change_log ?distrib_uri ?distrib_file ?publish_msg
+        ?publish_artefacts pkg_file
+    in
     let publish_artefact acc artefact =
       acc >>= fun acc -> match artefact with
       | `Doc -> publish_doc pkg
       | `Distrib -> publish_distrib pkg
-      | `Alt -> publish_alt pkg kind
+      | `Alt kind -> publish_alt pkg kind
     in
-    List.fold_left publish_artefact (Ok ()) todo >>= fun () -> Ok 0
+    Topkg_care.Pkg.publish_artefacts pkg
+    >>= fun todo -> List.fold_left publish_artefact (Ok ()) todo
+    >>= fun () -> Ok 0
   end
   |> Cli.handle_error
 
@@ -63,21 +64,30 @@ let publish ()
 
 open Cmdliner
 
-let artefact =
-  let artefact = [ "doc", `Doc; "distrib", `Distrib; "alt", `Alt] in
-  let doc = strf "The artefact to publish. $(docv) must be one of %s. If
-                  absent, determined by the package description."
-      (Arg.doc_alts_enum artefact)
+let artefacts =
+  let alt_prefix = "alt-" in
+  let parser = function
+  | "do" | "doc" -> `Ok `Doc
+  | "di" | "dis" | "dist" | "distr" | "distri" | "distrib" -> `Ok `Distrib
+  | s when String.is_prefix alt_prefix s ->
+      begin match String.(with_range ~first:(length alt_prefix) s) with
+      | "" -> `Error ("`alt-' alternative artefact kind is missing")
+      | kind -> `Ok (`Alt kind)
+      end
+  | s -> `Error (strf "`%s' unknown publication artefact" s)
   in
-  let artefact = Arg.enum artefact in
-  Arg.(value & pos 0 (some artefact) None & info [] ~doc ~docv:"ARTEFACT")
-
-let kind =
-  let doc = "For $(b,alt) artefacts, the artefact kind $(docv). The
-             semantics of alternative artefact kinds is left to the
-             delegate.";
+  let printer ppf = function
+  | `Doc -> Fmt.string ppf "doc"
+  | `Distrib -> Fmt.string ppf "distrib"
+  | `Alt a -> Fmt.pf ppf "alt-%s" a
   in
-  Arg.(value & pos 1 (some string) None & info [] ~doc ~docv:"KIND")
+  let artefact = parser, printer in
+  let doc = strf "The artefact to publish. $(docv) must be one of `doc`,
+                  `distrib` or `alt-$(i,KIND)`. If absent, the set of
+                  default publication artefacts is determined by the
+                  package description."
+  in
+  Arg.(value & pos_all artefact [] & info [] ~doc ~docv:"ARTEFACT")
 
 let doc = "Publish package distribution archives and derived artefacts"
 let man =
@@ -94,7 +104,7 @@ let man =
         "Publishes a distribution archive on the WWW.");
     `I ("$(b,doc)",
         "Publishes the documentation of a distribution archive on the WWW.");
-    `I ("$(b,alt) $(i,KIND)",
+    `I ("$(b,alt)-$(i,KIND)",
         "Publishes the alternative artefact of kind $(i,KIND) of
          a distribution archive. The semantics of alternative artefacts
          is left to the delegate, it could be anything, an email,
@@ -113,7 +123,7 @@ let cmd =
   let t = Term.(pure publish $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $
                 Cli.dist_name $ Cli.dist_version $ Cli.dist_opam $
                 Cli.delegate $ Cli.change_log $ Cli.dist_uri $ Cli.dist_file $
-                Cli.publish_msg $ artefact $ kind)
+                Cli.publish_msg $ artefacts)
   in
   (t, info)
 

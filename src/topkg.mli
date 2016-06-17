@@ -1252,6 +1252,20 @@ fun c os ->
 fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
               "build"; "Makefile"; "_build"]]} *)
 
+  (** {1 Distribution publication description} *)
+
+  type publish
+  (** The type for describing distribution publication. *)
+
+  val publish :
+    ?artefacts:[`Doc | `Distrib | `Alt of string ] list -> unit -> publish
+  (** [publish ~artefacts ()] influences the distribution publication process
+      performed by the [topkg] tool:
+      {ul
+      {- [artefacts] defines which artefacts are published by an invocation
+         of [topkg publish] without arguments (defaults to
+         [[`Doc;`Distrib]]).}} *)
+
   (** {1 Package description} *)
 
   type std_file
@@ -1304,6 +1318,7 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
     ?lint_files:fpath list option ->
     ?lint_custom:(unit -> R.msg result list) ->
     ?distrib:distrib ->
+    ?publish:publish ->
     ?build:build ->
     string -> (Conf.t -> install list result) -> unit
   (** [describe name install] describes a package named [name] with:
@@ -1341,6 +1356,8 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
          makes the lint fail. Defaults to [None].}
       {- [distrib], specifies the distribution process, defaults to
          {!distrib}[ ()].}
+      {- [publish], specifies the publication process, defaults to
+         {!publish}[ ()].}
       {- [build], specifies the build process, defaults to {!build}[ ()].}
       {- [install] given a {{!Conf.t}build configuration} specifies
          the install moves. Note that some of standard files are
@@ -1596,6 +1613,12 @@ module Private : sig
     val distrib_uri : t -> string option
     (** [distrib_uri p] is [p]'s distribution location URI pattern.
         See {!Pkg.distrib}. *)
+
+    (** {1:publish Publish} *)
+
+    val publish_artefacts : t -> [`Distrib | `Doc | `Alt of string ] list
+    (** [publish_artefacts p] is [p]'s distribution publication artefacts.
+        See {!Pkg.publish}. *)
 
     (** {1:lints Lints}
 

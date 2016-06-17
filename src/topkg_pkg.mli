@@ -36,6 +36,7 @@ val v :
   ?lint_files:Topkg_fpath.t list option ->
   ?lint_custom:(unit -> R.msg result list) ->
   ?distrib:Topkg_distrib.t ->
+  ?publish:Topkg_publish.t ->
   ?build:Topkg_build.t -> string ->
   (Topkg_conf.t -> Topkg_install.t list result) -> t
 
@@ -60,6 +61,10 @@ val distrib_uri : t -> string option
 val distrib_prepare :
   t -> dist_build_dir:Topkg_fpath.t -> name:string -> version:string ->
   opam:Topkg_fpath.t -> Topkg_fpath.t list result
+
+(* Publish *)
+
+val publish_artefacts : t -> [ `Distrib | `Doc | `Alt of string ] list
 
 (* Test *)
 

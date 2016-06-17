@@ -370,6 +370,7 @@ module Pkg : sig
     ?distrib_uri:string ->
     ?distrib_file:Fpath.t ->
     ?publish_msg:string ->
+    ?publish_artefacts:[ `Distrib | `Doc | `Alt of string] list ->
     Fpath.t -> t
   (** [v pkg_file] is a package from description file [pkg_file] which
       is loaded only if needed. The optional parameters allow to
@@ -451,6 +452,10 @@ module Pkg : sig
   (** [distrib_filename ~opam p] is a distribution filename for [p].
       If [opam] is [true] (defaults to [false]), the name follows
       OPAM's naming conventions. *)
+
+  val publish_artefacts : t ->
+    ([ `Distrib | `Doc | `Alt of string ] list, R.msg) result
+  (** [publish_artefacts p] are [p]'s publication artefacts. *)
 
   (** {1 Lint} *)
 

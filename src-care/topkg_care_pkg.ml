@@ -60,6 +60,7 @@ type t =
     distrib_uri : string option;
     distrib_file : Fpath.t option;
     publish_msg : string option;
+    publish_artefacts : [ `Distrib | `Doc | `Alt of string ] list option;
     pkg_file : Fpath.t;
     pkg : (Topkg.Private.Pkg.t, R.msg) result Lazy.t; }
 
@@ -230,9 +231,14 @@ let publish_msg p = match p.publish_msg with
     >>= fun change_log -> Topkg_care_text.change_log_file_last_entry change_log
     >>= fun (_, (h, txt)) -> Ok (strf "%s\n%s" h txt)
 
+let publish_artefacts p = match p.publish_artefacts with
+| Some arts -> Ok arts
+| None -> pkg p >>| Topkg.Private.Pkg.publish_artefacts
+
 let v
     ?name ?version ?delegate ?build_dir ?opam:opam_file ?opam_descr
     ?readme ?change_log ?license ?distrib_uri ?distrib_file ?publish_msg
+    ?publish_artefacts
     pkg_file
   =
   let readmes = match readme with Some r -> Some [r] | None -> None in
@@ -243,7 +249,7 @@ let v
   and p =
     { name; version; delegate; build_dir; opam = opam_file; opam_descr;
       opam_fields; readmes; change_logs; licenses; distrib_uri; distrib_file;
-      publish_msg; pkg_file; pkg }
+      publish_msg; publish_artefacts; pkg_file; pkg }
   in
   p
 

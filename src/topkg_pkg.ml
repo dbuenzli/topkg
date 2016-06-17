@@ -37,6 +37,7 @@ type t =
     lint_files : Topkg_fpath.t list option;
     lint_custom :(unit -> R.msg result list) option;
     distrib : Topkg_distrib.t;
+    publish : Topkg_publish.t;
     build : Topkg_build.t;
     installs : Topkg_conf.t -> Topkg_install.t list result; }
 
@@ -50,11 +51,12 @@ let v
     ?(lint_files = Some [])
     ?lint_custom
     ?(distrib = Topkg_distrib.v ())
+    ?(publish = Topkg_publish.v ())
     ?(build = Topkg_build.v ())
     name installs
   =
   { name; delegate; readmes; licenses; change_logs; metas; opams; lint_files;
-    lint_custom; distrib; build; installs }
+    lint_custom; distrib; publish; build; installs }
 
 let empty = v "" (fun _ -> Ok [])
 let with_name_and_build_dir p name build_dir =
@@ -115,25 +117,26 @@ let codec =
     | "\x00" -> None | "\x01" -> Some stub | s -> Topkg_codec.err ~kind s in
     Topkg_codec.v ~kind ~enc ~dec
   in
-  let distrib = Topkg_codec.(with_kind "distrib" @@ Topkg_distrib.codec) in
-  let build = Topkg_codec.(with_kind "build" @@ Topkg_build.codec) in
+  let distrib = Topkg_distrib.codec in
+  let publish = Topkg_publish.codec in
+  let build = Topkg_build.codec in
   let fields =
     (fun p -> (p.name, p.delegate, p.readmes, p.licenses, p.change_logs),
               (p.metas, p.opams, p.lint_files, p.lint_custom, p.distrib),
-              (p.build)),
+              (p.publish, p.build)),
     (fun ((name, delegate, readmes, licenses, change_logs),
           (metas, opams, lint_files, lint_custom, distrib),
-          (build)) ->
+          (publish, build)) ->
        { name; delegate; readmes; licenses; change_logs;
          metas; opams; lint_files; lint_custom; distrib;
-         build; installs = stub })
+         publish; build; installs = stub })
   in
   Topkg_codec.version 0 @@
   Topkg_codec.(view ~kind: "package" fields
                  (t3
                     (t5 name delegate readmes licenses change_logs)
                     (t5 metas opams lint_files lint_custom distrib)
-                    build))
+                    (t2 publish build)))
 (* Distrib *)
 
 let distrib_version_opam_files p ~version =
@@ -170,6 +173,10 @@ let distrib_prepare_pin p =
   >>= fun files -> Topkg_distrib.watermark_files ws_defs files
   >>= fun () -> distrib_version_opam_files p ~version
   >>= fun () -> Topkg_distrib.massage d ()
+
+(* Publish *)
+
+let publish_artefacts p = Topkg_publish.artefacts p.publish
 
 (* Test *)
 

@@ -60,6 +60,11 @@ module Pkg = struct
   let massage = Topkg_distrib.default_massage
   let exclude_paths = Topkg_distrib.default_exclude_paths
 
+  (* Publish *)
+
+  type publish = Topkg_publish.t
+  let publish = Topkg_publish.v
+
   (* Build *)
 
   type build = Topkg_build.t

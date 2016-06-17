@@ -27,6 +27,7 @@ val v :
   ?distrib_uri:string ->
   ?distrib_file:Fpath.t ->
   ?publish_msg:string ->
+  ?publish_artefacts:[ `Distrib | `Doc | `Alt of string] list ->
   Fpath.t -> t
 
 val pkg_file : t -> Fpath.t
@@ -47,6 +48,8 @@ val licenses : t -> (Fpath.t list, R.msg) result
 val distrib_uri : ?raw:bool -> t -> (string, R.msg) result
 val distrib_file : t -> (Fpath.t, R.msg) result
 val publish_msg : t -> (string, R.msg) result
+val publish_artefacts : t ->
+  ([ `Distrib | `Doc | `Alt of string] list, R.msg) result
 
 (** {1 Test} *)
 
