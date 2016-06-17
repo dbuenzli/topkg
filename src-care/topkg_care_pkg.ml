@@ -349,16 +349,12 @@ let lint_std_files p =
   end
   |> Logs.on_error_msg ~use:(fun () -> 1)
 
-let lint_file_with_cmd file_kind ~cmd file errs =
+let lint_file_with_cmd file_kind ~cmd file errs handle_exit =
   let run_linter cmd file ~exists =
     if not exists then Ok (`Fail (strf "%a: No such file" Fpath.pp file)) else
     OS.Cmd.(run_out ~err:err_run_out Cmd.(cmd % p file) |> out_string)
     >>| fun (out, status) -> match snd status with
-    | `Exited 0 ->
-        if Cmd.get_line_exec cmd <> "opam" then `Ok else
-        (* Fail on OPAM warnings. *)
-        let lc = List.length (String.cuts ~sep:"\n" out) in
-        if lc = 1 then `Ok else `Fail out
+    | `Exited 0 -> handle_exit out
     | _ -> `Fail out
   in
   begin
@@ -385,12 +381,13 @@ let lint_metas p =
     | [] -> Ok (lint_log "No ocamlfind META file to lint")
     | metas ->
       let cmd = Cmd.(Topkg_care_ocamlfind.cmd % "lint") in
+      let handle_exit _ = `Ok in
       let lint errs (f, lint) =
         begin
           Fpath.of_string f >>| fun f ->
           if not lint
           then lint_log (strf "ocamlfind META lint disabled for %a" Fpath.pp f)
-          else lint_file_with_cmd "META file" ~cmd f errs
+          else lint_file_with_cmd "META file" ~cmd f errs handle_exit
         end
         |> Logs.on_error_msg ~use:(fun () -> errs + 1)
       in
@@ -403,13 +400,25 @@ let lint_opams p =
     pkg p >>= fun p -> match Topkg.Private.Pkg.lint_opams p with
     | [] -> Ok (lint_log "No OPAM file to lint")
     | opams ->
+        (* We first run opam lint with -s and if there's something beyond
+           5 we rerun it without it for the error messages. It's ugly
+           since 5 will still but opam lint's cli is broken. *)
         let cmd = Cmd.(Topkg_care_opam.cmd % "lint") in
+        let handle_exit file out = match out with
+        | "" | "5" (* dirname version vs opam file version *) -> `Ok
+        | _ ->
+            let err = OS.Cmd.err_run_out in
+            match OS.Cmd.(run_out ~err Cmd.(cmd % p file) |> to_string) with
+            | Ok out -> `Fail out
+            | Error (`Msg err) -> `Fail err
+        in
+        let cmd = Cmd.(cmd % "-s") in
         let lint errs (f, lint, _) =
           begin
             Fpath.of_string f >>| fun f ->
             if not lint
             then lint_log (strf "OPAM file lint disabled for %a" Fpath.pp f)
-            else lint_file_with_cmd "OPAM file" ~cmd f errs
+            else lint_file_with_cmd "OPAM file" ~cmd f errs (handle_exit f)
           end
           |> Logs.on_error_msg ~use:(fun () -> errs + 1)
         in
