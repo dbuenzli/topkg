@@ -1,3 +1,7 @@
+
+
+- `topkg doc` add short option `-d` for `--dev`.
+
 v0.7.4 2016-06-17 Cambridge (UK)
 --------------------------------
 

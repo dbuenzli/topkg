@@ -81,7 +81,7 @@ let reload_browser =
 
 let dev =
   let doc = "Build the development documentation." in
-  Arg.(value & flag & info ["dev"] ~doc)
+  Arg.(value & flag & info ["d"; "dev"] ~doc)
 
 let doc = "Build the package's API documentation"
 let man =
