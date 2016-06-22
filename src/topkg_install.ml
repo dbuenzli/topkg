@@ -155,7 +155,7 @@ let mllib ?(field = lib) ?(cond = true) ?api ?dst_dir mllib =
   let add_mods acc mllib_mods =
     let api = api mllib_mods in
     let add_mod acc m =
-      let fname = Topkg_fpath.append lib_dir (Topkg_string.lowercase m) in
+      let fname = Topkg_fpath.append lib_dir (Topkg_string.uncapitalize m) in
       if List.mem m api
       then (field ?dst:(dst fname) ~exts:Topkg_fexts.api fname :: acc)
       else (field ?dst:(dst fname) ~exts:Topkg_fexts.cmx fname :: acc)
