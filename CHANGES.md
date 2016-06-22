@@ -1,4 +1,5 @@
-
+v0.7.5 2016-06-22 Cambridge (UK)
+--------------------------------
 
 - `topkg doc` add short option `-d` for `--dev`.
 - Fix `Pkg.mllib`, module list was lowercased rather than uncapitalized.
