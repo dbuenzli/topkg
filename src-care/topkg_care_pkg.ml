@@ -410,9 +410,9 @@ let lint_opams p =
           ("" | "5" (* dirname version vs opam file version *)) -> `Ok
         | _ ->
             let err = OS.Cmd.err_run_out in
-            match OS.Cmd.(run_out ~err Cmd.(cmd % p file) |> to_string) with
-            | Ok out -> `Fail out
-            | Error (`Msg err) -> `Fail err
+            match OS.Cmd.(run_out ~err Cmd.(cmd % p file) |> out_string) with
+            | Ok (out, _) -> `Fail out
+            | Error (`Msg out) -> `Fail out
         in
         let cmd = Cmd.(cmd % "-s") in
         let lint errs (f, lint, _) =
