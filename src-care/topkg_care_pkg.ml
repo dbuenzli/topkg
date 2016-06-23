@@ -353,9 +353,7 @@ let lint_file_with_cmd file_kind ~cmd file errs handle_exit =
   let run_linter cmd file ~exists =
     if not exists then Ok (`Fail (strf "%a: No such file" Fpath.pp file)) else
     OS.Cmd.(run_out ~err:err_run_out Cmd.(cmd % p file) |> out_string)
-    >>| fun (out, status) -> match snd status with
-    | `Exited 0 -> handle_exit out
-    | _ -> `Fail out
+    >>| fun (out, status) -> handle_exit (snd status) out
   in
   begin
     OS.File.exists file
@@ -381,7 +379,10 @@ let lint_metas p =
     | [] -> Ok (lint_log "No ocamlfind META file to lint")
     | metas ->
       let cmd = Cmd.(Topkg_care_ocamlfind.cmd % "lint") in
-      let handle_exit _ = `Ok in
+      let handle_exit status out = match status with
+      | `Exited 0 -> `Ok
+      | _ -> `Fail out
+      in
       let lint errs (f, lint) =
         begin
           Fpath.of_string f >>| fun f ->
@@ -404,8 +405,9 @@ let lint_opams p =
            5 we rerun it without it for the error messages. It's ugly
            since 5 will still but opam lint's cli is broken. *)
         let cmd = Cmd.(Topkg_care_opam.cmd % "lint") in
-        let handle_exit file out = match out with
-        | "" | "5" (* dirname version vs opam file version *) -> `Ok
+        let handle_exit file status out = match status, out with
+        | `Exited 0,
+          ("" | "5" (* dirname version vs opam file version *)) -> `Ok
         | _ ->
             let err = OS.Cmd.err_run_out in
             match OS.Cmd.(run_out ~err Cmd.(cmd % p file) |> to_string) with
