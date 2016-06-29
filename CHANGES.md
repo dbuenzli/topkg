@@ -1,3 +1,7 @@
+
+
+- Improve error message of some `Topkg.OS` functions (#57).
+
 v0.7.5 2016-06-22 Cambridge (UK)
 --------------------------------
 

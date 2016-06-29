@@ -21,7 +21,7 @@ module Dir = struct
 
   let exists dir =
     try Ok (Sys.(file_exists dir && is_directory dir)) with
-    | Sys_error e -> R.error_msg e
+    | Sys_error e -> R.error_msgf "%s: %s" dir e
 
   let must_exist dir = exists dir >>= function
   | true -> Ok dir
@@ -30,7 +30,8 @@ module Dir = struct
   (* Current working directory *)
 
   let current () = try Ok (Sys.getcwd ()) with Sys_error e -> R.error_msg e
-  let set_current d = try Ok (Sys.chdir d) with Sys_error e -> R.error_msg e
+  let set_current d =
+    try Ok (Sys.chdir d) with Sys_error e -> R.error_msgf "%s: %s" d e
 
   (* Directory contents *)
 
@@ -48,7 +49,8 @@ module Dir = struct
           loop acc fs
       in
       Ok (loop [] files)
-    with Sys_error e -> R.error_msg e
+    with
+    | Sys_error e -> R.error_msgf "%s: %s" p e
 end
 
 (* File system operations *)
@@ -67,7 +69,7 @@ module File = struct
 
   let exists f =
     try Ok (Sys.(file_exists f && not (is_directory f))) with
-    | Sys_error e -> R.error_msg e
+    | Sys_error e -> R.error_msgf "%s: %s" f e
 
   let must_exist f = exists f >>= function
   | true -> Ok f
@@ -77,7 +79,8 @@ module File = struct
     try
       if not must_exist && not (Sys.file_exists f) then Ok () else
       Ok (Sys.remove f)
-    with Sys_error e -> R.error_msg e
+    with
+    | Sys_error e -> R.error_msgf "%s: %s" f e
 
   (* Folding over files *)
 
@@ -128,7 +131,7 @@ module File = struct
         really_input ic buf 0 len; close ic;
         Ok (Bytes.unsafe_to_string buf)
       with exn -> close ic; raise exn
-    with Sys_error e -> R.error_msg e
+    with Sys_error e -> R.error_msgf "%s: %s" file e
 
   let write file s =
     try
@@ -136,7 +139,7 @@ module File = struct
       (if file = dash then Ok stdout else safe_open_out_bin file) >>= fun oc ->
       try output_string oc s; flush oc; close oc; Ok ()
       with exn -> close oc; raise exn
-    with Sys_error e -> R.error_msg e
+    with Sys_error e -> R.error_msgf "%s: %s" file e
 
   let write_subst file vars s = (* very ugly mister, too lazy to rewrite *)
     try
@@ -179,7 +182,7 @@ module File = struct
         close oc;
         Ok ()
       with exn -> close oc; raise exn
-    with Sys_error e -> R.error_msg e
+    with Sys_error e -> R.error_msgf "%s: %s" file e
 
   let tmp () =
     try
