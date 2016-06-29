@@ -27,3 +27,13 @@ opam pin add -kgit topkg topkg#master
 opam pin add -kgit topkg-care topkg#master
 ```
 
+Changing the Topkg API
+----------------------
+
+Is a *very* delicate thing to do as it could break packages. Here's an
+invocation that can be used to reinstall packages that build depend on
+`topkg`:
+
+```
+opam reinstall $(opam list -s --installed --depends-on topkg)
+```
