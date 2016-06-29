@@ -282,32 +282,20 @@ let dump ppf c =
 let of_cli_args ~pkg_name:name ~build_dir:bdir args =
   let cli_opts = cli_opts_of_key_index () in
   let cli_opts = ("-n", Key.V pkg_name) :: cli_opts in
-  let rec parse_keys conf = function
+  let strf = Topkg_string.strf in
+  let rec parse_keys conf = function (* WARNING raises *)
   | key :: def :: defs ->
       begin match try Some (List.assoc key cli_opts) with Not_found -> None with
-      | None ->
-          Topkg_log.warn
-            (fun m -> m "key %s: unknown, ignoring." key);
-          parse_keys conf defs
+      | None -> failwith (Topkg_string.strf "key %s: Unknown key." key)
       | Some (Key.V k) ->
-          if mem k conf then begin
-            Topkg_log.warn
-              (fun m -> m "key %s: repeated definition, ignoring." key);
-            parse_keys conf defs
-          end else begin
-            match (conv_parser k.conv) def with
-            | Ok v ->
-                parse_keys (add k v conf) defs
-            | Error (`Msg e) ->
-                Topkg_log.warn
-                  (fun m -> m "key %s: %s, using absent value" key e);
-                parse_keys conf defs
-          end
+          if mem k conf
+          then failwith (strf "key %s: Repeated definition." key) else
+          match (conv_parser k.conv) def with
+          | Ok v -> parse_keys (add k v conf) defs
+          | Error (`Msg e) -> failwith (strf "key %s: %s." key e)
       end
   | [] -> conf
-  | key :: [] ->
-      Topkg_log.warn (fun m -> m "key %s: No value specified." key);
-      conf
+  | key :: [] -> failwith (strf "key %s: No value specified." key)
   in
   let add_if_absent (Key.V k) conf = (* WARNING raises *)
     if mem k conf then conf else
@@ -317,8 +305,10 @@ let of_cli_args ~pkg_name:name ~build_dir:bdir args =
     let conf = if mem pkg_name conf then conf else add pkg_name name conf in
     if mem build_dir conf then conf else add build_dir bdir conf
   in
-  let cli_conf = ensure_pkg_name_and_bdir (parse_keys empty args) in
-  try Ok (Kset.fold add_if_absent !key_index cli_conf) with
+  try
+    let cli_conf = ensure_pkg_name_and_bdir (parse_keys empty args) in
+    Ok (Kset.fold add_if_absent !key_index cli_conf)
+  with
   | Failure e -> R.error_msg e
 
 let pkg_name c = value c pkg_name
