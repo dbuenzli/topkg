@@ -91,6 +91,9 @@ let default_watermarks =
     "PKG_REPO", `Opam (None, "dev-repo", space); ]
 
 let default_files_to_watermark =
+  let is_file f =
+    Topkg_os.File.exists f |> Topkg_log.on_error_msg ~use:(fun _ -> false)
+  in
   let is_binary_ext ext =
     let module Set = Set.Make (String) in
     let exts =
@@ -102,11 +105,11 @@ let default_files_to_watermark =
     in
     Set.mem ext exts
   in
-  let not_binary f = not (is_binary_ext @@ Topkg_fpath.get_ext f) in
+  let keep f = not (is_binary_ext @@ Topkg_fpath.get_ext f) && is_file f in
   fun () ->
     Topkg_vcs.get ()
     >>= fun repo -> Topkg_vcs.tracked_files repo
-    >>= fun files -> Ok (List.filter not_binary files)
+    >>= fun files -> Ok (List.filter keep files)
 
 let default_massage () = Ok ()
 
