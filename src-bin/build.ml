@@ -6,7 +6,7 @@
 
 open Bos_setup
 
-let build_args pkg_name build_dir dry_run tests args =
+let build_args pkg_name build_dir dry_run tests debug args =
   let on_some_use_opt opt to_arg = function
   | None -> Cmd.empty
   | Some value -> Cmd.(v opt % to_arg value)
@@ -16,11 +16,13 @@ let build_args pkg_name build_dir dry_run tests args =
   let build_dir = on_some_use_opt "--build-dir" Cmd.p build_dir in
   let dry_run = if dry_run then Cmd.(v "--dry-run") else Cmd.empty in
   let tests = on_some_use_opt "--tests" String.of_bool tests in
-  Cmd.(verb %% dry_run %% pkg_name %% build_dir %% tests %% Cmd.of_list args)
+  let debug = on_some_use_opt "--debug" String.of_bool debug in
+  Cmd.(verb %% dry_run %% pkg_name %% build_dir %% tests %% debug %%
+       Cmd.of_list args)
 
-let build () pkg_file pkg_name build_dir dry_run tests args =
+let build () pkg_file pkg_name build_dir dry_run tests debug args =
   let pkg = Topkg_care.Pkg.v pkg_file in
-  let args = build_args pkg_name build_dir dry_run tests args in
+  let args = build_args pkg_name build_dir dry_run tests debug args in
   let out = OS.Cmd.out_stdout in
   begin
     OS.Dir.current ()
@@ -70,6 +72,14 @@ let tests =
   in
   Arg.(value & opt (some bool) None  & info ["tests"] ~doc ~docv:"BOOL")
 
+let debug =
+  let doc = "Debug build. Specifies if debugging information should be
+             saved in build artefacts. This is equivalent to specify the
+             same option after the -- token."
+  in
+  let env = Arg.env_var "TOPKG_CONF_DEBUG" in
+  Arg.(value & opt (some bool) None  & info ["debug"] ~env ~doc ~docv:"BOOL")
+
 let doc = "Build the package"
 let man =
   [ `S "SYNOPSIS";
@@ -90,7 +100,7 @@ let man =
 let cmd =
   let info = Term.info "build" ~sdocs:Cli.common_opts ~doc ~man in
   let t = Term.(pure build $ Cli.setup $ Cli.pkg_file $ pkg_name $ build_dir $
-                dry_run $ tests $ args)
+                dry_run $ tests $ debug $ args)
   in
   (t, info)
 
