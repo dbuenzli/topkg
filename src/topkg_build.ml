@@ -21,7 +21,8 @@ let nop = fun _ -> Ok ()
 let cmd c os =
   let ocamlbuild = Topkg_conf.tool "ocamlbuild" os in
   let build_dir = Topkg_conf.build_dir c in
-  Topkg_cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %
+  let debug = Topkg_cmd.(on (Topkg_conf.debug c) (v "-tag" % "debug")) in
+  Topkg_cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %% debug %
              "-build-dir" % build_dir)
 
 let v

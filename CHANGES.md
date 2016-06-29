@@ -1,7 +1,13 @@
 
-- Remove deprecated `--installer` configuration key.
+- Add a `--debug` configuration key. Defaults to `true` or the value
+  of the `TOPKG_CONF_DEBUG` environment variable. The default build
+  system invocation is changed to enable save of debugging information
+  in build artefacts if they key is `true`. The key is generally not
+  meant to be specified so that the policy can changed in bulk over
+  topkg packages.
 - `Pkg.files_to_watermark`, make sure only files are returned (#58).
 - Improve error message of some `Topkg.OS` functions (#57).
+- Remove deprecated `--installer` configuration key.
 
 v0.7.5 2016-06-22 Cambridge (UK)
 --------------------------------

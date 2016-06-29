@@ -68,6 +68,8 @@ type build_context = [`Dev | `Distrib | `Pin ]
 val build_context : t -> [`Dev | `Distrib | `Pin ]
 val build_tests : t -> bool
 
+val debug : t -> bool
+
 (** {1 OCaml configuration} *)
 
 module OCaml : sig

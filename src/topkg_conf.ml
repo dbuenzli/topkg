@@ -195,9 +195,12 @@ let tests =
   let absent () = Ok None in
   discovered_key "tests" (some bool) ~absent ~doc
 
-let installer = (* FIXME remove deprecated *)
-  let doc = "Deprecated (has no effect)." in
-  key "installer" bool ~absent:false ~doc
+let debug =
+  let doc = "Debug build. Save debugging information in build artefacts. This \
+             key should not be specified explicitely in your package build \
+             instructions."
+  in
+  key "debug" bool ~env:"TOPKG_CONF_DEBUG" ~absent:true ~doc
 
 (* Key documentation *)
 
@@ -335,6 +338,8 @@ let build_tests c = match value c tests with
     match build_context c with
     | `Dev -> true
     | _ -> false
+
+let debug c = value c debug
 
 (* OCaml configuration, as communicated by ocamlc -config  *)
 

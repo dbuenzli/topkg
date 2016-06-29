@@ -796,6 +796,13 @@ module Conf : sig
       depends on the {!build_context}, it is [true] in the [`Dev]
       context and [false] in the other contexts. *)
 
+  val debug : t -> bool
+  (** [debug c] is the value of a predefined key [--debug] that
+      indicates if the build should include debugging information
+      in the build artefacts. If absent the value is [true] or the
+      value of the environment variable `TOPKG_CONF_DEBUG` if
+      specified. *)
+
   val dump : Format.formatter -> t -> unit
   (** [dump ppf c] formats an unspecified representation of [c] on [ppf]. *)
 
