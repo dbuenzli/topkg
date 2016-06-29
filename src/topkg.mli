@@ -766,16 +766,6 @@ module Conf : sig
       Usually specified in OPAM build instructions with
       ["--pinned" "%{pinned}%"]. *)
 
-(**/**)
-  (* FIXME remove deprecated *)
-  val installer : t -> bool
-  (** [installer c] is the value of a predefined key [--installer].
-      It is [true] if the build is initiated by an installer like OPAM.
-      If absent defaults to [false]. Usually specified in OPAM build
-      instructions with ["--installer" "true"]. This is used to
-      determine the {!build_context}. *)
-(**/**)
-
   type build_context = [`Dev | `Distrib | `Pin ]
   (** The type for build contexts. See {!val:build_context} for semantics. *)
 

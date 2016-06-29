@@ -322,7 +322,6 @@ let pkg_name c = value c pkg_name
 let build_dir c = value c build_dir
 let vcs c = value c vcs
 let pinned c = value c pinned
-let installer c = value c installer
 
 type build_context = [`Dev | `Distrib | `Pin ]
 let build_context c =

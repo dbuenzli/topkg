@@ -1,4 +1,5 @@
 
+- Remove deprecated `--installer` configuration key.
 - `Pkg.files_to_watermark`, make sure only files are returned (#58).
 - Improve error message of some `Topkg.OS` functions (#57).
 
