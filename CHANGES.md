@@ -1,3 +1,5 @@
+v0.7.6 2016-07-01 Cambridge (UK)
+--------------------------------
 
 - Add `pkg/pkg.ml clean` command. Removes the OPAM install file
   and performs an effect that can be specified via `clean` in the
@@ -6,17 +8,20 @@
 - Change the signature of the build command `cmd` in the `Pkg.build`
   specification. This is an API breaking change but does not affect any
   published package. See #53 for details.
-- Add `Conf.OCaml.word_size`, reports the bit word size for
-  the programs that are produced by the compilers.
+- Add `Conf.OCaml.word_size`. Reports the bit word size for
+  the programs that are produced by a given compiler.
 - Build configuration key parsing. Fail hard on any error instead
-  of warning (#56).
+  of warn and continue (#56). Thanks to Thomas Gazagnaire for suggesting
+  the previous idea was a terrible one.
 - Add a `--debug` configuration key. Defaults to `true` or the value
   of the `TOPKG_CONF_DEBUG` environment variable. The default build
   system invocation is changed to enable save of debugging information
   in build artefacts if they key is `true`. The key is generally not
-  meant to be specified so that the policy can changed in bulk over
-  topkg packages (#54).
-- `Pkg.files_to_watermark`, make sure only files are returned (#58).
+  meant to be specified by packagers so that the policy can changed in
+  bulk over topkg packages (#54).
+- `Pkg.files_to_watermark` default function. Make sure only files are
+  returned (#58). Fixes problems with symlinks to directories in git
+  checkout. Thanks to Thomas Gazagnaire for reporting.
 - Improve error message of some `Topkg.OS` functions (#57).
 - Remove deprecated `--installer` configuration key.
 - `topkg lint` fix regression in error OPAM lint report.
