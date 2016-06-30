@@ -25,6 +25,8 @@ let pp_help ppf () =
   prf ppf "  test [OPTION]... [TEST]... [-- [ARG]...]@,";
   prf ppf "      @[Run all or the given built package tests, \
                    see `Test options' below.@]@,";
+  prf ppf "  clean [OPTION]...@,";
+  prf ppf "      @[Clean the package build, see `Clean options' below.@]@,";
   prf ppf "  help@,";
   prf ppf "      @[Show this help.@]@,";
   prf ppf "  ipc VERBOSITY [ARG]...@,";
@@ -47,7 +49,14 @@ let pp_help ppf () =
   prf ppf "  --build-dir BUILD_DIR (absent=discovered)@,";
   prf ppf "      @[Specifies the build directory BUILD_DIR.@]@,";
   prf ppf "  -l, --list@,";
-  prf ppf "      @[Do not run the tests, list them.@]@,";
+  prf ppf "      @[Do not run the tests, list them.@]@,@,";
+  prf ppf "Clean options:@,";
+  prf ppf "  --build-dir BUILD_DIR (absent=discovered)@,";
+  prf ppf "      @[Specifies the build directory BUILD_DIR.@]@,";
+  prf ppf "  -n NAME, --pkg-name NAME  (absent=discovered)@,";
+  prf ppf "      @[The name NAME of the package (and hence the OPAM \
+                  install file).@ If absent provided by the package@ \
+                  description.@]@,";
   ()
 
 (* Commands *)
@@ -67,9 +76,9 @@ let build_cmd pkg dry_run args =
     Topkg_log.info (fun m -> m "Build configuration:@\n%a" Topkg_conf.dump c)
   in
   let adjust_pkg_to_conf pkg c =
-    let pkg_name = Topkg_conf.pkg_name c in
+    let name = Topkg_conf.pkg_name c in
     let build_dir = Topkg_conf.build_dir c in
-    Topkg_pkg.with_name_and_build_dir pkg pkg_name build_dir
+    Topkg_pkg.with_name_and_build_dir pkg ~name ~build_dir
   in
   let pkg_name = Topkg_pkg.name pkg in
   let build_dir = Topkg_pkg.build_dir pkg in
@@ -78,12 +87,12 @@ let build_cmd pkg dry_run args =
   >>= fun pkg -> Topkg_pkg.build pkg ~dry_run c `Host_os
 
 let test_cmd pkg build_dir list tests args =
-  let pkg = match build_dir with
-  | None -> pkg
-  | Some build_dir ->
-      Topkg_pkg.with_name_and_build_dir pkg Topkg_pkg.(name pkg) build_dir
-  in
+  let pkg = Topkg_pkg.with_name_and_build_dir ?build_dir pkg in
   Topkg_pkg.test pkg list tests args
+
+let clean_cmd pkg name build_dir =
+  let pkg = Topkg_pkg.with_name_and_build_dir ?name ?build_dir pkg in
+  Topkg_pkg.clean pkg `Host_os
 
 let ipc_cmd pkg args =
   Topkg_ipc.write_answer (Topkg_cmd.of_list args) pkg >>= fun () -> Ok 0
@@ -93,6 +102,7 @@ let run_cmd pkg cmd args = match cmd with
 | `Version -> version_cmd pkg
 | `Build dry_run -> build_cmd pkg dry_run args
 | `Test (bdir, list, tests, args) -> test_cmd pkg bdir list tests args
+| `Clean (pkg_name, bdir) -> clean_cmd pkg pkg_name bdir
 | `Ipc -> ipc_cmd pkg args
 
 (* Cli interface *)
@@ -146,6 +156,16 @@ let parse_test_args args =
   in
   loop None false [] args
 
+let parse_clean_args args =
+  let rec loop pkg_name build_dir = function
+  | "--build-dir" :: bdir :: args -> loop pkg_name (Some bdir) args
+  | ("-n" | "--pkg-name") :: n :: args -> loop (Some n) build_dir args
+  | [] -> Ok (pkg_name, build_dir)
+  | a :: args ->
+      R.error_msgf "don't know what to do with `%s'" a
+  in
+  loop None None args
+
 let parse_ipc_args args =
   begin match args with
   | [] -> R.error_msg "missing verbosity and IPC arguments"
@@ -174,6 +194,9 @@ let parse_cli () =
           | "test" :: args ->
               parse_test_args args >>= fun (bdir, list, tests, args) ->
               Ok (`Test (bdir, list, tests, args), verbosity, [])
+          | "clean" :: args ->
+              parse_clean_args args >>= fun (pkg_name, bdir) ->
+              Ok (`Clean (pkg_name, bdir), verbosity, [])
           | cmd :: _ -> R.error_msgf "Unknown command '%s'" cmd
           | [] -> R.error_msg "No command specified"
   end

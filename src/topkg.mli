@@ -1111,7 +1111,8 @@ Pkg.mllib ~cond:jsoo "src/mylib_jsoo.mllib"
     ?dir:fpath ->
     ?pre:(Conf.t -> unit result) ->
     ?cmd:(Conf.t -> Conf.os -> fpath list -> unit result) ->
-    ?post:(Conf.t -> unit result) -> unit -> build
+    ?post:(Conf.t -> unit result) ->
+    ?clean:(Conf.os -> build_dir:fpath -> unit result) -> unit -> build
   (** [build ~prepare_on_pin ~dir ~cmd ~pre ~post] describes the package
       build procedure.
       {ul
@@ -1132,7 +1133,7 @@ Pkg.mllib ~cond:jsoo "src/mylib_jsoo.mllib"
          It is given the build configuration, an {{!Conf.os}OS
          specification}, the list of files to build relative to the
          {{!Conf.build_dir}build directory}, and build the given
-         files in the build directory.}}
+         files in the build directory. The default is:
 {[
 fun c os files ->
   let ocamlbuild = Conf.tool "ocamlbuild" os in
@@ -1143,8 +1144,18 @@ fun c os files ->
                     "-build-dir" % build_dir %% of_list files)
 ]}}
       {- [post] is a hook that is invoked with the build context after
-         the build command returned sucessfully. Default is a nop.}}
-
+         the build command returned sucessfully. Default is a nop.}
+      {- [clean] is invoked to clean a build. It is given
+         an {{!Conf.os}OS specification} and a build directory to
+         clean. The default is:
+{[
+let clean os ~build_dir =
+  let ocamlbuild = Topkg_conf.tool "ocamlbuild" os in
+  OS.Cmd.run @@
+  Cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %
+                    "-build-dir" % build_dir % "-clean")
+]}
+}}
       {b Warning.} If you are invoking tools in your hooks consider
       using {!Conf.tool} to look them up it helps for cross-compilation. *)
 

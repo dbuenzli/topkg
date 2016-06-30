@@ -1,4 +1,8 @@
 
+- Add `pkg/pkg.ml clean` command. Removes the OPAM install file
+  and performs an effect that can be specified via `clean` in the
+ `Pkg.build` description. The `topkg clean` command now simply forwards
+  to this command.
 - Change the signature of the build command `cmd` in the `Pkg.build`
   specification. This is an API breaking change but does not affect any
   published package. See #53 for details.

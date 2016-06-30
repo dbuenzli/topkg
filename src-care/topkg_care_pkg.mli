@@ -63,6 +63,12 @@ val build :
   t -> dir:Fpath.t -> args:Cmd.t ->
   out:(OS.Cmd.run_out -> ('a, R.msg) result) -> ('a, R.msg) result
 
+(** {1 Clean} *)
+
+val clean :
+  t -> dir:Fpath.t -> args:Cmd.t ->
+  out:(OS.Cmd.run_out -> ('a, R.msg) result) -> ('a, R.msg) result
+
 (** {1 Distrib} *)
 
 val distrib_filename : ?opam:bool -> t -> (Fpath.t, R.msg) result

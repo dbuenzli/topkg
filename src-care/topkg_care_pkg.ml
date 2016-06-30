@@ -297,6 +297,7 @@ let run p ~dir cmd ~args ~out =
 
 let test p ~dir ~args ~out = run p ~dir "test" ~args ~out
 let build p ~dir ~args ~out = run p ~dir "build" ~args ~out
+let clean p ~dir ~args ~out = run p ~dir "clean" ~args ~out
 
 (* Lint *)
 

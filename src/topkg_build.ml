@@ -13,7 +13,8 @@ type t =
     dir : Topkg_fpath.t;
     pre : Topkg_conf.t -> unit result;
     cmd : Topkg_conf.t -> Topkg_conf.os -> Topkg_fpath.t list -> unit result;
-    post : Topkg_conf.t -> unit result; }
+    post : Topkg_conf.t -> unit result;
+    clean : Topkg_conf.os -> build_dir:Topkg_fpath.t -> unit result; }
 
 let with_dir b dir = { b with dir }
 
@@ -26,16 +27,23 @@ let cmd c os files =
   Topkg_cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %% debug %
              "-build-dir" % build_dir %% of_list files)
 
+let clean os ~build_dir =
+  let ocamlbuild = Topkg_conf.tool "ocamlbuild" os in
+  Topkg_os.Cmd.run @@
+  Topkg_cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %
+             "-build-dir" % build_dir % "-clean")
+
 let v
     ?(prepare_on_pin = true) ?(dir = "_build") ?(pre = nop) ?(cmd = cmd)
-    ?(post = nop) () =
-  { prepare_on_pin; dir; pre; cmd; post }
+    ?(post = nop) ?(clean = clean) () =
+  { prepare_on_pin; dir; pre; cmd; post; clean; }
 
 let prepare_on_pin b = b.prepare_on_pin
 let dir b = b.dir
 let pre b = b.pre
 let cmd b = b.cmd
 let post b = b.post
+let clean b = b.clean
 let codec =
   let prepare_on_pin = Topkg_codec.(with_kind "prepare_on_pin" @@ bool) in
   let dir = Topkg_codec.(with_kind "dir" @@ string) in
@@ -43,7 +51,8 @@ let codec =
     let stub _ = invalid_arg "not executable outside package definition" in
     (fun b -> b.prepare_on_pin, b.dir),
     (fun (prepare_on_pin, dir)  ->
-       { prepare_on_pin; dir; pre = stub; cmd = stub; post = stub })
+       { prepare_on_pin; dir; pre = stub; cmd = stub; post = stub;
+         clean = stub })
   in
   Topkg_codec.version 0 @@
   Topkg_codec.(view ~kind:"build" fields (pair prepare_on_pin dir))

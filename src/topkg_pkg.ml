@@ -59,8 +59,12 @@ let v
     lint_custom; distrib; publish; build; installs }
 
 let empty = v "" (fun _ -> Ok [])
-let with_name_and_build_dir p name build_dir =
-  let build = Topkg_build.with_dir p.build build_dir in
+let with_name_and_build_dir ?name ?build_dir p =
+  let name = match name with None -> p.name | Some n -> n in
+  let build = match build_dir with
+  | None -> p.build
+  | Some build_dir -> Topkg_build.with_dir p.build build_dir
+  in
   { p with name; build }
 
 let name p = p.name
@@ -249,8 +253,10 @@ let test p ~list ~tests:queries ~args =
 
 (* Build *)
 
+let install_file p = p.name ^ ".install"
+
 let write_opam_install_file p install =
-  let file = p.name ^ ".install" in
+  let file = install_file p in
   let install = Topkg_opam.Install.to_string install in
   Topkg_os.File.write file install
   >>| fun () -> Topkg_log.app (fun m -> m "Wrote OPAM install file %s" file)
@@ -281,6 +287,15 @@ let build p ~dry_run c os =
       >>= fun () -> write_tests_file p tests
       >>= fun () -> run_build_hook "Post" (Topkg_build.post p.build) c
       >>= fun () -> Ok 0
+
+(* Clean *)
+
+let clean p os =
+  let file = install_file p in
+  let build_dir = build_dir p in
+  Topkg_os.File.delete file
+  >>= fun () -> (Topkg_build.clean p.build) os ~build_dir
+  >>= fun () -> Ok 0
 
 (* Lint *)
 

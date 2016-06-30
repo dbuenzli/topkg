@@ -24,7 +24,8 @@ val opam_file :
 type t
 
 val empty : t
-val with_name_and_build_dir : t -> string -> Topkg_fpath.t -> t
+val with_name_and_build_dir :
+  ?name:string -> ?build_dir:Topkg_fpath.t -> t -> t
 
 val v :
   ?delegate:Topkg_cmd.t ->
@@ -74,6 +75,10 @@ val test :
 (* Build *)
 
 val build : t -> dry_run:bool -> Topkg_conf.t -> Topkg_conf.os -> int result
+
+(* Clean *)
+
+val clean : t -> Topkg_conf.os -> int result
 
 (* Lint *)
 
