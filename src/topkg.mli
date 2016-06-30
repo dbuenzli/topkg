@@ -869,6 +869,15 @@ module Conf : sig
         [true] is returned iff the standard library directory has the
         [dynlink.cmxa] library. *)
 
+    val word_size : t -> int
+    (** [word_size] is the bit size of one word on the OS that will
+        execute the programs produced by the compiler (i.e. the value
+        of {!Sys.word_size} in these programs). Until at least OCaml
+        4.03 this information is not readily available (see
+        {{:http://caml.inria.fr/mantis/view.php?id=7172}PR #7173}) and
+        the information is read from the C SIZEOF_PTR macro defined in
+        the file [caml/config.h] of the standard library directory. *)
+
     val dump : Format.formatter -> t -> unit
     (** [dump ppf c] prints an unspecified representation of [c] on [ppf]. *)
   end

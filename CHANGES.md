@@ -1,4 +1,6 @@
 
+- Add `Conf.OCaml.word_size` that reports the bit word size for
+  the programs that are produced by the compilers.
 - Build configuration key parsing. Fail hard on any error instead
   of warning (#56)
 - Add a `--debug` configuration key. Defaults to `true` or the value

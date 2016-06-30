@@ -16,7 +16,7 @@ let os_to_string = function
 
 let os_tool_env name os =
   let pre = match os with `Build_os -> "BUILD_OS_" | `Host_os -> "HOST_OS_" in
-  pre ^ String.uppercase name
+  pre ^ Topkg_string.uppercase name
 
 let os_bin_dir_env = function
 | `Build_os -> "BUILD_OS_BIN"
@@ -407,9 +407,26 @@ module OCaml = struct
     | Some v -> v
     | None -> let v = discover k c in add_discovery k (string_of_bool v) c; v
 
+  let get_int_with_discovery k c ~discover =
+    let maybe_v = match find k c with
+    | None -> None
+    | Some v ->
+      try Some (int_of_string v) with
+      | Failure _ ->
+          Topkg_log.warn (fun m ->
+              m (conf_key "could not parse integer,@ trying to discover")
+                (os_to_string c.os) k);
+          None
+   in
+   match maybe_v with
+   | Some v -> v
+   | None -> let v = discover k c in add_discovery k (string_of_int v) c; v
+
+  let find_stdlib c = find "standard_library" c
+
   let get_bool_stdlib_file_exists_discovery k c ~file ~on_error =
     get_bool_with_discovery k c ~discover:begin fun k c ->
-      match find "standard_library" c with
+      match find_stdlib c with
       | None ->
           Topkg_log.warn (fun m ->
               m (conf_key
@@ -477,6 +494,49 @@ module OCaml = struct
   let native_dynlink c =
     let file _ = "dynlink.cmxa" in
     get_bool_stdlib_file_exists_discovery "natdynlink" c ~file ~on_error:false
+
+  let word_size c =
+    let sizeof_ptr_of_config_h file =
+      let err l =
+        R.error_msgf "could not parse SIZEOF_PTR from %S in %s" l file
+      in
+      let rec parse = function
+      | [] -> R.error_msgf "could not find SIZEOF_PTR in %s" file
+      | l :: ls ->
+          let l = Topkg_string.trim l in
+          let is_size_of_ptr = Topkg_string.is_prefix "#define SIZEOF_PTR" l in
+          if not is_size_of_ptr then parse ls else
+          match Topkg_string.cut ~rev:true ~sep:' ' l with
+          | None -> err l
+          | Some (_, size) ->
+              try Ok (int_of_string size * 8) with Failure _ -> err l
+      in
+      Topkg_os.File.read file
+      >>= fun conf -> Ok (Topkg_string.cuts ~sep:'\n' conf)
+      >>= fun lines -> parse lines
+    in
+    get_int_with_discovery "word_size" c ~discover:begin fun k c ->
+      let on_error = 64 in
+      match find_stdlib c with
+      | None ->
+          Topkg_log.warn (fun m ->
+              m (conf_key
+                   "undefined, stdlib dir not found for discovery@ using %d")
+                (os_to_string c.os) k on_error);
+          on_error
+      | Some stdlib_dir ->
+          let conf_h = "caml/conf.h" in
+          match
+            Topkg_os.File.must_exist Topkg_fpath.(stdlib_dir // conf_h)
+            >>= fun conf -> sizeof_ptr_of_config_h conf
+          with
+          | Ok v -> v
+          | Error (`Msg e) ->
+              Topkg_log.warn (fun m ->
+                m (conf_key "undefined,@ discovery error: %s,@ using %d")
+                  (os_to_string c.os) k e on_error);
+              on_error
+    end
 
   let dump ppf c =
     let pp_elt ppf (k, v) = Format.fprintf ppf "(%S, %S)" k v in
