@@ -266,7 +266,6 @@ let build p ~dry_run c os =
   >>= fun (targets, install, tests) -> match dry_run with
   | true -> write_opam_install_file p install >>= fun () -> Ok 0
   | false ->
-      let build_cmd = (Topkg_build.cmd p.build) c os targets in
       let is_pin = Topkg_conf.build_context c = `Pin in
       let prepare = match Topkg_build.prepare_on_pin p.build && is_pin with
       | false -> Ok ()
@@ -277,7 +276,7 @@ let build p ~dry_run c os =
       in
       prepare
       >>= fun () -> run_build_hook "Pre" (Topkg_build.pre p.build) c
-      >>= fun () -> Topkg_os.Cmd.run build_cmd
+      >>= fun () -> (Topkg_build.cmd p.build) c os targets
       >>= fun () -> write_opam_install_file p install
       >>= fun () -> write_tests_file p tests
       >>= fun () -> run_build_hook "Post" (Topkg_build.post p.build) c

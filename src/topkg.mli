@@ -1110,7 +1110,7 @@ Pkg.mllib ~cond:jsoo "src/mylib_jsoo.mllib"
     ?prepare_on_pin:bool ->
     ?dir:fpath ->
     ?pre:(Conf.t -> unit result) ->
-    ?cmd:(Conf.t -> Conf.os -> fpath list -> Cmd.t) ->
+    ?cmd:(Conf.t -> Conf.os -> fpath list -> unit result) ->
     ?post:(Conf.t -> unit result) -> unit -> build
   (** [build ~prepare_on_pin ~dir ~cmd ~pre ~post] describes the package
       build procedure.
@@ -1127,17 +1127,18 @@ Pkg.mllib ~cond:jsoo "src/mylib_jsoo.mllib"
          distribution preparation if applicable, but before the build
          command. It can be used to adapt the build setup according to
          the build configuration. Default is a nop.}
-      {- [cmd] determines the build command to build the files
+      {- [cmd] invokes the build system to build the files
          determined by {{!install}install} moves.
          It is given the build configuration, an {{!Conf.os}OS
          specification}, the list of files to build relative to the
-         {{!Conf.build_dir}build directory}, and must return a command
-         line that builds the files in the build directory.
+         {{!Conf.build_dir}build directory}, and build the given
+         files in the build directory.}}
 {[
 fun c os files ->
   let ocamlbuild = Conf.tool "ocamlbuild" os in
   let build_dir = Conf.build_dir c in
   let debug = Cmd.(on (Conf.debug c) (v "-tag" % "debug")) in
+  OS.Cmd.run @@
   Cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %% debug %
                     "-build-dir" % build_dir %% of_list files)
 ]}}
