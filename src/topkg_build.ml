@@ -12,18 +12,18 @@ type t =
   { prepare_on_pin : bool;
     dir : Topkg_fpath.t;
     pre : Topkg_conf.t -> unit result;
-    cmd : Topkg_conf.t -> Topkg_conf.os -> Topkg_cmd.t;
+    cmd : Topkg_conf.t -> Topkg_conf.os -> Topkg_fpath.t list -> Topkg_cmd.t;
     post : Topkg_conf.t -> unit result; }
 
 let with_dir b dir = { b with dir }
 
 let nop = fun _ -> Ok ()
-let cmd c os =
+let cmd c os files =
   let ocamlbuild = Topkg_conf.tool "ocamlbuild" os in
   let build_dir = Topkg_conf.build_dir c in
   let debug = Topkg_cmd.(on (Topkg_conf.debug c) (v "-tag" % "debug")) in
   Topkg_cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %% debug %
-             "-build-dir" % build_dir)
+             "-build-dir" % build_dir %% of_list files)
 
 let v
     ?(prepare_on_pin = true) ?(dir = "_build") ?(pre = nop) ?(cmd = cmd)

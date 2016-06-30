@@ -1,8 +1,11 @@
 
-- Add `Conf.OCaml.word_size` that reports the bit word size for
+- Change the signature of the build command `cmd` in the `Pkg.build`
+  specification. This is an API breaking change but does not affect any
+  published package. See #53 for details.
+- Add `Conf.OCaml.word_size`, reports the bit word size for
   the programs that are produced by the compilers.
 - Build configuration key parsing. Fail hard on any error instead
-  of warning (#56)
+  of warning (#56).
 - Add a `--debug` configuration key. Defaults to `true` or the value
   of the `TOPKG_CONF_DEBUG` environment variable. The default build
   system invocation is changed to enable save of debugging information
@@ -12,6 +15,7 @@
 - `Pkg.files_to_watermark`, make sure only files are returned (#58).
 - Improve error message of some `Topkg.OS` functions (#57).
 - Remove deprecated `--installer` configuration key.
+- `topkg lint` fix regression in error OPAM lint report.
 
 v0.7.5 2016-06-22 Cambridge (UK)
 --------------------------------

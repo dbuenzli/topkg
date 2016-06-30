@@ -16,7 +16,7 @@ val v :
   ?prepare_on_pin:bool ->
   ?dir:Topkg_fpath.t ->
   ?pre:(Topkg_conf.t -> unit result) ->
-  ?cmd:(Topkg_conf.t -> Topkg_conf.os -> Topkg_cmd.t) ->
+  ?cmd:(Topkg_conf.t -> Topkg_conf.os -> Topkg_fpath.t list -> Topkg_cmd.t) ->
   ?post:(Topkg_conf.t -> unit result) -> unit -> t
 
 val with_dir : t -> Topkg_fpath.t -> t
@@ -24,7 +24,9 @@ val with_dir : t -> Topkg_fpath.t -> t
 val prepare_on_pin : t -> bool
 val dir : t -> Topkg_fpath.t
 val pre : t -> (Topkg_conf.t -> unit result)
-val cmd : t -> (Topkg_conf.t -> Topkg_conf.os -> Topkg_cmd.t)
+val cmd :
+  t -> (Topkg_conf.t -> Topkg_conf.os -> Topkg_fpath.t list -> Topkg_cmd.t)
+
 val post : t -> (Topkg_conf.t -> unit result)
 val codec : t Topkg_codec.t
 

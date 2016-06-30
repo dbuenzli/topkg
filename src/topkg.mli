@@ -1110,7 +1110,7 @@ Pkg.mllib ~cond:jsoo "src/mylib_jsoo.mllib"
     ?prepare_on_pin:bool ->
     ?dir:fpath ->
     ?pre:(Conf.t -> unit result) ->
-    ?cmd:(Conf.t -> Conf.os -> Cmd.t) ->
+    ?cmd:(Conf.t -> Conf.os -> fpath list -> Cmd.t) ->
     ?post:(Conf.t -> unit result) -> unit -> build
   (** [build ~prepare_on_pin ~dir ~cmd ~pre ~post] describes the package
       build procedure.
@@ -1127,18 +1127,19 @@ Pkg.mllib ~cond:jsoo "src/mylib_jsoo.mllib"
          distribution preparation if applicable, but before the build
          command. It can be used to adapt the build setup according to
          the build configuration. Default is a nop.}
-      {- [cmd] determines the build command that is invoked with the
-         targets to build as determined by {{!install}install} moves.
-         It is given the build configuration an {{!Conf.os}OS specification}
-         and and must return a command line to run that builds the targets
-         given as arguments in the {{!Conf.build_dir}build directory} of the
-         build configuration. Defaults to:
+      {- [cmd] determines the build command to build the files
+         determined by {{!install}install} moves.
+         It is given the build configuration, an {{!Conf.os}OS
+         specification}, the list of files to build relative to the
+         {{!Conf.build_dir}build directory}, and must return a command
+         line that builds the files in the build directory.
 {[
-fun c os ->
+fun c os files ->
   let ocamlbuild = Conf.tool "ocamlbuild" os in
   let build_dir = Conf.build_dir c in
-  Cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %
-       "-build-dir" % build_dir)
+  let debug = Cmd.(on (Conf.debug c) (v "-tag" % "debug")) in
+  Cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %% debug %
+                    "-build-dir" % build_dir %% of_list files)
 ]}}
       {- [post] is a hook that is invoked with the build context after
          the build command returned sucessfully. Default is a nop.}}
