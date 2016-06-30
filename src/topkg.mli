@@ -722,7 +722,7 @@ module Conf : sig
       If absent defaults to [default].
 
       Usually specified in OPAM build instructions with:
-      {["--with-thatpkg" "%{thatpkg:installed}%"]} along with an entry in the
+      {["--with-thatpkg" thatpkg:installed]} along with an entry in the
       depopt field of the OPAM file.
 
       {b Warning.} Only use this combinator for denoting OPAM
@@ -763,8 +763,8 @@ module Conf : sig
   (** [pinned c] is the value of a predefined key [--pinned].
       It is [true] if the build is initiated by an installer like OPAM
       and the package is pinned. If absent defaults to [false].
-      Usually specified in OPAM build instructions with
-      ["--pinned" "%{pinned}%"]. *)
+      Usually specified in OPAM build instructions with:
+{["--pinned" pinned]} *)
 
   type build_context = [`Dev | `Distrib | `Pin ]
   (** The type for build contexts. See {!val:build_context} for semantics. *)
@@ -800,7 +800,7 @@ module Conf : sig
   (** [debug c] is the value of a predefined key [--debug] that
       indicates if the build should include debugging information
       in the build artefacts. If absent the value is [true] or the
-      value of the environment variable `TOPKG_CONF_DEBUG` if
+      value of the environment variable TOPKG_CONF_DEBUG if
       specified. *)
 
   val dump : Format.formatter -> t -> unit
@@ -1824,12 +1824,12 @@ build configuration on the command line. In the simplest case, if
 your package has no configuration options, this simply boils
 down to:
 {v
-build: [[
+build: [
   "ocaml" "pkg/pkg.ml" "build"
-          "--pinned" "%{pinned}%" ]]
+          "--pinned" pinned ]
 v}
 
-The ["--pinned" "%{pinned}%"] configuration key specification is used to
+The ["--pinned" pinned] configuration key specification is used to
 inform the package description about the {{!Conf.build_context}build
 context}. This invocation of [pkg/pkg.ml] executes your build system
 with a set of targets determined from the build configuration and
@@ -1847,9 +1847,9 @@ following field to the OPAM file to instruct how to build and execute
 them (unfortunately this involves the repetition of the build line
 at the moment with OPAM but might change in the future):
 {v
-build-test: [[
-  "ocaml" "pkg/pkg.ml" "build" "--pinned" "%{pinned}%" "--tests" "true"
-  "ocaml" "pkg/pkg.ml" "test" ]]
+build-test: [
+ [ "ocaml" "pkg/pkg.ml" "build" "--pinned" pinned "--tests" "true" ]
+ [ "ocaml" "pkg/pkg.ml" "test" ]]
 v}
 
 {b Beyond OPAM.} If you need to support another package system you
@@ -2015,8 +2015,8 @@ For this conditional install the OPAM build instructions look like this:
 depopts: [ "cmdliner" ]
 build: [[
   "ocaml" "pkg/pkg.ml" "build"
-          "--pinned" "%{pinned}%"
-          "--with-cmdliner" "%{cmdliner:installed}%" ]]
+          "--pinned" pinned
+          "--with-cmdliner" cmdliner:installed ]]
 ]}
 
 {2:installautoconds Automatic install conditions}
@@ -2179,10 +2179,10 @@ of the install [etc] directory.}
    directory.}}
 The OPAM build instructions for the package are:
 {v
-build:
-[[ "ocaml" "pkg/pkg.ml" "build"
-           "--pinned" "%{pinned}%"
-           "--etc-dir" "%{mypkg:etc}%" ]]
+build: [
+  "ocaml" "pkg/pkg.ml" "build"
+          "--pinned" pinned
+          "--etc-dir" mypkg:etc ]
 v}
 
 {2:multiopam Multiple OPAM packages for a single distribution}
@@ -2222,10 +2222,10 @@ The build instructions of these OPAM files need to give the name of
 the package to the build invocation so that the right install description
 can be selected:
 {v
-build:
-[[ "ocaml" "pkg/pkg.ml" "build"
-           "--pkg-name" "%{name}%"
-           "--pinned" "%{pinned}%" ]]
+build: [
+  "ocaml" "pkg/pkg.ml" "build"
+          "--pkg-name" name
+          "--pinned" pinned ]
 v}
 
 In general you will use the default, main, package name and its OPAM file to
