@@ -525,9 +525,9 @@ module OCaml = struct
                 (os_to_string c.os) k on_error);
           on_error
       | Some stdlib_dir ->
-          let conf_h = "caml/conf.h" in
+          let config_h = "caml/config.h" in
           match
-            Topkg_os.File.must_exist Topkg_fpath.(stdlib_dir // conf_h)
+            Topkg_os.File.must_exist Topkg_fpath.(stdlib_dir // config_h)
             >>= fun conf -> sizeof_ptr_of_config_h conf
           with
           | Ok v -> v
