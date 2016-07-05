@@ -69,7 +69,7 @@ let args =
              command line options do not get interpreted by the $(b,$(tname))
              command itself."
   in
-  Arg.(value & pos_right 0 string [] & info [] ~doc ~docv:"[-- ARG...]")
+  Arg.(value & pos_right 0 string [] & info [] ~doc ~docv:"ARG")
 
 let exec =
   let doc = "Executable name or path suffix, with or without its
