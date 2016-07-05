@@ -32,12 +32,12 @@ let of_list ?slip line = match slip with
 | Some slip -> List.fold_left (fun acc v -> v :: slip :: acc) [] line
 
 let dump ppf cmd =
-  let pp_elt ppf s = Format.fprintf ppf "%S" s in
+  let pp_elt ppf s = Format.fprintf ppf "%s" (Filename.quote s) in
   let rec loop = function
   | [] -> ()
   | v :: vs ->
-      if vs = [] then (Format.fprintf ppf "@[%a@]" pp_elt v) else
-      (Format.fprintf ppf "@[%a@];@ " pp_elt v; loop vs)
+      if vs = [] then pp_elt ppf v else
+      (Format.fprintf ppf "%a@ " pp_elt v; loop vs)
   in
   Format.fprintf ppf "@[<1>["; loop (List.rev cmd); Format.fprintf ppf "]@]"
 

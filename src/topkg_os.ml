@@ -211,7 +211,7 @@ module Cmd = struct
   let exec ?stdout ?stderr cmd =
     try
       let line = line ?stdout ?stderr cmd in
-      Topkg_log.debug (fun m -> m ~header:"EXEC" "%S" line);
+      Topkg_log.debug (fun m -> m ~header:"EXEC" "@[<1>[%s]@]" line);
       Ok ((), (cmd, `Exited (Sys.command line)))
     with Sys_error e | Failure e -> R.error_msg e
 
