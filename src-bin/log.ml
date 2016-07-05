@@ -56,7 +56,7 @@ let action =
 
 let no_pager =
   let doc = "Do not pipe the output into a pager. This automatically
-             happens if the TERM environment variable is 'dumb'."
+             happens if the TERM environment variable is 'dumb' or undefined."
   in
   Arg.(value & flag & info ["no-pager"] ~doc)
 

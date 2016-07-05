@@ -91,7 +91,8 @@ module Text : sig
   (** [find ~no_pager] is an optional pager command. If [don't] is
       [true] returns [None]. Otherwise first consults the [PAGER] environment
       variable, then tries [less] or [more] in that order. If the [TERM]
-      environment variable is ["dumb"] unconditionaly returns [None]. *)
+      environment variable is ["dumb"] or undefined unconditionaly returns
+      [None]. *)
 end
 
 (** Pretty printers. *)

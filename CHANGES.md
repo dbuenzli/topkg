@@ -1,5 +1,6 @@
 
 
+- Pager, do not try to discover if TERM variable is undefined.
 - Add `topkg run` to easily run built executables.
 
 v0.7.6 2016-07-01 Cambridge (UK)

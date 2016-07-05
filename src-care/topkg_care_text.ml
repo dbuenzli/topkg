@@ -127,7 +127,7 @@ let split_uri ?(rel = false) uri = match String.(cut ~sep:"//" (trim uri)) with
 let find_pager ~don't =
   if don't then Ok None else
   match OS.Env.var "TERM" with
-  | Some "dumb" -> Ok None
+  | Some "dumb" | None -> Ok None
   | _ ->
       let add_env v cmds = match OS.Env.(value v (some cmd) ~absent:None) with
       | None -> cmds
