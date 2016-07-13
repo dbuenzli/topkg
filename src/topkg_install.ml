@@ -7,7 +7,9 @@
 open Topkg_result
 
 type move_scheme =
-  { field : [ `Test of bool * Topkg_cmd.t | Topkg_opam.Install.field ];
+  { field :
+      [ `Test of bool * Topkg_fpath.t option * Topkg_cmd.t
+      | Topkg_opam.Install.field ];
     auto_bin : bool;
     force : bool;
     built : bool;
@@ -60,9 +62,9 @@ let to_build ?header c os i =
       let targets = if m.built && not maybe then src :: targets else targets in
       let src = if m.built then Topkg_string.strf "%s/%s" bdir src else src in
       match m.field with
-      | `Test (run, args) ->
+      | `Test (run, dir, args) ->
           if not build_tests then acc else
-          let test = Topkg_test.v src ~args ~run in
+          let test = Topkg_test.v src ~args ~run ~dir in
           (targets, moves, test :: tests)
       | #Topkg_opam.Install.field as field ->
           let move = (field, Topkg_opam.Install.move ~maybe src ~dst) in
@@ -116,8 +118,8 @@ let share_root = field `Share_root
 let stublibs = field `Stublibs
 let toplevel = field `Toplevel
 let unknown name = field (`Unknown name)
-let test ?(run = true) ?(args = Topkg_cmd.empty) =
-  field_exec (`Test (run, args))
+let test ?(run = true) ?dir ?(args = Topkg_cmd.empty) =
+  field_exec (`Test (run, dir, args))
 
 (* Higher-level installs *)
 

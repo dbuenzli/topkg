@@ -43,6 +43,7 @@ module Dir : sig
 
   val current : unit -> Topkg_fpath.t result
   val set_current : Topkg_fpath.t -> unit result
+  val with_current : Topkg_fpath.t -> ('a -> 'b) -> 'a -> 'b result
 
   val contents :
     ?dotfiles:bool -> ?rel:bool -> Topkg_fpath.t -> Topkg_fpath.t list result

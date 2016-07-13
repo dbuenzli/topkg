@@ -421,6 +421,11 @@ module OS : sig
 
     val set_current : fpath -> unit result
     (** [set_current dir] sets the current working directory to [dir]. *)
+
+    val with_current : fpath -> ('a -> 'b) -> 'a -> 'b result
+    (** [with_current dir f v] is [f v] with the current working directory
+        bound to [dir]. After the function returns the current working
+        directory is back to its initial value. *)
   end
 
   (** Running commands. *)
@@ -1059,13 +1064,15 @@ Pkg.mllib ~cond:jsoo "src/mylib_jsoo.mllib"
 
   (** {2:tests Test executable description} *)
 
-  val test : ?run:bool -> ?args:Cmd.t -> exec_field
+  val test : ?run:bool -> ?dir:fpath -> ?args:Cmd.t -> exec_field
   (** [test] is a special {{!exec_field}executable field}: it doesn't
       install the described executable (as such the [dst] argument is
       ignored at the moment). If [run] is [true] (default) executes
       the test with [args] when [ocaml pkg/pkg.ml test] is run; this
       will notably run to test the distribution tarball. If
-      [run] is [false] the test needs to be invoked explicitely. *)
+      [run] is [false] the test needs to be invoked explicitely.
+      [dir] specifies the current working directory for the test, expressed
+      relative to the root directory of the package (defaults to [.]). *)
 
   (** {2 Higher-level installs} *)
 

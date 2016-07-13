@@ -33,6 +33,12 @@ module Dir = struct
   let set_current d =
     try Ok (Sys.chdir d) with Sys_error e -> R.error_msgf "%s: %s" d e
 
+  let with_current dir f v =
+    current ()
+    >>= fun original -> set_current dir
+    >>= fun () -> let r = f v in set_current original
+    >>= fun () -> Ok r
+
   (* Directory contents *)
 
   let contents ?(dotfiles = false) ?(rel = false) p =

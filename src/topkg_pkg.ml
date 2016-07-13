@@ -190,15 +190,23 @@ let write_tests_file p tests =
   Topkg_codec.write (tests_file p) tests_file_codec tests
 
 let tests_run tests ~args =
-  let run_test acc t =
+  let run_test root_dir acc t =
     let exec = Topkg_test.exec t in
     let args = match args with Some args -> args | None -> Topkg_test.args t in
-    let cmd = Topkg_cmd.(v exec %% args) in
-    Topkg_log.info (fun m -> m "Running test %s" exec);
-    acc + ((Topkg_os.Cmd.run_status cmd >>| fun (`Exited c) -> c)
-           |> Topkg_log.on_error_msg ~use:(fun _ -> 1))
+    let cmd = Topkg_cmd.(v Topkg_fpath.(root_dir // exec) %% args) in
+    let run () =
+      Topkg_log.info (fun m -> m "Running test %s" exec);
+      (Topkg_os.Cmd.run_status cmd >>| fun (`Exited c) -> c)
+      |> Topkg_log.on_error_msg ~use:(fun _ -> 1)
+    in
+    let res = match Topkg_test.dir t with
+    | None -> Ok (run ())
+    | Some dir -> Topkg_os.Dir.with_current dir run ()
+    in
+    acc + (res |> Topkg_log.on_error_msg ~use:(fun _ -> 1))
   in
-  match List.fold_left run_test 0 tests with
+  Topkg_os.Dir.current ()
+  >>= fun root_dir -> match List.fold_left (run_test root_dir) 0 tests with
   | 0 -> Ok 0
   | n -> Topkg_log.err (fun m -> m "Some tests failed."); Ok 1
 

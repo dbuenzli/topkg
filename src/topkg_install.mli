@@ -35,7 +35,8 @@ val stublibs : field
 val toplevel : field
 val unknown : string -> field
 
-val test : ?run:bool -> ?args:Topkg_cmd.t -> ?auto:bool -> field
+val test :
+  ?run:bool -> ?dir:Topkg_fpath.t -> ?args:Topkg_cmd.t -> ?auto:bool -> field
 
 val mllib :
   ?field:field -> ?cond:bool -> ?api:string list -> ?dst_dir:Topkg_fpath.t ->

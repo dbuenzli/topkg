@@ -1,8 +1,11 @@
 
+- Test description, allow to specify a working directory
+  for the test via the `?dir` optional argument. Thanks
+  to Thomas Gazagnaire for suggesting.
 - Fix behaviour of pinned distribution watermarking when
   git repo is not at the root directory of the package and
   `--vcs true` is forced.
-- Fix pkg/pkg.ml's main's ignoring TOPKG_VERBOSITY.
+- Fix pkg/pkg.ml's main's ignoring `TOPKG_VERBOSITY`'s value.
 - Toy GitHub delegate: fix log verbosity propagation.
 - Fix `Vcs.is_dirty` to detect untracked files. Thanks to Hannes Mehnert.
 - Pager, do not try to discover if TERM variable is undefined.
