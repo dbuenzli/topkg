@@ -48,6 +48,9 @@ let cmd (kind, cmd, dir) = vcs_cmd kind cmd dir
 
 (* Git support *)
 
+let git_work_tree (_, _, dir) =
+  Topkg_cmd.(v "--work-tree" % Topkg_fpath.dirname dir)
+
 let find_git () = Lazy.force git >>= function
 | (false, _) -> Ok None
 | (true, git) ->
@@ -65,7 +68,9 @@ let run_git r args out =
   | (_, (_, `Exited c)) -> err_git git c
 
 let git_is_dirty r =
-  let status = Topkg_cmd.(cmd r % "status" % "--porcelain") in
+  let status =
+    Topkg_cmd.(cmd r %% git_work_tree r % "status" % "--porcelain")
+  in
   Topkg_os.Cmd.(run_out ~err:Topkg_os.File.null status |> out_string)
   >>= function
   | ("", (_, `Exited 0)) -> Ok false
@@ -73,7 +78,10 @@ let git_is_dirty r =
   | (_, (_, `Exited c)) -> err_git status c
 
 let git_file_is_dirty r file =
-  let diff = Topkg_cmd.(cmd r % "diff-index" % "--quiet" % "HEAD" % p file) in
+  let diff =
+    Topkg_cmd.(cmd r %% git_work_tree r % "diff-index" % "--quiet" % "HEAD" %
+               p file)
+  in
   Topkg_os.Cmd.(run_status ~err:Topkg_os.File.null diff) >>= function
   | `Exited 0 -> Ok false
   | `Exited 1 -> Ok true
@@ -105,8 +113,8 @@ let git_commit_ptime_s r commit_ish =
 let git_describe ~dirty r commit_ish =
   let dirty = dirty && commit_ish = "HEAD" in
   run_git r
-    Topkg_cmd.(v "describe" % "--always" %% on dirty (v "--dirty") %%
-               on (not dirty) (v commit_ish))
+    Topkg_cmd.(git_work_tree r % "describe" % "--always" %%
+               on dirty (v "--dirty") %% on (not dirty) (v commit_ish))
     Topkg_os.Cmd.out_string
 
 let git_tags r =
@@ -122,7 +130,9 @@ let git_changes r ~after ~until =
   >>= fun commits -> parse_changes commits
 
 let git_tracked_files r ~tree_ish =
-  let tracked = Topkg_cmd.(v "ls-tree" % "--name-only" % "-r" % tree_ish) in
+  let tracked =
+    Topkg_cmd.(git_work_tree r % "ls-tree" % "--name-only" % "-r" % tree_ish)
+  in
   run_git r tracked Topkg_os.Cmd.out_lines
 
 let git_clone r ~dir:d =
