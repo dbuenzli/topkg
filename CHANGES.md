@@ -1,3 +1,5 @@
+v0.7.7 2016-07-13 Cambridge (UK)
+--------------------------------
 
 - Test description, allow to specify a working directory
   for the test via the `?dir` optional argument. Thanks
@@ -8,7 +10,7 @@
 - Fix pkg/pkg.ml's main's ignoring `TOPKG_VERBOSITY`'s value.
 - Toy GitHub delegate: fix log verbosity propagation.
 - Fix `Vcs.is_dirty` to detect untracked files. Thanks to Hannes Mehnert.
-- Pager, do not try to discover if TERM variable is undefined.
+- Pager, do not try to discover if `TERM` variable is undefined.
 - Add `topkg run` to easily run built executables.
 
 v0.7.6 2016-07-01 Cambridge (UK)
