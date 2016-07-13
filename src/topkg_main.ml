@@ -107,7 +107,7 @@ let run_cmd pkg cmd args = match cmd with
 
 (* Cli interface *)
 
-let default_verb = Some Topkg_log.Warning
+let default_verb = Topkg_log.level ()
 let incr_verb = function
 | Some Topkg_log.Warning -> Some Topkg_log.Info
 | Some Topkg_log.Info -> Some Topkg_log.Debug
