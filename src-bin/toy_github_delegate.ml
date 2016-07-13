@@ -231,8 +231,11 @@ let request = function
 let ipc_cmd args =
   begin match args with
   | verbosity :: req ->
-      Logs.level_of_string verbosity
-      >>= fun level -> Logs.set_level level; request req
+      Logs.level_of_string verbosity >>= fun logs_level ->
+      Topkg.Log.level_of_string verbosity >>= fun topkg_level ->
+      Topkg.Log.set_level topkg_level;
+      Logs.set_level logs_level;
+      request req
   | [] ->
       R.error_msg "malformed delegate request, verbosity is missing"
   end
