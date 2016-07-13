@@ -65,11 +65,12 @@ let run_git r args out =
   | (_, (_, `Exited c)) -> err_git git c
 
 let git_is_dirty r =
-  let diff = Topkg_cmd.(cmd r % "diff" % "--quiet" % "HEAD") in
-  Topkg_os.Cmd.(run_status ~err:Topkg_os.File.null diff) >>= function
-  | `Exited 0 -> Ok false
-  | `Exited 1 -> Ok true
-  | `Exited c -> err_git diff c
+  let status = Topkg_cmd.(cmd r % "status" % "--porcelain") in
+  Topkg_os.Cmd.(run_out ~err:Topkg_os.File.null status |> out_string)
+  >>= function
+  | ("", (_, `Exited 0)) -> Ok false
+  | (_, (_, `Exited 0)) -> Ok true
+  | (_, (_, `Exited c)) -> err_git status c
 
 let git_file_is_dirty r file =
   let diff = Topkg_cmd.(cmd r % "diff-index" % "--quiet" % "HEAD" % p file) in

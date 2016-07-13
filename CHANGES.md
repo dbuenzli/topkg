@@ -1,5 +1,6 @@
 
 
+- Fix `Vcs.is_dirty` to detect untracked files.
 - Pager, do not try to discover if TERM variable is undefined.
 - Add `topkg run` to easily run built executables.
 
