@@ -69,6 +69,7 @@ val build_context : t -> [`Dev | `Distrib | `Pin ]
 val build_tests : t -> bool
 
 val debug : t -> bool
+val profile : t -> bool
 
 (** {1 OCaml configuration} *)
 

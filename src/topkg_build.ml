@@ -23,9 +23,10 @@ let cmd c os files =
   let ocamlbuild = Topkg_conf.tool "ocamlbuild" os in
   let build_dir = Topkg_conf.build_dir c in
   let debug = Topkg_cmd.(on (Topkg_conf.debug c) (v "-tag" % "debug")) in
+  let profile = Topkg_cmd.(on (Topkg_conf.profile c) (v "-tag" % "profile")) in
   Topkg_os.Cmd.run @@
-  Topkg_cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %% debug %
-             "-build-dir" % build_dir %% of_list files)
+  Topkg_cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %% debug
+             %% profile % "-build-dir" % build_dir %% of_list files)
 
 let clean os ~build_dir =
   let ocamlbuild = Topkg_conf.tool "ocamlbuild" os in
