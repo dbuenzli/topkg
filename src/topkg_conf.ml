@@ -202,6 +202,13 @@ let debug =
   in
   key "debug" bool ~env:"TOPKG_CONF_DEBUG" ~absent:true ~doc
 
+let profile =
+  let doc = "Profiling build. Include run-time profiling support in build \
+             artefacts. This key should not be specified explicitely \
+             in your package build instructions."
+  in
+  key "profile" bool ~env:"TOPKG_CONF_PROFILE" ~absent:false ~doc
+
 (* Key documentation *)
 
 let pp_cli_opt ppf opt_name absent env doc docv =
@@ -330,6 +337,7 @@ let build_tests c = match value c tests with
     | _ -> false
 
 let debug c = value c debug
+let profile c = value c profile
 
 (* OCaml configuration, as communicated by ocamlc -config  *)
 

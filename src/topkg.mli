@@ -808,6 +808,12 @@ module Conf : sig
       value of the environment variable TOPKG_CONF_DEBUG if
       specified. *)
 
+  val profile : t -> bool
+  (** [profile c] is the value of a predefined key [--profile] that
+      indicates if the build artefacts include run-time profiling support.  If
+      absent the value is [false] or the value of the environment variable
+      TOPKG_CONF_PROFILE if specified. *)
+
   val dump : Format.formatter -> t -> unit
   (** [dump ppf c] formats an unspecified representation of [c] on [ppf]. *)
 
@@ -1146,9 +1152,10 @@ fun c os files ->
   let ocamlbuild = Conf.tool "ocamlbuild" os in
   let build_dir = Conf.build_dir c in
   let debug = Cmd.(on (Conf.debug c) (v "-tag" % "debug")) in
+  let profile = Cmd.(on (Conf.profile c) (v "-tag" % "profile")) in
   OS.Cmd.run @@
-  Cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %% debug %
-                    "-build-dir" % build_dir %% of_list files)
+  Cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %% debug
+                  %% profile % "-build-dir" % build_dir %% of_list files)
 ]}}
       {- [post] is a hook that is invoked with the build context after
          the build command returned sucessfully. Default is a nop.}
