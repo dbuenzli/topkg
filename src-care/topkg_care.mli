@@ -251,66 +251,6 @@ module OCamlfind : sig
        distributed with OCaml. *)
 end
 
-(** WWW browser interaction.
-
-    {b Note.} Trying to load and reload URIs from the command line in
-    a consistant manner across browsers and operating systems seems to
-    be a hopeless endeavour. In particular the reload strategy
-    mentioned below—useful to write API documentation—is
-    an indication of what {e should} be done for what is believed to be the
-    best user experience. But don't expect
-    this work in all contexts (currently it only fully works with
-    Chrome on Darwin and it is not even glitchless). If you know how
-    to improve or extend the support for particular browsers and platforms
-    get in touch {{:https://github.com/dbuenzli/topkg/issues/20}here}. *)
-module Browser : sig
-
-  (** {1 Browser} *)
-
-  (** Command line interface. *)
-  module Cli : sig
-
-    (** {1 Command line} *)
-
-    val browser : Cmd.t option Cmdliner.Term.t
-    (** A [--browser] option and [BROWSER] environment variable to
-        use with the [browser] argument of {!reload}. *)
-
-    val prefix : bool Cmdliner.Term.t
-    (** A [--prefix] option to use with the [prefix] argument of {!reload}. *)
-
-    val background : bool Cmdliner.Term.t
-    (** A [--background] option to use with [background] argument of
-        {!reload}. *)
-  end
-
-  val reload :
-    ?background:bool ->
-    ?prefix:bool -> ?browser:Cmd.t -> uri:string -> (unit, R.msg) result
-  (** [reload ~background ~prefix ~browser uri] tries to reload the URI
-      [uri] or an URI prefixed by [uri] if prefix is [true] (defaults to
-      [false]) in browser [browser].
-
-      The reload should always lead to the reload of a single tab
-      found as follows.
-      {ol
-      {- Repeat from the frontmost browser window to the backmost one until
-         a tab to reload is found:
-        {ol
-        {- If the window's current tab's URI is [uri] (or is prefixed by [uri]
-           when  [prefix] is [true]), reload this tab.}
-        {- If the window has one or more tab whose URI is [uri] (or is prefixed
-         by [uri] when [prefix] is [true]), pick the left most one, make it
-         current in the window and reload it.}}}
-      {- If no tab was found, get the frontmost window. If the current tab
-         has no URI, use that tab with [uri] otherwise create a new tab
-         with [uri] and make it current for the window.}}
-      If [background] is [true] (defaults to [false]), the browser application
-      should be kept in the background, only the reload should occur. If [false]
-      the browser application and reloaded window should be brought into
-      focus. *)
-end
-
 (** Archive file creation. *)
 module Archive : sig
 

@@ -90,7 +90,7 @@ let browse () pkg_file opam browser prefix background target =
         else Error (`Msg msg)
     in
     uri
-    >>= fun uri -> Topkg_care.Browser.reload ~background ~prefix ?browser ~uri
+    >>= fun uri -> Webbrowser.reload ~background ~prefix ?browser uri
     >>= fun () -> Ok 0
   end
   |> Cli.handle_error
@@ -123,8 +123,8 @@ let man =
 let cmd =
   let info = Term.info "browse" ~sdocs:Cli.common_opts ~doc ~man in
   let t = Term.(pure browse $ Cli.setup $ Cli.pkg_file $ Cli.opam $
-                Topkg_care.Browser.Cli.browser $ Topkg_care.Browser.Cli.prefix $
-                Topkg_care.Browser.Cli.background $ target)
+                Webbrowser_cli.browser $ Webbrowser_cli.prefix $
+                Webbrowser_cli.background $ target)
   in
   (t, info)
 

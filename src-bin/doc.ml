@@ -53,7 +53,7 @@ let browser_reload reload ~background ~browser dir =
   | true -> Ok abs_dir
   | false ->
       let uri = strf "file://%s" Fpath.(to_string abs_dir) in
-      Topkg_care.Browser.reload ~background ~prefix:true ?browser ~uri
+      Webbrowser.reload ~background ~prefix:true ?browser uri
       >>= fun () -> Ok abs_dir
 
 let doc_cmd () pkg_file build_dir dev reload background browser =
@@ -104,8 +104,8 @@ let man =
 let cmd =
   let info = Term.info "doc" ~sdocs:Cli.common_opts ~doc ~man in
   let t = Term.(pure doc_cmd $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $
-                dev $ reload_browser $ Topkg_care.Browser.Cli.background $
-                Topkg_care.Browser.Cli.browser)
+                dev $ reload_browser $ Webbrowser_cli.background $
+                Webbrowser_cli.browser)
   in
   (t, info)
 

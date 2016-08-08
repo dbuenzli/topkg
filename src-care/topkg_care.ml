@@ -9,7 +9,6 @@ module Pp = Topkg_care_text.Pp
 module Opam = Topkg_care_opam
 module OCamlbuild = Topkg_care_ocamlbuild
 module OCamlfind = Topkg_care_ocamlfind
-module Browser = Topkg_care_browser
 module Archive = Topkg_care_archive
 
 module Pkg = Topkg_care_pkg

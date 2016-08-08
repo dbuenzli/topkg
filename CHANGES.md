@@ -1,3 +1,8 @@
+
+
+- Remove Topkg_care.Browser. Rely on the `webbrowser` package
+  instead.
+
 v0.7.7 2016-07-13 Cambridge (UK)
 --------------------------------
 
