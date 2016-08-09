@@ -23,5 +23,5 @@ depends: [
 build:[
   "ocaml" "pkg/pkg.ml" "build"
           "--pkg-name" name
-          "--pinned" pinned
+          "--pinned" "%{pinned}%"
 ]
