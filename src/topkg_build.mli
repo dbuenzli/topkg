@@ -12,6 +12,9 @@ open Topkg_result
 
 type t
 
+val build_cmd : Topkg_conf.t -> Topkg_conf.os -> Topkg_cmd.t
+val clean_cmd : Topkg_conf.os -> build_dir:Topkg_fpath.t -> Topkg_cmd.t
+
 val v :
   ?prepare_on_pin:bool ->
   ?dir:Topkg_fpath.t ->

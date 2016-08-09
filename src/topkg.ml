@@ -69,6 +69,8 @@ module Pkg = struct
 
   type build = Topkg_build.t
   let build = Topkg_build.v
+  let build_cmd = Topkg_build.build_cmd
+  let clean_cmd = Topkg_build.clean_cmd
 
   (* Package *)
 

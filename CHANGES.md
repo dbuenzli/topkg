@@ -1,4 +1,6 @@
 
+- Add `Pkg.{build,clean}_cmd`. This makes it easier to extend
+  the default build system invocation.
 - Be more quiet on package zero rebuilds.
 - Remove Topkg_care.Browser. Rely on the `webbrowser` package
   instead.

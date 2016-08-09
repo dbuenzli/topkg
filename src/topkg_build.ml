@@ -6,7 +6,19 @@
 
 open Topkg_result
 
-type context = [ `Pin | `Dev | `Distrib ]
+
+let build_cmd c os =
+  let ocamlbuild = Topkg_conf.tool "ocamlbuild" os in
+  let build_dir = Topkg_conf.build_dir c in
+  let debug = Topkg_cmd.(on (Topkg_conf.debug c) (v "-tag" % "debug")) in
+  let profile = Topkg_cmd.(on (Topkg_conf.profile c) (v "-tag" % "profile")) in
+  Topkg_cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %% debug
+             %% profile % "-build-dir" % build_dir)
+
+let clean_cmd os ~build_dir =
+  let ocamlbuild = Topkg_conf.tool "ocamlbuild" os in
+  Topkg_cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %
+             "-build-dir" % build_dir % "-clean")
 
 type t =
   { prepare_on_pin : bool;
@@ -19,20 +31,12 @@ type t =
 let with_dir b dir = { b with dir }
 
 let nop = fun _ -> Ok ()
+
 let cmd c os files =
-  let ocamlbuild = Topkg_conf.tool "ocamlbuild" os in
-  let build_dir = Topkg_conf.build_dir c in
-  let debug = Topkg_cmd.(on (Topkg_conf.debug c) (v "-tag" % "debug")) in
-  let profile = Topkg_cmd.(on (Topkg_conf.profile c) (v "-tag" % "profile")) in
-  Topkg_os.Cmd.run @@
-  Topkg_cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %% debug
-             %% profile % "-build-dir" % build_dir %% of_list files)
+  Topkg_os.Cmd.run @@ Topkg_cmd.(build_cmd c os %% of_list files)
 
 let clean os ~build_dir =
-  let ocamlbuild = Topkg_conf.tool "ocamlbuild" os in
-  Topkg_os.Cmd.run @@
-  Topkg_cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %
-             "-build-dir" % build_dir % "-clean")
+  Topkg_os.Cmd.run @@ clean_cmd os ~build_dir
 
 let v
     ?(prepare_on_pin = true) ?(dir = "_build") ?(pre = nop) ?(cmd = cmd)

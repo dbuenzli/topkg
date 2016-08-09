@@ -1148,14 +1148,7 @@ Pkg.mllib ~cond:jsoo "src/mylib_jsoo.mllib"
          {{!Conf.build_dir}build directory}, and build the given
          files in the build directory. The default is:
 {[
-fun c os files ->
-  let ocamlbuild = Conf.tool "ocamlbuild" os in
-  let build_dir = Conf.build_dir c in
-  let debug = Cmd.(on (Conf.debug c) (v "-tag" % "debug")) in
-  let profile = Cmd.(on (Conf.profile c) (v "-tag" % "profile")) in
-  OS.Cmd.run @@
-  Cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %% debug
-                  %% profile % "-build-dir" % build_dir %% of_list files)
+fun c os files -> OS.Cmd.run @@ Cmd.(Pkg.build_cmd c os %% of_list files)
 ]}}
       {- [post] is a hook that is invoked with the build context after
          the build command returned sucessfully. Default is a nop.}
@@ -1163,15 +1156,29 @@ fun c os files ->
          an {{!Conf.os}OS specification} and a build directory to
          clean. The default is:
 {[
-let clean os ~build_dir =
-  let ocamlbuild = Topkg_conf.tool "ocamlbuild" os in
-  OS.Cmd.run @@
-  Cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %
-                    "-build-dir" % build_dir % "-clean")
-]}
-}}
+let clean os ~build_dir = OS.Cmd.run @@ Pkg.clean_cmd os ~build_dir
+]}}}
       {b Warning.} If you are invoking tools in your hooks consider
       using {!Conf.tool} to look them up it helps for cross-compilation. *)
+
+  val build_cmd : Conf.t -> Conf.os -> Cmd.t
+  (** [build_cmd c os] is the default build command to which
+      files to build are given. Its value is defined by:
+{[fun c os ->
+  let ocamlbuild = Conf.tool "ocamlbuild" os in
+  let build_dir = Conf.build_dir c in
+  let debug = Cmd.(on (Conf.debug c) (v "-tag" % "debug")) in
+  let profile = Cmd.(on (Conf.profile c) (v "-tag" % "profile")) in
+  Cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %% debug %%
+                    profile % "-build-dir" % build_dir)]} *)
+
+  val clean_cmd : Conf.os -> build_dir:fpath -> Cmd.t
+  (** [clean_cmd os ~build_dir] is the default clean command. Its value
+      is defined by:
+ {[fun os ~build_dir ->
+  let ocamlbuild = Conf.tool "ocamlbuild" os in
+  Cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %
+                    "-build-dir" % build_dir % "-clean") ]} *)
 
   (** {1:distrib Distribution description} *)
 
