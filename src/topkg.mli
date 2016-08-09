@@ -387,6 +387,11 @@ module OS : sig
         writes to {!Pervasives.stdout} and flushes but doesn't close the channel
         when the function returns. *)
 
+    val write_subst : fpath -> (string * string) list -> string -> unit result
+    (** [write_subst file vars content] is like {!write} except any occurence
+        of a string of the form ["%%ID%%"] in [content] is replaced by the
+        value of [List.assoc "ID" vars], if any. *)
+
     (** {1:tmpfiles Temporary files} *)
 
     val tmp : unit -> fpath result
