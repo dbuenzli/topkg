@@ -17,13 +17,14 @@ dependencies. This is what your packages will need as a *build*
 dependency.
 
 Topkg-care is distributed under the ISC license it depends on
-[fmt][fmt], [logs][logs], [bos][bos], [cmdliner][cmdliner] and
-`opam-lib`.
+[fmt][fmt], [logs][logs], [bos][bos], [cmdliner][cmdliner],
+[webbrowser][webbrowser] and `opam-lib`.
 
 [fmt]: http://erratique.ch/software/fmt
 [logs]: http://erratique.ch/software/logs
 [bos]: http://erratique.ch/software/bos
 [cmdliner]: http://erratique.ch/software/cmdliner
+[webbrowser]: http://erratique.ch/software/webbrowser
 
 Home page: http://erratique.ch/software/topkg  
 Contact: Daniel Bünzli `<daniel.buenzl i@erratique.ch>`
