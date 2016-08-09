@@ -267,7 +267,7 @@ let write_opam_install_file p install =
   let file = install_file p in
   let install = Topkg_opam.Install.to_string install in
   Topkg_os.File.write file install
-  >>| fun () -> Topkg_log.app (fun m -> m "Wrote OPAM install file %s" file)
+  >>| fun () -> Topkg_log.info (fun m -> m "Wrote OPAM install file %s" file)
 
 let run_build_hook kind hook c =
   (hook c)
