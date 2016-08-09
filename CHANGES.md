@@ -1,8 +1,15 @@
+v0.7.8 2016-08-09 Zagreb
+------------------------
 
-- Add `Pkg.{build,clean}_cmd`. This makes it easier to extend
-  the default build system invocation.
-- Be more quiet on package zero rebuilds.
-- Remove Topkg_care.Browser. Rely on the `webbrowser` package
+- Add a `--profile` configuration key. Thanks to David Kaloper
+  Meršinjak for the patch.
+- Add `OS.File.write_subst`. Allows clients to substitute watermark
+  like variables in hooks.
+- Add `Pkg.{build,clean}_cmd`. Allows clients to extend the default
+  build system invocation.
+- Be more quiet on package builds (log the `.install` file
+  written message at info level).
+- Remove Topkg_care.Browser. Depend on the `webbrowser` package
   instead.
 
 v0.7.7 2016-07-13 Cambridge (UK)

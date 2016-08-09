@@ -32,7 +32,9 @@ let () =
   let metas = [ Pkg.meta_file ~install:false "pkg/META" ] in
   let opams =
     let install = false in
-    let not_topkg_deps = Some ["fmt"; "logs"; "bos"; "cmdliner"; "opam-lib"] in
+    let not_topkg_deps =
+      Some ["fmt"; "logs"; "bos"; "cmdliner"; "webbrowser"; "opam-lib"]
+    in
     [ Pkg.opam_file ~install "topkg.opam" ~lint_deps_excluding:not_topkg_deps;
       Pkg.opam_file ~install "topkg-care.opam" ]
   in
