@@ -1616,10 +1616,10 @@ module Private : sig
     val result_error_msg : 'a t -> 'a result t
     (** [result_error_msg ok] codecs [ok] or error message results. *)
 
-    val fpath : Topkg_fpath.t t
+    val fpath : Fpath.t t
     (** [fpath] codecs files paths. *)
 
-    val cmd : Topkg_cmd.t t
+    val cmd : Cmd.t t
     (** [cmd] codecs command line fragments. *)
   end
 
