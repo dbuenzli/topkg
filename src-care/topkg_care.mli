@@ -187,7 +187,7 @@ module Opam : sig
     (** [to_string d] is [d] as a string. *)
 
     val of_readme :
-      ?flavour:Topkg_care_text.flavour -> string -> (t, R.msg) result
+      ?flavour:Text.flavour -> string -> (t, R.msg) result
     (** [of_readme r] extracts an OPAM description file from a readme [r]
         with a certain structure. *)
 
