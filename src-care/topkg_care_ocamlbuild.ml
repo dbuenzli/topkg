@@ -10,21 +10,23 @@ let cmd =
   Cmd.of_list @@ Topkg.Cmd.to_list @@ Topkg.Conf.tool "ocamlbuild" `Host_os
 
 let find_packages ~roots s =
-  let find_next_package_id =
-    let package = String.sub "package(" in
-    let not_rpar c = not (Char.equal ')' c) in
-    let not_dot c = not (Char.equal '.' c) in
-    fun ~root s -> match String.Sub.find_sub ~sub:package s with
-    | None -> None
-    | Some s ->
-        let rest = String.Sub.(extend (stop s)) in
-        let id, rest = String.Sub.span ~sat:not_rpar rest in
-        let id = if root then String.Sub.take ~sat:not_dot id else id in
-        Some (String.Sub.to_string id, String.Sub.tail rest)
-  in
-  let rec loop acc s = match find_next_package_id ~root:roots s with
+  let package = String.sub "package(" in
+  let not_rpar c = not (Char.equal ')' c) in
+  let not_dot c = not (Char.equal '.' c) in
+  let is_comma c = Char.equal ',' c in
+  let is_sep c = Char.Ascii.is_white c || is_comma c in
+  let rec loop acc s = match String.Sub.find_sub ~sub:package s with
   | None -> acc
-  | Some (id, rest) -> loop (String.Set.add id acc) rest
+  | Some s ->
+      let rest = String.Sub.(extend (stop s)) in
+      let ids, rest = String.Sub.span ~sat:not_rpar rest in
+      let ids = String.Sub.fields ~empty:false ~is_sep ids in
+      let add_id acc id =
+        let id = if roots then String.Sub.take ~sat:not_dot id else id in
+        String.Set.add (String.Sub.to_string id) acc
+      in
+      let acc = List.fold_left add_id acc ids in
+      loop acc (String.Sub.tail rest)
   in
   loop String.Set.empty (String.sub s)
 

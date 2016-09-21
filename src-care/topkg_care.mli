@@ -232,7 +232,8 @@ module OCamlbuild : sig
        before the first ['.'], are in the set.
 
        {b Warning.} This is a very dumb parsing that simply looks up
-       for all ["package($ID)"] patterns in the [_tags] file. *)
+       for all ["package($ID)"] and ["package($ID0[, ]*$ID1...)"]
+       patterns in the [_tags] file. *)
 end
 
 (** [ocamlfind] helpers. *)
