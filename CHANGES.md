@@ -1,3 +1,10 @@
+v0.7.9 2016-09-21 Zagreb
+------------------------
+
+- Better package parsing in ocamlbuild _tags files. Thanks
+  to Thomas Gazagnaire for the report.
+- Remove references to internal names in the API.
+
 v0.7.8 2016-08-09 Zagreb
 ------------------------
 
