@@ -34,6 +34,18 @@ let copy_assets src_dir dst_dir =
   OS.Dir.contents src_dir
   >>= fun files -> List.iter (copy_asset dst_dir) files; Ok ()
 
+let copy_odig_css doc_dir dst_dir =
+  OS.File.exists Fpath.(doc_dir / "style.css") >>= function
+  | true -> Ok ()
+  | false ->
+      let get_odig_etc = Cmd.(v "opam" % "config" % "var" % "odig:etc") in
+      OS.Cmd.(run_out get_odig_etc |> to_string) >>= function
+      | "#undefined" (* no comment *) -> Ok ()
+      | etcdir ->
+          Fpath.of_string etcdir >>= fun etcdir ->
+          OS.File.read Fpath.(etcdir / "ocamldoc.css")
+          >>= fun cont -> OS.File.write Fpath.(dst_dir / "style.css") cont
+
 let build_doc dev build_dir =
   let doc_dir = Fpath.v "doc" in
   let odocl = Fpath.(doc_dir / (if dev then "dev.odocl" else "api.odocl")) in
@@ -44,6 +56,7 @@ let build_doc dev build_dir =
   >>= fun target -> OS.Cmd.run Cmd.(ocamlbuild %% docflags % unixy_path target)
   >>= fun () -> Ok Fpath.(build_dir // parent target)
   >>= fun dst_dir -> copy_assets doc_dir dst_dir
+  >>= fun () -> copy_odig_css doc_dir dst_dir
   >>= fun () -> Ok dst_dir
 
 let browser_reload reload ~background ~browser dir =
@@ -97,6 +110,8 @@ let man =
         documentation and the doc/dev.odocl the development documentation.
         The directory can also hold CSS, PNG, JPEG, GIF, SVG, WOFF, TTF, OTF
         files that are copied over to the generated documentation directory.";
+    `P "If the doc/ directory has no doc/style.css file but odig(1) is
+        installed, its ocamldoc stylesheet is used.";
   ] @ Cli.common_opts_man @ [
     `S "ENVIRONMENT VARIABLES";
   ] @ Cli.see_also ~cmds:[]

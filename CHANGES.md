@@ -1,3 +1,8 @@
+
+
+- Doc gen. If there is no `doc/style.css` but `opkg`
+  is installed, use its `ocamldoc` stylesheet.
+
 v0.7.9 2016-09-21 Zagreb
 ------------------------
 
