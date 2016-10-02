@@ -209,6 +209,13 @@ let profile =
   in
   key "profile" bool ~env:"TOPKG_CONF_PROFILE" ~absent:false ~doc
 
+let coverage =
+  let doc = "Coverage build. Include run-time coverage support in build \
+             artefacts. This key should not be specified explicitely \
+             in your package build instructions."
+  in
+  key "coverage" bool ~env:"TOPKG_CONF_COVERAGE" ~absent:false ~doc
+
 (* Key documentation *)
 
 let pp_cli_opt ppf opt_name absent env doc docv =
@@ -338,6 +345,7 @@ let build_tests c = match value c tests with
 
 let debug c = value c debug
 let profile c = value c profile
+let coverage c = value c coverage
 
 (* OCaml configuration, as communicated by ocamlc -config  *)
 

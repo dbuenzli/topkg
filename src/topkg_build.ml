@@ -12,8 +12,11 @@ let build_cmd c os =
   let build_dir = Topkg_conf.build_dir c in
   let debug = Topkg_cmd.(on (Topkg_conf.debug c) (v "-tag" % "debug")) in
   let profile = Topkg_cmd.(on (Topkg_conf.profile c) (v "-tag" % "profile")) in
+  let coverage =
+    Topkg_cmd.(on (Topkg_conf.coverage c) (v "-pkg" % "bisect_ppx"))
+  in
   Topkg_cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %% debug
-             %% profile % "-build-dir" % build_dir)
+             %% profile %% coverage % "-build-dir" % build_dir)
 
 let clean_cmd os ~build_dir =
   let ocamlbuild = Topkg_conf.tool "ocamlbuild" os in
