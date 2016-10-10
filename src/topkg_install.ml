@@ -123,14 +123,16 @@ let test ?(run = true) ?dir ?(args = Topkg_cmd.empty) =
 
 (* Higher-level installs *)
 
-let parse_mllib_modules contents =
+let parse_mllib contents = (* list of module name and path (for dir/Mod) *)
   let lines = Topkg_string.cuts ~sep:'\n' contents in
   let add_mod acc l =
-    let m = String.trim @@ match Topkg_string.cut ~sep:'#' l with
+    let path = String.trim @@ match Topkg_string.cut ~sep:'#' l with
     | None -> l
-    | Some (m, _ (* comment *)) -> m
+    | Some (p, _ (* comment *)) -> p
     in
-    if m = "" then acc else m :: acc
+    if path = "" then acc else
+    let mod_name = Topkg_string.capitalize @@ Topkg_fpath.basename path in
+    (mod_name, path) :: acc
   in
   List.fold_left add_mod [] lines
 
@@ -142,32 +144,38 @@ let mllib ?(field = lib) ?(cond = true) ?api ?dst_dir mllib =
   | None -> None
   | Some dir -> Some (Topkg_fpath.append dir (Topkg_fpath.basename f))
   in
-  let api mllib_mods = match api with
-  | None -> mllib_mods
-  | Some api ->
-      let in_mllib i = List.mem (Topkg_string.capitalize i) mllib_mods in
-      let api, orphans = List.partition in_mllib api in
-      let warn o =
-        Topkg_log.warn (fun m -> m "mllib %s: unknown interface %s" mllib o)
-      in
-      List.iter warn orphans;
-      api
+  let api mllib_content =
+    let mod_names = List.map fst mllib_content in
+    match api with
+    | None -> mod_names (* all the .mllib modules if unspecified *)
+    | Some api ->
+        let in_mllib i = List.mem (Topkg_string.capitalize i) mod_names in
+        let api, orphans = List.partition in_mllib api in
+        let warn o =
+          Topkg_log.warn (fun m -> m "mllib %s: unknown interface %s" mllib o)
+        in
+        List.iter warn orphans;
+        api
   in
   let library = field ?dst:(dst lib_base) ~exts:Topkg_fexts.library lib_base in
-  let add_mods acc mllib_mods =
-    let api = api mllib_mods in
-    let add_mod acc m =
-      let fname = Topkg_fpath.append lib_dir (Topkg_string.uncapitalize m) in
+  let add_mods acc mllib_content =
+    let api = api mllib_content in
+    let add_mod acc (m, path) =
+      let fname = Topkg_string.uncapitalize (Topkg_fpath.basename path) in
+      let fpath = match Topkg_fpath.dirname path with
+      | "." -> Topkg_fpath.append lib_dir fname
+      | parent -> Topkg_fpath.(append lib_dir (append parent fname))
+      in
       if List.mem m api
-      then (field ?dst:(dst fname) ~exts:Topkg_fexts.api fname :: acc)
-      else (field ?dst:(dst fname) ~exts:Topkg_fexts.cmx fname :: acc)
+      then (field ?dst:(dst fname) ~exts:Topkg_fexts.api fpath :: acc)
+      else (field ?dst:(dst fname) ~exts:Topkg_fexts.cmx fpath :: acc)
     in
-    List.fold_left add_mod acc mllib_mods
+    List.fold_left add_mod acc mllib_content
   in
   begin
     Topkg_os.File.read mllib
-    >>= fun contents -> Ok (parse_mllib_modules contents)
-    >>= fun mods -> Ok (flatten @@ add_mods [library] mods)
+    >>= fun contents -> Ok (parse_mllib contents)
+    >>= fun mllib_content -> Ok (flatten @@ add_mods [library] mllib_content)
   end
   |> Topkg_log.on_error_msg ~use:(fun () -> [])
 

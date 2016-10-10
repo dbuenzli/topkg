@@ -1,7 +1,7 @@
 
-
-- Doc gen. If there is no `doc/style.css` but `odig`
-  is installed, use its `ocamldoc` stylesheet.
+- `Pkg.mllib`. Correct support for mllib which have subpaths (#75).
+- Doc gen. If there is no `doc/style.css` but `odig` is installed, use
+  its `ocamldoc` stylesheet.
 
 v0.7.9 2016-09-21 Zagreb
 ------------------------
