@@ -774,7 +774,7 @@ module Conf : sig
       It is [true] if the build is initiated by an installer like OPAM
       and the package is pinned. If absent defaults to [false].
       Usually specified in OPAM build instructions with:
-{["--pinned" pinned]} *)
+{["--pinned" "%{pinned}%"]} *)
 
   type build_context = [`Dev | `Distrib | `Pin ]
   (** The type for build contexts. See {!val:build_context} for semantics. *)
@@ -1865,10 +1865,10 @@ down to:
 {v
 build: [
   "ocaml" "pkg/pkg.ml" "build"
-          "--pinned" pinned ]
+          "--pinned" "%{pinned}%" ]
 v}
 
-The ["--pinned" pinned] configuration key specification is used to
+The ["--pinned" "%{pinned}%"] configuration key specification is used to
 inform the package description about the {{!Conf.build_context}build
 context}. This invocation of [pkg/pkg.ml] executes your build system
 with a set of targets determined from the build configuration and
@@ -1887,7 +1887,7 @@ them (unfortunately this involves the repetition of the build line
 at the moment with OPAM but might change in the future):
 {v
 build-test: [
- [ "ocaml" "pkg/pkg.ml" "build" "--pinned" pinned "--tests" "true" ]
+ [ "ocaml" "pkg/pkg.ml" "build" "--pinned" "%{pinned}%" "--tests" "true" ]
  [ "ocaml" "pkg/pkg.ml" "test" ]]
 v}
 
@@ -2054,7 +2054,7 @@ For this conditional install the OPAM build instructions look like this:
 depopts: [ "cmdliner" ]
 build: [[
   "ocaml" "pkg/pkg.ml" "build"
-          "--pinned" pinned
+          "--pinned" "%{pinned}%"
           "--with-cmdliner" cmdliner:installed ]]
 ]}
 
@@ -2220,7 +2220,7 @@ The OPAM build instructions for the package are:
 {v
 build: [
   "ocaml" "pkg/pkg.ml" "build"
-          "--pinned" pinned
+          "--pinned" "%{pinned}%"
           "--etc-dir" mypkg:etc ]
 v}
 
@@ -2264,7 +2264,7 @@ can be selected:
 build: [
   "ocaml" "pkg/pkg.ml" "build"
           "--pkg-name" name
-          "--pinned" pinned ]
+          "--pinned" "%{pinned}%" ]
 v}
 
 In general you will use the default, main, package name and its OPAM file to
