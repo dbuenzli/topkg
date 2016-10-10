@@ -7,8 +7,9 @@
 type ext = [ `Ext of string | `Obj | `Lib | `Dll | `Exe ]
 type t = ext list
 
-let api = [ `Ext ".mli"; `Ext ".cmi"; `Ext ".cmti"; `Ext ".cmx" ]
+let interface = [ `Ext ".mli"; `Ext ".cmi"; `Ext ".cmti"; ]
 let cmx = [ `Ext ".cmx" ]
+let api = interface @ cmx
 let c_library = [ `Lib ]
 let c_dll_library = [ `Dll ]
 let library = [` Ext ".cma"; `Ext ".cmxa"; `Ext ".cmxs" ] @ c_library

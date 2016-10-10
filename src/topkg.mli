@@ -910,11 +910,14 @@ module Exts : sig
   type t = ext list
   (** The type for lists of file extensions. *)
 
-  val api : t
-  (** [api] is [exts [".mli"; ".cmi"; ".cmti"; ".cmx"]] *)
+  val interface : t
+  (** [interface] is [exts [".mli"; ".cmi"; ".cmti"]]. *)
 
   val cmx : ext list
-  (** [cmx] is [ext ".cmx"] *)
+  (** [cmx] is [ext ".cmx"]. *)
+
+  val api : t
+  (** [api] is [interface @ cmx]. *)
 
   val c_library : ext list
   (** [c_library] is the extension for C libraries (archives). The
