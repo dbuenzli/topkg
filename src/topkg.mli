@@ -1906,9 +1906,9 @@ The {!Pkg.describe} function has a daunting number of arguments and
 configuration options. However if you keep things simple and stick to
 the defaults, much of this does not need to be specified.
 
-In fact if we consider the basic default {{!setup}setup} mentioned
-above for a library described to OCamlbuild in a [src/mylib.mllib]
-file your package description file [pkg/pkg.ml] simply looks like
+For example, if we consider the basic {{!setup}setup} mentioned
+above for a library described with an OCamlbuild [src/mylib.mllib]
+file, your package description file [pkg/pkg.ml] simply looks like
 this:
 {[
 #!/usr/bin/env ocaml
