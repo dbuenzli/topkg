@@ -5,7 +5,7 @@ Topkg — The transitory OCaml software packager
 Topkg is a packager for distributing OCaml software. It provides an
 API to describe the files a package installs in a given build
 configuration and to specify information about the package's
-distribution creation and publication procedures.
+distribution, creation and publication procedures.
 
 The optional topkg-care package provides the `topkg` command line tool
 which helps with various aspects of a package's life cycle: creating
