@@ -1848,7 +1848,7 @@ make it do something useful.
 
 {1:build OPAM and package build instructions}
 
-The package needs to build-depend on [topkg] aswell as [ocamlfind]
+The package needs to build-depend on [topkg] as well as [ocamlfind]
 which is used by the package description file [pkg/pkg.ml] to find the
 [topkg] library; it is likely that you are using [ocamlbuild] too. So
 the depends field of your OPAM file should at least have:
