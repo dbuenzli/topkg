@@ -715,9 +715,9 @@ module Conf : sig
       the value of the variable is parsed with [conv] and used instead
       of [absent] when needed.
 
-      [doc] is a documentation string for the key. [docv] is a meta
-      is a documentation to stand for the key value, defaults to the
-      [docv] of [conv]. In [doc] occurences of the substring ["$(docv)"]
+      [doc] is a documentation string for the key. [docv] is a documentation
+      meta-variable to stand for the key value, defaulting to the
+      [docv] of [conv]. In [doc], occurences of the substring ["$(docv)"]
       are replaced by the value of [docv]. *)
 
   val discovered_key :
@@ -1877,7 +1877,7 @@ make it do something useful.
 
 {1:build OPAM and package build instructions}
 
-The package needs to build-depend on [topkg] aswell as [ocamlfind]
+The package needs to build-depend on [topkg] as well as [ocamlfind]
 which is used by the package description file [pkg/pkg.ml] to find the
 [topkg] library; it is likely that you are using [ocamlbuild] too. So
 the depends field of your OPAM file should at least have:
@@ -1933,11 +1933,11 @@ these files.
 
 The {!Pkg.describe} function has a daunting number of arguments and
 configuration options. However if you keep things simple and stick to
-the defaults not much of this does not need to be specified.
+the defaults, much of this does not need to be specified.
 
-In fact if we consider the basic default {{!setup}setup} mentioned
-above for a library described to OCamlbuild in a [src/mylib.mllib]
-file your package description file [pkg/pkg.ml] simply looks like
+For example, if we consider the basic {{!setup}setup} mentioned
+above for a library described with an OCamlbuild [src/mylib.mllib]
+file, your package description file [pkg/pkg.ml] simply looks like
 this:
 {[
 #!/usr/bin/env ocaml
@@ -2267,7 +2267,7 @@ To achieve this your package description file can simply condition
 the package install description on the package name
 {{!Conf.pkg_name}communicated by the configuration}. In this setup
 you'll likely have one [$PKG.opam] per [$PKG] at the root of your source
-repository, you should declare them to the description too, so that
+repository, you should declare them in the description too, so that
 they get properly linted and used by the [topkg] tool when appropriate
 (see how the OPAM file is looked up according to the package name
 in {!Pkg.describe}). Here is a blueprint:
