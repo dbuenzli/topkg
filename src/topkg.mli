@@ -715,9 +715,9 @@ module Conf : sig
       the value of the variable is parsed with [conv] and used instead
       of [absent] when needed.
 
-      [doc] is a documentation string for the key. [docv] is a meta
-      is a documentation to stand for the key value, defaults to the
-      [docv] of [conv]. In [doc] occurences of the substring ["$(docv)"]
+      [doc] is a documentation string for the key. [docv] is a documentation
+      meta-variable to stand for the key value, defaulting to the
+      [docv] of [conv]. In [doc], occurences of the substring ["$(docv)"]
       are replaced by the value of [docv]. *)
 
   val discovered_key :
