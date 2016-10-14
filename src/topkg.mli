@@ -2238,7 +2238,7 @@ To achieve this your package description file can simply condition
 the package install description on the package name
 {{!Conf.pkg_name}communicated by the configuration}. In this setup
 you'll likely have one [$PKG.opam] per [$PKG] at the root of your source
-repository, you should declare them to the description too, so that
+repository, you should declare them in the description too, so that
 they get properly linted and used by the [topkg] tool when appropriate
 (see how the OPAM file is looked up according to the package name
 in {!Pkg.describe}). Here is a blueprint:
