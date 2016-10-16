@@ -37,6 +37,10 @@ val clean : t -> (Topkg_conf.os -> build_dir:Topkg_fpath.t -> unit result)
 
 val codec : t Topkg_codec.t
 
+val ocb_tag : Topkg_conf.t -> 'a Topkg_conf.key -> string -> Topkg_cmd.t
+val ocb_bool_tag : Topkg_conf.t -> bool Topkg_conf.key -> string -> Topkg_cmd.t
+val ocb_bool_tags : Topkg_conf.t -> (bool Topkg_conf.key * string) list -> Topkg_cmd.t
+
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli
 
