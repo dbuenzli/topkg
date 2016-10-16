@@ -62,6 +62,17 @@ let codec =
   Topkg_codec.version 0 @@
   Topkg_codec.(view ~kind:"build" fields (pair prepare_on_pin dir))
 
+let ocb_tag c key tag =
+  let tag = Topkg_string.strf "%s(%a)" tag (Topkg_conf.pp_value c) key in
+  Topkg_cmd.(v "-tag" % tag)
+
+let ocb_bool_tag c key tag =
+  Topkg_cmd.(on (Topkg_conf.value c key) @@ v "-tag" % tag)
+
+let ocb_bool_tags c tags =
+  let f (key, tag) = Topkg_cmd.(%%) (ocb_bool_tag c key tag) in
+  List.fold_right f tags Topkg_cmd.empty
+
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli
 

@@ -272,6 +272,8 @@ let value c k = match find k c with
       (Topkg_string.strf "configuration key %s undefined, did you create
          a key after the call to Pkg.describe ?" (* dirty bastard *) k.name)
 
+let pp_value c ppf k = k.conv.print ppf (value c k)
+
 let dump ppf c =
   let dump_binding (Key.V k) v is_first =
     if is_first then () else Format.pp_print_cut ppf ();

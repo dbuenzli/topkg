@@ -55,6 +55,7 @@ val pp_keys_cli_opts : Format.formatter -> unit -> unit
 type t
 val empty : t
 val value : t -> 'a key -> 'a
+val pp_value : t -> Format.formatter -> 'a key -> unit
 val dump : Format.formatter -> t -> unit
 val of_cli_args :
   pkg_name:string -> build_dir:Topkg_fpath.t -> string list -> t result
