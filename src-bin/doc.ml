@@ -102,7 +102,7 @@ let man =
     `P "The $(b,$(tname)) command builds the package's API documentation. Use
         the option $(b,-r) to open or refresh the documentation in
         a WWW browser (see $(b,--browser) for details).";
-    `P "$(b,WARNING.) The way this command works is at the moment
+    `P "$(b,WARNING.) The way this command works is at the
         moment very ad-hoc and ocamlbuild specific. It will
         change in the future.";
     `P "Current support relies on having a doc/ directory at the root of the
