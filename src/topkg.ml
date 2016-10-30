@@ -71,6 +71,9 @@ module Pkg = struct
   let build = Topkg_build.v
   let build_cmd = Topkg_build.build_cmd
   let clean_cmd = Topkg_build.clean_cmd
+  let ocb_tag = Topkg_build.ocb_tag
+  let ocb_bool_tag = Topkg_build.ocb_bool_tag
+  let ocb_bool_tags = Topkg_build.ocb_bool_tags
 
   (* Package *)
 

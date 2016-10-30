@@ -1188,6 +1188,27 @@ let clean os ~build_dir = OS.Cmd.run @@ Pkg.clean_cmd os ~build_dir
   Cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %
                     "-build-dir" % build_dir % "-clean") ]} *)
 
+  val ocb_tag : Conf.t -> 'a Conf.key -> string -> Cmd.t
+  (** [ocb_tag c key name] is a command fragment setting the [ocamlbuild]
+      parameterized tag [name] to the value of [key].
+
+      E.g. for [key : bool Conf.key] set to [true], [ocb_tag c key "foo"] sets
+      the tag [foo(true)]. *)
+
+  val ocb_bool_tag : Conf.t -> bool Conf.key -> string -> Cmd.t
+  (** [ocb_bool_tag c key name] is a command fragment setting the [ocamlbuild] tag
+      [name] iff [key] is set to true. *)
+
+  val ocb_bool_tags : Conf.t -> (bool Conf.key * string) list -> Cmd.t
+  (** [ocb_bool_tags c assoc] is a concatenation of {!ocb_bool_tag} for all pairs in
+      [assoc].
+
+      Conditionalize [ocamlbuild] invocation, setting the tag [key_is_true] if
+      the key [key] is set to [true]:
+{[let tags = [(key, "key_is_true")]
+  let cmd c os files =
+    OS.Cmd.run Cmd.(build_cmd %% ocb_bool_tags tags %% of_list files]} *)
+
   (** {1:distrib Distribution description} *)
 
   type watermark = string * [ `String of string | `Version | `Version_num
