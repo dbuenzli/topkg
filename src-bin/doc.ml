@@ -14,7 +14,7 @@ let unixy_path p =
 let ocamlbuild build_dir =
   let ocamlbuild = Topkg_care.OCamlbuild.cmd in
   Cmd.(ocamlbuild % "-classic-display" % "-use-ocamlfind" % "-no-links" %
-       "-build-dir" % unixy_path build_dir)
+       "-no-plugin" % "-build-dir" % unixy_path build_dir)
 
 let docflags = Cmd.(v "-docflags" % "-colorize-code,-charset,utf-8")
 
