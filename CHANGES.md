@@ -1,4 +1,4 @@
-v0.8.0 2016-10-20 Zagreb
+v0.8.0 2016-10-31 Zagreb
 ------------------------
 
 - Add `Conf.debugger_support` a configuration key to inform to the
