@@ -1099,9 +1099,9 @@ Pkg.mllib ~cond:jsoo "src/mylib_jsoo.mllib"
 
       The following functions are OCamlbuild specific higher level
       installs that generate moves by reading OCamlbuild specification
-      files. They also automatically handle the {!Conf.debug_build_artefacts}
-      configuration key by building and installing the right files whenever
-      the key is [true]. *)
+      files. They also automatically handle the {!Conf.debugger_support}
+      configuration key by building and installing the build artefacts
+      needed by debuggers whenever its value is [true]. *)
 
   val mllib :
     ?field:field -> ?cond:bool -> ?api:string list -> ?dst_dir:fpath ->
