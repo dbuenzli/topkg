@@ -1,12 +1,27 @@
+v0.8.0 2016-10-20 Zagreb
+------------------------
 
-- `Pkg.mllib`. Correct support for mllib which have subpaths (#75).
-- Doc gen. If there is no `doc/style.css` but `odig` is installed, use
-  its `ocamldoc` stylesheet.
+- Add `Conf.debugger_support` a configuration key to inform to the
+  build system it should build and install build artefacts for
+  debuggers. Packages using `Pkg.{mlib,clib}` descriptions will handle
+  this automatically. The key can be set globally in a switch via the
+  `TOPKG_CONF_DEBUGGER_SUPPORT` environment variable (#77).
+- Add `Pkg.{ocb_tag,ocb_bool_tag,ocb_bool_tags}` to easily extend
+  `ocamlbuild` invocations according to the build configuration (#78). Thanks
+  to David Kaloper Meršinjak for the idea and the patch.
+- Add `Exts.interface` for installing `mli` only compilation units (#74).
+- `Pkg.mllib` description. Correct support for mllib which have subpaths (#75).
+- Documentation generation. Fix support in the presence of `ocamlbuild`
+  plugins (#80). Thanks to David Kaloper Meršinjak for the report
+  and the patch.
+- Documentation generation. If there is no `doc/style.css` but `odig` is
+  installed, use its `ocamldoc` stylesheet. This allows to see how it will
+  be rendered by `odig` and avoids maintaining stylesheets in repos.
 
 v0.7.9 2016-09-21 Zagreb
 ------------------------
 
-- Better package parsing in ocamlbuild _tags files. Thanks
+- Better package parsing in `ocamlbuild` _tags files. Thanks
   to Thomas Gazagnaire for the report.
 - Remove references to internal names in the API.
 
