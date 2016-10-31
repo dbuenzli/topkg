@@ -813,6 +813,13 @@ module Conf : sig
       value of the environment variable TOPKG_CONF_DEBUG if
       specified. *)
 
+  val debugger_support : t -> bool
+  (** [debugger_support c] is the value of a predefined key
+      [--debugger-support] that indicates if build artefacts needed
+      for source level debuggers should be built and installed. If
+      absent the value is [false] or the value of the environment
+      variable TOPKG_CONF_DEBUGGER_SUPPORT if specified. *)
+
   val profile : t -> bool
   (** [profile c] is the value of a predefined key [--profile] that
       indicates if the build artefacts include run-time profiling support.  If
@@ -1088,7 +1095,13 @@ Pkg.mllib ~cond:jsoo "src/mylib_jsoo.mllib"
       [dir] specifies the current working directory for the test, expressed
       relative to the root directory of the package (defaults to [.]). *)
 
-  (** {2 Higher-level installs} *)
+  (** {2 OCamlbuild higher-level installs}
+
+      The following functions are OCamlbuild specific higher level
+      installs that generate moves by reading OCamlbuild specification
+      files. They also automatically handle the {!Conf.debug_build_artefacts}
+      configuration key by building and installing the right files whenever
+      the key is [true]. *)
 
   val mllib :
     ?field:field -> ?cond:bool -> ?api:string list -> ?dst_dir:fpath ->

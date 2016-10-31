@@ -197,14 +197,22 @@ let tests =
 
 let debug =
   let doc = "Debug build. Save debugging information in build artefacts. This \
-             key should not be specified explicitely in your package build \
+             key should not be specified explicitly in your package build \
              instructions."
   in
   key "debug" bool ~env:"TOPKG_CONF_DEBUG" ~absent:true ~doc
 
+let debugger_support =
+  let doc = "Debugger support. Build and install build artefacts needed \
+             by debuggers. This key should not be specified explicitly in \
+             your package build instructions."
+  in
+  key "debugger-support" bool ~env:"TOPKG_CONF_DEBUGGER_SUPPORT" ~absent:false
+    ~doc
+
 let profile =
   let doc = "Profiling build. Include run-time profiling support in build \
-             artefacts. This key should not be specified explicitely \
+             artefacts. This key should not be specified explicitly \
              in your package build instructions."
   in
   key "profile" bool ~env:"TOPKG_CONF_PROFILE" ~absent:false ~doc
@@ -339,6 +347,7 @@ let build_tests c = match value c tests with
     | _ -> false
 
 let debug c = value c debug
+let debugger_support c = value c debugger_support
 let profile c = value c profile
 
 (* OCaml configuration, as communicated by ocamlc -config  *)

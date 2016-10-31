@@ -15,7 +15,9 @@ type move_scheme =
     built : bool;
     exts : Topkg_fexts.t;
     src : string;
-    dst : string; }
+    dst : string;
+    debugger_support : bool; (* This a bit hacky, only used by
+                                OCamlbuild higher-level installs *) }
 
 type t = move_scheme list
 
@@ -39,6 +41,7 @@ let lib_drop_exts native native_dynlink =
 
 let to_build ?header c os i =
   let bdir = Topkg_conf.build_dir c in
+  let debugger_support = Topkg_conf.debugger_support c in
   let build_tests = Topkg_conf.build_tests c in
   let ocaml_conf = Topkg_conf.OCaml.v c os in
   let native = Topkg_conf.OCaml.native ocaml_conf in
@@ -49,6 +52,7 @@ let to_build ?header c os i =
   let bin_drops = List.map ext_to_string (bin_drop_exts native) in
   let lib_drops = List.map ext_to_string (lib_drop_exts native native_dylink) in
   let add acc m =
+    if m.debugger_support && not debugger_support then acc else
     let mv (targets, moves, tests as acc) src dst =
       let src = file_to_str src in
       let drop = not m.force && match m.field with
@@ -90,6 +94,7 @@ type field =
   ?dst:string -> string -> t
 
 let _field field
+    ?(debugger_support = false)
     ?(auto = true) ?(force = false) ?(built = true) ?(cond = true) ?(exts = [])
     ?dst src =
   if not cond then [] else
@@ -99,11 +104,15 @@ let _field field
       if Topkg_fpath.is_file_path dst then dst else
       dst ^ (Topkg_fpath.basename src)
   in
-  [{ field; auto_bin = auto; force; built; exts; src; dst }]
+  [{ field; auto_bin = auto; force; built; exts; src; dst;
+     debugger_support; }]
 
-let field field = _field ~auto:false field
+let field field =
+  _field ~debugger_support:false ~auto:false field
+
 let field_exec field ?auto ?force ?built ?cond ?exts ?dst src =
-  _field field ?auto ?force ?built ?cond ?exts ?dst src
+  _field field ~debugger_support:false
+    ?auto ?force ?built ?cond ?exts ?dst src
 
 let bin = field_exec `Bin
 let doc = field `Doc
@@ -121,7 +130,7 @@ let unknown name = field (`Unknown name)
 let test ?(run = true) ?dir ?(args = Topkg_cmd.empty) =
   field_exec (`Test (run, dir, args))
 
-(* Higher-level installs *)
+(* OCamlbuild higher-level installs *)
 
 let parse_mllib contents = (* list of module name and path (for dir/Mod) *)
   let lines = Topkg_string.cuts ~sep:'\n' contents in
@@ -136,8 +145,16 @@ let parse_mllib contents = (* list of module name and path (for dir/Mod) *)
   in
   List.fold_left add_mod [] lines
 
+let field_of_field field = (* hack, recover a field from a field function... *)
+  match (List.hd (field "")).field with
+  | `Test (run, dir, args) -> assert false
+  | #Topkg_opam.Install.field as field -> field
+
 let mllib ?(field = lib) ?(cond = true) ?api ?dst_dir mllib =
   if not cond then [] else
+  let debugger_support_field =
+    _field ~debugger_support:true ~auto:false (field_of_field field)
+  in
   let lib_dir = Topkg_fpath.dirname mllib in
   let lib_base = Topkg_fpath.rem_ext mllib in
   let dst f = match dst_dir with
@@ -166,9 +183,14 @@ let mllib ?(field = lib) ?(cond = true) ?api ?dst_dir mllib =
       | "." -> Topkg_fpath.append lib_dir fname
       | parent -> Topkg_fpath.(append lib_dir (append parent fname))
       in
-      if List.mem m api
-      then (field ?dst:(dst fname) ~exts:Topkg_fexts.api fpath :: acc)
-      else (field ?dst:(dst fname) ~exts:Topkg_fexts.cmx fpath :: acc)
+      let dst = dst fname in
+      let exts, debugger_support_exts = match List.mem m api with
+      | true -> Topkg_fexts.api, Topkg_fexts.exts [".ml"; ".cmt"]
+      | false -> Topkg_fexts.cmx, Topkg_fexts.exts [".ml"; ".cmi"; ".cmt"; ]
+      in
+      field ?dst ~exts fpath ::
+      debugger_support_field ?dst ~exts:debugger_support_exts fpath ::
+      acc
     in
     List.fold_left add_mod acc mllib_content
   in
@@ -179,10 +201,24 @@ let mllib ?(field = lib) ?(cond = true) ?api ?dst_dir mllib =
   end
   |> Topkg_log.on_error_msg ~use:(fun () -> [])
 
+let parse_clib contents =
+  let lines = Topkg_string.cuts ~sep:'\n' contents in
+  let add_obj_path acc l =
+    let path = String.trim @@ match Topkg_string.cut ~sep:'#' l with
+    | None -> l
+    | Some (p, _ (* comment *)) -> p
+    in
+    if path = "" then acc else path :: acc
+  in
+  List.fold_left add_obj_path [] lines
+
 let clib
     ?(dllfield = stublibs) ?(libfield = lib) ?(cond = true) ?lib_dst_dir clib
   =
   if not cond then [] else
+  let debugger_support_field =
+    _field ~debugger_support:true ~auto:false (field_of_field lib)
+  in
   let lib_dir = Topkg_fpath.dirname clib in
   let lib_base =
     let base = Topkg_fpath.(basename @@ rem_ext clib) in
@@ -194,13 +230,28 @@ let clib
   | None -> None
   | Some dir -> Some (Topkg_fpath.append dir (Topkg_fpath.basename f))
   in
+  let add_debugger_support cobjs =
+    let add_cobj acc path =
+      let fname = Topkg_fpath.(rem_ext @@ basename path) in
+      let fpath = match Topkg_fpath.dirname path with
+      | "." -> Topkg_fpath.append lib_dir fname
+      | parent -> Topkg_fpath.(append lib_dir (append parent fname))
+      in
+      let dst = lib_dst fname in
+      debugger_support_field ?dst ~exts:(Topkg_fexts.ext ".c") fpath :: acc
+    in
+    List.fold_left add_cobj [] cobjs
+  in
   begin
-    lib_base >>= fun lib_base ->
+    lib_base
+    >>= fun lib_base -> Topkg_os.File.read clib
+    >>= fun contents ->
+    let cobjs = parse_clib contents in
     let lib = Topkg_fpath.append lib_dir ("lib" ^ lib_base) in
     let lib = libfield ~exts:Topkg_fexts.c_library lib ?dst:(lib_dst lib) in
     let dll = Topkg_fpath.append lib_dir ("dll" ^ lib_base) in
     let dll = dllfield ~exts:Topkg_fexts.c_dll_library dll in
-    Ok (flatten @@ [lib; dll])
+    Ok (flatten @@ lib :: dll :: add_debugger_support cobjs)
   end
   |> Topkg_log.on_error_msg ~use:(fun () -> [])
 
