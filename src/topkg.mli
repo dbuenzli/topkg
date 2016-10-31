@@ -1169,6 +1169,12 @@ let clean os ~build_dir = OS.Cmd.run @@ Pkg.clean_cmd os ~build_dir
       {b Warning.} If you are invoking tools in your hooks consider
       using {!Conf.tool} to look them up it helps for cross-compilation. *)
 
+  (** {2:ocamlbuild OCamlbuild support}
+
+      If you are using [ocamlbuild], the following functions
+      help to customize the build system invocation according to the
+      configuration. *)
+
   val build_cmd : Conf.t -> Conf.os -> Cmd.t
   (** [build_cmd c os] is the default build command to which
       files to build are given. Its value is defined by:
@@ -1183,31 +1189,33 @@ let clean os ~build_dir = OS.Cmd.run @@ Pkg.clean_cmd os ~build_dir
   val clean_cmd : Conf.os -> build_dir:fpath -> Cmd.t
   (** [clean_cmd os ~build_dir] is the default clean command. Its value
       is defined by:
- {[fun os ~build_dir ->
+{[fun os ~build_dir ->
   let ocamlbuild = Conf.tool "ocamlbuild" os in
   Cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %
                     "-build-dir" % build_dir % "-clean") ]} *)
 
   val ocb_tag : Conf.t -> 'a Conf.key -> string -> Cmd.t
-  (** [ocb_tag c key name] is a command fragment setting the [ocamlbuild]
-      parameterized tag [name] to the value of [key].
+  (** [ocb_tag c key name] is a command fragment adding the
+      [ocamlbuild] parameterized tag [name] with [key]'s value to
+      the default set of tags. The key value is converted to a string
+      using the printer of the key value {{!Conf.conv}converter}.
 
-      E.g. for [key : bool Conf.key] set to [true], [ocb_tag c key "foo"] sets
-      the tag [foo(true)]. *)
+      For example with a key [k : bool Conf.key] whose value is
+      [true], [ocb_tag c k "foo"] adds the tag [foo(true)] to the
+      default tags. A sample build command for {!build} using
+      this key would be:
+{[
+  let cmd c os files =
+    OS.Cmd.run Cmd.(build_cmd c os %% ocb_tag c k "foo" %% of_list files)]} *)
 
   val ocb_bool_tag : Conf.t -> bool Conf.key -> string -> Cmd.t
-  (** [ocb_bool_tag c key name] is a command fragment setting the [ocamlbuild] tag
-      [name] iff [key] is set to true. *)
+  (** [ocb_bool_tag c key name] is a command fragment adding
+      the [ocamlbuild] tag [name] to the default set of tags iff [key]'s
+      value is [true]. *)
 
   val ocb_bool_tags : Conf.t -> (bool Conf.key * string) list -> Cmd.t
-  (** [ocb_bool_tags c assoc] is a concatenation of {!ocb_bool_tag} for all pairs in
-      [assoc].
-
-      Conditionalize [ocamlbuild] invocation, setting the tag [key_is_true] if
-      the key [key] is set to [true]:
-{[let tags = [(key, "key_is_true")]
-  let cmd c os files =
-    OS.Cmd.run Cmd.(build_cmd %% ocb_bool_tags tags %% of_list files]} *)
+  (** [ocb_bool_tags c assoc] is the concatenation of {!ocb_bool_tag}
+      for all pairs in [assoc]. *)
 
   (** {1:distrib Distribution description} *)
 
@@ -1828,7 +1836,7 @@ tool, see {!care}.
 {- {!descr}}
 {- {!installdescr}}
 {- {!care}}
-{- Advanced topics
+{- {!advanced}
    {ul {- {!config_store}}
        {- {!multiopam}}}}
 {- {!menagerie}}}
