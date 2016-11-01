@@ -21,6 +21,8 @@ type move_scheme =
 
 type t = move_scheme list
 
+let nothing = []
+
 let flatten ls = (* We don't care about order *)
   let rec push acc = function v :: vs -> push (v :: acc) vs | [] -> acc in
   let rec loop acc = function

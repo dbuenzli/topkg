@@ -975,6 +975,12 @@ module Pkg : sig
   type install
   (** The type for representing a set of install moves. *)
 
+  val nothing : install
+  (** [nothing] is an empty set of install moves. *)
+
+  val flatten : install list -> install
+  (** [flatten installs] is the union of all the install moves in [installs]. *)
+
   type field =
     ?force:bool -> ?built:bool -> ?cond:bool -> ?exts:Exts.t -> ?dst:fpath ->
     fpath -> install
