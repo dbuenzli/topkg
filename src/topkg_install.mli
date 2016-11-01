@@ -10,6 +10,7 @@
 
 type t
 
+val nothing : t
 val flatten : t list -> t
 val to_build :
   ?header:string ->

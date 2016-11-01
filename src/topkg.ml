@@ -31,6 +31,8 @@ module Pkg = struct
   type field = Topkg_install.field
   type exec_field = ?auto:bool -> field
 
+  let nothing = Topkg_install.nothing
+  let flatten = Topkg_install.flatten
   let bin = Topkg_install.bin
   let doc = Topkg_install.doc
   let etc = Topkg_install.etc
