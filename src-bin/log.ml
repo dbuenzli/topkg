@@ -76,7 +76,7 @@ let last_version =
 let doc = "Show and edit the package's change log"
 let man =
   [ `S "DESCRIPTION";
-    `P "The $(b,$(tname)) command shows, edits and commits
+    `P "The $(tname) command shows, edits and commits
         the package's change log.";
     `S "CHANGE LOG FORMAT";
     `P "To be able to extract the version and changes of the last distribution,

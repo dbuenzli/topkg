@@ -148,7 +148,7 @@ let pkg_descr =
              a description is extracted from the the readme (see
              option $(b,--readme)) as follow: the first marked up
              section of the readme is extracted, its title is parsed
-             according to the pattern '$(NAME) $(SEP) $(SYNOPSIS)',
+             according to the pattern '\\$(NAME) \\$(SEP) \\$(SYNOPSIS)',
              the body of the section is the long description. A few
              lines are filtered out: lines that start with either
              'Home page:', 'Contact:' or '%%VERSION'."
@@ -160,9 +160,9 @@ let doc = "Interaction with OPAM and the OCaml OPAM repository"
 let man =
   [
     `S "SYNOPSIS";
-    `P "$(b,$(mname)) $(b,$(tname)) [$(i,OPTION)]... $(i,ACTION)";
+    `P "$(mname) $(tname) [$(i,OPTION)]... $(i,ACTION)";
     `S "DESCRIPTION";
-    `P "The $(b,$(tname)) command provides a few actions to interact with
+    `P "The $(tname) command provides a few actions to interact with
         OPAM and the OCaml OPAM repository.";
     `S "ACTIONS";
     `I ("$(b,descr)",

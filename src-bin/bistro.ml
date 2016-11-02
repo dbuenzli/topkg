@@ -25,7 +25,7 @@ open Cmdliner
 let doc = "For when you are in a hurry or need to go for a drink"
 let man =
   [ `S "DESCRIPTION";
-    `P "The $(b,$(tname)) command (quick in Russian) is equivalent to invoke:";
+    `P "The $(tname) command (quick in Russian) is equivalent to invoke:";
   `Pre "\
 topkg distrib       # Create the distribution archive
 topkg publish       # Publish it on the WWW with its documentation

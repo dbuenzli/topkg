@@ -111,7 +111,7 @@ let man =
     `Pre (strf "%s$(b,%s) %s" pad t doc) :: `Noblank :: acc
   in
   [ `S "DESCRIPTION";
-    `P "The $(b,$(tname)) command opens or reloads URIs mentioned in the
+    `P "The $(tname) command opens or reloads URIs mentioned in the
         OPAM file in a WWW browser. A few other useful logical target are
         provided and arbitrary file, http or https schemed URIs can also
         be specified as the target."; ]

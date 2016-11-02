@@ -40,7 +40,7 @@ let args =
 let doc = "Interprocess communication with package description files"
 let man =
   [ `S "DESCRIPTION";
-    `P "The $(b,$(tname)) command is used by package description files. It is
+    `P "The $(tname) command is used by package description files. It is
         undocumented.";
   ] @ Cli.see_also ~cmds:[]
 

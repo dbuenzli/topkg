@@ -92,9 +92,9 @@ let artefacts =
 let doc = "Publish package distribution archives and derived artefacts"
 let man =
   [ `S "SYNOPSIS";
-    `P "$(b,$(mname)) $(b,$(tname)) [$(i,OPTION)]... [$(i,ARTEFACT)]...";
+    `P "$(mname) $(tname) [$(i,OPTION)]... [$(i,ARTEFACT)]...";
     `S "DESCRIPTION";
-    `P "The $(b,$(tname)) command publishes package distribution archives
+    `P "The $(tname) command publishes package distribution archives
         and other artefacts via the package delegate. See topkg-delegate(7) for
         more details.";
     `P "Artefact publication always relies on a distribution archive having

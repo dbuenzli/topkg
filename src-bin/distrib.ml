@@ -103,7 +103,7 @@ let skip_tests =
 let doc = "Create a package distribution archive"
 let man =
   [ `S "DESCRIPTION";
-    `P "The $(b,$(tname)) command creates a package distribution
+    `P "The $(tname) command creates a package distribution
         archive in the build directory of the package.  The generated
         archive should be bit-wise reproducible. There are however a few
         caveats, see the section about this further down.";
@@ -121,7 +121,7 @@ let man =
   ] @ Cli.common_opts_man @ [
     `S "REPRODUCIBLE DISTRIBUTION ARCHIVES";
     `P "Given the package name, the HEAD commit identifier
-        and the version string, the $(b,$(tname)) command should always
+        and the version string, the $(tname) command should always
         generate the same archive.";
     `P "More precisely, files are added to the archive using a well
         defined order on path names. Their file permissions are either

@@ -18,14 +18,14 @@ let main () = `Help (`Pager, None)
 let doc = "Topkg package care"
 let man =
   [ `S "DESCRIPTION";
-    `P "$(b,$(mname)) takes care of topkg packages.";
-    `P "Use '$(b,$(mname)) help release' for help to release a package.";
+    `P "$(mname) takes care of topkg packages.";
+    `P "Use '$(mname) help release' for help to release a package.";
     `Noblank;
-    `P "Use '$(b,$(mname)) help delegate' for help about the topkg delegate.";
+    `P "Use '$(mname) help delegate' for help about the topkg delegate.";
     `Noblank;
-    `P "Use '$(b,$(mname)) help troubleshoot' for a few troubleshooting tips.";
+    `P "Use '$(mname) help troubleshoot' for a few troubleshooting tips.";
     `Noblank;
-    `P "Use '$(b,$(mname)) help $(i,COMMAND)' for help about $(i,COMMAND).";
+    `P "Use '$(mname) help $(i,COMMAND)' for help about $(i,COMMAND).";
   ] @ Cli.common_opts_man @ [
     `S "ENVIRONMENT VARIABLES";
     `S "BUGS";

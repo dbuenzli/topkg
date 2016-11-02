@@ -67,7 +67,7 @@ let delete =
 let doc = "Tag the package's source repository with a version"
 let man =
   [ `S "DESCRIPTION";
-    `P "The $(b,$(tname)) command tags the package's VCS HEAD commit with a
+    `P "The $(tname) command tags the package's VCS HEAD commit with a
         version. If the version is not specified on the command line it is
         automatically extracted from the package's change log; use
         $(b,topkg log -t) to check the extracted value.";

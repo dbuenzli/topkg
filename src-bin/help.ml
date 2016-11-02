@@ -58,7 +58,7 @@ topkg log commit";
         format, see topkg-log(1) for details.";
     `P "The last two commands mentioned perform no magic, it is entirely up
         to you to use them or not. The first one simply opens the change log
-        of the package in your $$$$EDITOR and the second one commits it to
+        of the package in your \\$EDITOR and the second one commits it to
         your VCS with a dull, canned, commit message.";
     `S "VCS TAG THE RELEASE";
     `P "Here again topkg provides a magic-less command that will simply
@@ -166,7 +166,7 @@ let delegate =
          environment variable.");
     `I ("4. Homepage derived discovery.", "Consult the 'homepage' field of the
         package's OPAM file, extract the second-level domain of the URI as
-        $$$$NAME and uses the tool $(b,$$NAME-topkg-delegate) iff it exists
+        \\$NAME and uses the tool $(b,\\$NAME-topkg-delegate) iff it exists
         in the executable search path. For example if the homepage is
         http://www.example.org/mypackage, an existing
         $(b,example-topkg-delegate) tool will be used.");
@@ -360,7 +360,7 @@ let topic =
 let doc = "Show help about topkg"
 let man =
   [ `S "DESCRIPTION";
-    `P "The $(b,$(tname)) command shows help about $(mname).";
+    `P "The $(tname) command shows help about $(mname).";
     `P "Use `topics' as $(i,TOPIC) to get a list of topics.";
   ] @ Cli.see_also ~cmds:[]
 

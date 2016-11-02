@@ -66,7 +66,7 @@ open Cmdliner
 let args =
   let doc = "Arguments given to the executable. If options are being
              passed, needs to be specified after a -- token so that the
-             command line options do not get interpreted by the $(b,$(tname))
+             command line options do not get interpreted by the $(tname)
              command itself."
   in
   Arg.(value & pos_right 0 string [] & info [] ~doc ~docv:"ARG")
@@ -84,16 +84,16 @@ let exec =
 let doc = "Run built executables"
 let man =
   [ `S "SYNOPSIS";
-    `P "$(b,$(mname)) $(b,$(tname)) [$(i,OPTION)]... $(i,EXEC) \
+    `P "$(mname) $(tname) [$(i,OPTION)]... $(i,EXEC) \
         [-- [$(i,ARG)]...]]";
     `S "DESCRIPTION";
-    `P "The $(b,$(tname)) command runs executable files found
+    `P "The $(tname) command runs executable files found
         in the build directory.";
     `P "$(b,WARNING) The way this command works is subject to change
         in the future.";
   ] @ Cli.common_opts_man @ [
     `S "EXIT STATUS";
-    `P "The $(b,$(tname)) command exits with one of the following values:";
+    `P "The $(tname) command exits with one of the following values:";
     `I ("0", "the run exited normally.");
     `I ("1", "the run exited abnormally.");
     `I (">1", "an error occured.");

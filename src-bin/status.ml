@@ -73,11 +73,11 @@ let until =
 let doc = "List commits to publish in the next distribution"
 let man =
   [ `S "DESCRIPTION";
-    `P "The $(b,$(tname)) command consults the package's VCS and outputs the
+    `P "The $(tname) command consults the package's VCS and outputs the
         list of commits that define the changes for the next distribution.";
   ] @ Cli.common_opts_man @ [
     `S "EXIT STATUS";
-    `P "The $(b,$(tname)) command exits with one of the following values:";
+    `P "The $(tname) command exits with one of the following values:";
     `I ("0", "changes have been detected.");
     `I ("1", "no changes have been detected.");
     `I (">1", "an error occured.");

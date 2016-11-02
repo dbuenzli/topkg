@@ -115,9 +115,9 @@ let msg =
 let doc = "Interact with the package's issue tracker"
 let man =
   [ `S "SYNOPSIS";
-    `P "$(b,$(mname)) $(b,$(tname)) [$(i,OPTION)]... [$(i,ACTION)]...";
+    `P "$(mname) $(tname) [$(i,OPTION)]... [$(i,ACTION)]...";
     `S "DESCRIPTION";
-    `P "The $(b,$(tname)) command interacts with the package's issue
+    `P "The $(tname) command interacts with the package's issue
         tracker via the package delegate. See topkg-delegate(7) for more
         details.";
     `P "To consult the issues in a WWW browser invoke

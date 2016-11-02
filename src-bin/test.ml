@@ -57,10 +57,10 @@ let list =
 let doc = "Run built package tests"
 let man =
   [ `S "SYNOPSIS";
-    `P "$(b,$(mname)) $(b,$(tname)) [$(i,OPTION)]... [-- [$(i,TEST)]... \
+    `P "$(mname) $(tname) [$(i,OPTION)]... [-- [$(i,TEST)]... \
         [-- [$(i,ARG)]...]]";
     `S "DESCRIPTION";
-    `P "The $(b,$(tname)) command runs the tests that were built by
+    `P "The $(tname) command runs the tests that were built by
         topkg-build(1). This is equivalent to invoke:";
     `Pre "ocaml ./pkg/pkg.ml test [$(i,TEST)]... [-- [$(i,ARG)]...]";
     `P "The value for $(i,TEST) can be a full path to the test executable
@@ -73,7 +73,7 @@ let man =
     `Pre "topkg test mytest -- -- arg";
   ] @ Cli.common_opts_man @ [
     `S "EXIT STATUS";
-    `P "The $(b,$(tname)) command exits with one of the following values:";
+    `P "The $(tname) command exits with one of the following values:";
     `I ("0", "the tests succeeded.");
     `I ("1", "the tests failed.");
     `I (">1", "an error occured.");

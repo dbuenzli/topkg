@@ -251,8 +251,8 @@ let ipc_cmd =
   let doc = "Delegate request IPCs" in
   let man =
     [ `S "DESCRIPTION";
-      `P "The $(b,$(tname)) command implements the topkg delegate protocol.
-          See topkg-delegate(7) and $(b,$(mname) --help) for more
+      `P "The $(tname) command implements the topkg delegate protocol.
+          See topkg-delegate(7) and $(mname) $(b,--help) for more
           information." ]
   in
   let args =
@@ -267,7 +267,7 @@ let main_cmd =
   let doc = "Topkg's toy GitHub delegate" in
   let man =
    [ `S "DESCRIPTION";
-     `P "$(b,$(mname)) is a toy topkg delegate for GitHub. It will disappear
+     `P "$(mname) is a toy topkg delegate for GitHub. It will disappear
          once a decent GitHub delegate emerges. For more
          information about topkg delegates, see topkg-delegate(7).";
      `P "This delegate only supports the following delegations:";
