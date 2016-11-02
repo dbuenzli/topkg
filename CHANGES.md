@@ -1,3 +1,10 @@
+v0.8.1 2016-11-02 Zagreb
+------------------------
+
+- Add `Pkg.{nothing,flatten}`. Thanks to David Kaloper Meršinjak for the
+  suggestion and the patch.
+
+
 v0.8.0 2016-10-31 Zagreb
 ------------------------
 
