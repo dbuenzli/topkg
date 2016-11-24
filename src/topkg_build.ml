@@ -10,10 +10,15 @@ open Topkg_result
 let build_cmd c os =
   let ocamlbuild = Topkg_conf.tool "ocamlbuild" os in
   let build_dir = Topkg_conf.build_dir c in
+  let toolchain =
+    match Topkg_conf.toolchain c with
+    | Some toolchain -> Topkg_cmd.(v "-toolchain" % toolchain)
+    | _ -> Topkg_cmd.empty
+  in
   let debug = Topkg_cmd.(on (Topkg_conf.debug c) (v "-tag" % "debug")) in
   let profile = Topkg_cmd.(on (Topkg_conf.profile c) (v "-tag" % "profile")) in
-  Topkg_cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %% debug
-             %% profile % "-build-dir" % build_dir)
+  Topkg_cmd.(ocamlbuild % "-use-ocamlfind" %% toolchain % "-classic-display" %%
+                          debug %% profile % "-build-dir" % build_dir)
 
 let clean_cmd os ~build_dir =
   let ocamlbuild = Topkg_conf.tool "ocamlbuild" os in
