@@ -826,6 +826,11 @@ module Conf : sig
       absent the value is [false] or the value of the environment variable
       TOPKG_CONF_PROFILE if specified. *)
 
+  val toolchain : t -> string option
+  (** [toolchain c] is the value of a predefined key [--toolchain] that
+      specifies the ocamlbuild toolchain. If absent the value is [None] or
+      the value of the environment variable TOPKG_CONF_TOOLCHAIN if specified. *)
+
   val dump : Format.formatter -> t -> unit
   (** [dump ppf c] formats an unspecified representation of [c] on [ppf]. *)
 
@@ -1200,10 +1205,15 @@ let clean os ~build_dir = OS.Cmd.run @@ Pkg.clean_cmd os ~build_dir
 {[fun c os ->
   let ocamlbuild = Conf.tool "ocamlbuild" os in
   let build_dir = Conf.build_dir c in
+  let toolchain =
+    match Topkg_conf.toolchain c with
+    | Some toolchain -> Topkg_cmd.(v "-toolchain" % toolchain)
+    | _ -> Topkg_cmd.empty
+  in
   let debug = Cmd.(on (Conf.debug c) (v "-tag" % "debug")) in
   let profile = Cmd.(on (Conf.profile c) (v "-tag" % "profile")) in
-  Cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %% debug %%
-                    profile % "-build-dir" % build_dir)]} *)
+  Cmd.(ocamlbuild % "-use-ocamlfind" %% toolchain % "-classic-display" %%
+                    debug %% profile % "-build-dir" % build_dir)]} *)
 
   val clean_cmd : Conf.os -> build_dir:fpath -> Cmd.t
   (** [clean_cmd os ~build_dir] is the default clean command. Its value

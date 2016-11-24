@@ -217,6 +217,10 @@ let profile =
   in
   key "profile" bool ~env:"TOPKG_CONF_PROFILE" ~absent:false ~doc
 
+let toolchain =
+  let doc = "Specifies the ocamlfind toolchain." in
+  key "toolchain" (some string) ~env:"TOPKG_CONF_TOOLCHAIN" ~absent:None ~doc
+
 (* Key documentation *)
 
 let pp_cli_opt ppf opt_name absent env doc docv =
@@ -330,6 +334,7 @@ let of_cli_args ~pkg_name:name ~build_dir:bdir args =
 
 let pkg_name c = value c pkg_name
 let build_dir c = value c build_dir
+let toolchain c = value c toolchain
 let vcs c = value c vcs
 let pinned c = value c pinned
 
