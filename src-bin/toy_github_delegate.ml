@@ -291,7 +291,7 @@ let main_cmd =
      `I ("1. opam-publish token stealing.",
           "If you have already used opam-publish, an authorization token
            was generated for it that is keept in
-           \\$(opam config root)/plugins/opam-publish/\\$(user).token. If
+           \\$(opam config var root)/plugins/opam-publish/\\$(user).token. If
            such a file exists, \\$(user) and the corresponding token will
            be used for authentication.");
      `I ("2. Environment variable.",
