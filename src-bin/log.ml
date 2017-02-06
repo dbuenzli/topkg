@@ -113,15 +113,17 @@ etc.";
     `I ("$(b,commit)", "commit changes made to the package's change log to the
                         VCS.");
     `S Manpage.s_arguments;
-    `Blocks (Cli.common_opts_man);
+    `Blocks Cli.common_opts_man;
     `S Manpage.s_environment;
-    `I ("$(i,EDITOR)", "The editor used to edit the change log.");
-    `I ("$(i,PAGER)", "The pager used to consult the change log.");
-    `I ("$(i,TERM)", "See option $(b,--no-pager).");
     `Blocks (Cli.see_also ~cmds:["topkg-publish"; "topkg-tag"; "topkg-opam"]) ]
 
+let envs =
+  [ Term.env_info "EDITOR" ~doc:"The editor used to edit the change log.";
+    Term.env_info "PAGER" ~doc:"The pager used to consult the change log.";
+    Term.env_info "TERM" ~doc:"See option $(b,--no-pager)." ]
+
 let cmd =
-  let info = Term.info "log" ~sdocs:Cli.common_opts ~doc ~man in
+  let info = Term.info "log" ~sdocs:Cli.common_opts ~doc ~man ~envs in
   let t = Term.(pure log $ Cli.setup $ Cli.pkg_file $ Cli.change_log $ action $
                 last $ last_version $ no_pager)
   in

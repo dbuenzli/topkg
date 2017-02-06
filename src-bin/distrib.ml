@@ -147,17 +147,17 @@ let man =
          Reproducibility relies on bzip2 to be a reproducible function
          across platforms.");
     `I ("Topkg changes", "Topkg could change its distribution procedure in
-         the future, for example to correct bugs.");
-    `S Manpage.s_environment;
-    `I ("$(i,TOPKG_BZIP2)", "The bzip2 tool to use to compress the
-        archive. Gets the archive on stdin and must output the result on
-        standard out.");
-    `I ("$(i,TOPKG_TAR)", "The tar tool to use to unarchive a tbz
-        archive (archive creation itself is handled by topkg).");
-    `Blocks (Cli.see_also ~cmds:["topkg-lint"]); ]
+         the future, for example to correct bugs."); ]
+
+let envs =
+  [ Term.env_info "TOPKG_BZIP2" ~doc:"The $(b,bzip2) tool to use to compress the
+    archive. Gets the archive on stdin and must output the result on
+    standard out.";
+    Term.env_info "TOPKG_TAR" ~doc:"The $(b,tar) tool to use to unarchive a tbz
+    archive (archive creation itself is handled by topkg)."; ]
 
 let cmd =
-  let info = Term.info "distrib" ~sdocs:Cli.common_opts ~doc ~man in
+  let info = Term.info "distrib" ~sdocs:Cli.common_opts ~doc ~man ~envs in
   let t = Term.(pure distrib $ Cli.setup $ Cli.pkg_file $
                 Cli.dist_opam $ Cli.build_dir $ Cli.dist_name $
                 Cli.dist_version $ keep_build_dir $ skip_lint $ skip_build $

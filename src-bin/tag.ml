@@ -71,7 +71,7 @@ let man =
         version. If the version is not specified on the command line it is
         automatically extracted from the package's change log; use
         $(b,topkg log -t) to check the extracted value.";
-    `Blocks (Cli.common_opts_man);
+    `Blocks Cli.common_opts_man;
     `Blocks (Cli.see_also ~cmds:["topkg-log";]); ]
 
 let cmd =

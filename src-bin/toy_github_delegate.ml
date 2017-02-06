@@ -291,7 +291,7 @@ let main_cmd =
      `I ("1. opam-publish token stealing.",
           "If you have already used opam-publish, an authorization token
            was generated for it that is keept in
-           \\$(opam config root)/plugins/opam-publish/\\$(user).token. If
+           \\$(opam config var root)/plugins/opam-publish/\\$(user).token. If
            such a file exists, \\$(user) and the corresponding token will
            be used for authentication.");
      `I ("2. Environment variable.",
@@ -304,13 +304,14 @@ let main_cmd =
           the $(i,DISTRIB_URI) URI, itself determined from the 'dev-repo'
           field of the opam file, see topkg-delegate(7) and topkg's API
           documentation for more details); in this case your GitHub
-          password will be prompted twice on the command line by curl (ugh).");
-     `S "ENVIRONMENT VARIABLES";
-     `I ("TOPKG_GITHUB_AUTH", "GitHub authentication data, see
-          the section GITHUB AUTHENTICATION for details."); ]
+          password will be prompted twice on the command line by curl (ugh).")]
+  in
+  let envs =
+    [ Term.env_info "TOPKG_GITHUB_AUTH" ~doc:"GitHub authentication data, see
+      the section GITHUB AUTHENTICATION for details." ]
   in
   let version = "%%VERSION%%" in
-  let info = Term.info "toy-github-topkg-delegate" ~version ~doc ~man in
+  let info = Term.info "toy-github-topkg-delegate" ~version ~doc ~man ~envs in
   let t = Term.(ret (const main_cmd $ const ())) in
   (t, info)
 

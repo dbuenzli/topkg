@@ -179,13 +179,14 @@ let man =
         "outputs the field $(i,FIELD) of the package's opam file.");
     `S Manpage.s_arguments;
     `Blocks Cli.common_opts_man;
-    `S Manpage.s_environment;
-    `I ("$(i,TOPKG_OPAM_PUBLISH)", "The opam-publish tool to use to submit
-         packages.");
     `Blocks (Cli.see_also ~cmds:["topkg-distrib"]) ]
 
+let envs =
+  [ Term.env_info "TOPKG_OPAM_PUBLISH" ~doc:"The $(b,opam-publish) tool to use
+    to submit packages." ]
+
 let cmd =
-  let info = Term.info "opam" ~sdocs:Cli.common_opts ~doc ~man in
+  let info = Term.info "opam" ~sdocs:Cli.common_opts ~doc ~man ~envs in
   let t = Term.(pure opam $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $
                 Cli.dist_name $ Cli.dist_version $ Cli.dist_opam $
                 Cli.dist_uri $ Cli.dist_file $

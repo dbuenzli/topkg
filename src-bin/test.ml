@@ -71,7 +71,7 @@ let man =
        test 'mytest' use one of the following invocation:";
     `Pre "topkg test -- mytest -- arg"; `Noblank;
     `Pre "topkg test mytest -- -- arg";
-    `Blocks (Cli.common_opts_man);
+    `Blocks Cli.common_opts_man;
     `S Manpage.s_exit_status;
     `P "The $(tname) command exits with one of the following values:";
     `I ("0", "the tests succeeded.");

@@ -133,15 +133,16 @@ let man =
         "Close issue $(i,ID).");
     `S "ARGUMENTS";
     `S "OPTIONS";
-    `Blocks (Cli.common_opts_man);
-    `S Manpage.s_environment;
-    `I ("$(i,EDITOR)", "The editor used to edit issue messages.");
-    `I ("$(i,TOPKG_DELEGATE)", "The package delegate to use,
-        see topkg-delegate(7).");
-  ] @ Cli.see_also ~cmds:[]
+    `Blocks Cli.common_opts_man;
+    `Blocks (Cli.see_also ~cmds:[])]
+
+let envs =
+  [ Term.env_info "EDITOR" ~doc:"The editor used to edit issue messages.";
+    Term.env_info "TOPKG_DELEGATE" ~doc:"The package delegate to use, see
+    topkg-delegate(7)." ]
 
 let cmd =
-  let info = Term.info "issue" ~sdocs:Cli.common_opts ~doc ~man in
+  let info = Term.info "issue" ~sdocs:Cli.common_opts ~doc ~man ~envs in
   let t = Term.(pure issue $ Cli.setup $ Cli.pkg_file $ Cli.opam $
                 Cli.delegate $ action $ id $ msg) in
   (t, info)
