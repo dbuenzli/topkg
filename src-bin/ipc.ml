@@ -39,10 +39,10 @@ let args =
 
 let doc = "Interprocess communication with package description files"
 let man =
-  [ `S "DESCRIPTION";
+  [ `S Manpage.s_description;
     `P "The $(tname) command is used by package description files. It is
         undocumented.";
-  ] @ Cli.see_also ~cmds:[]
+    `Blocks (Cli.see_also ~cmds:[]) ]
 
 let cmd =
   let info = Term.info "ipc" ~sdocs:Cli.common_opts ~doc ~man in

@@ -82,20 +82,19 @@ let debug =
 
 let doc = "Build the package"
 let man =
-  [ `S "SYNOPSIS";
+  [ `S Manpage.s_synopsis;
     `P "$(mname) $(tname) [$(i,OPTION)]... [-- $(i,BUILD_CONF)...]";
-    `S "DESCRIPTION";
+    `S Manpage.s_description;
     `P "The $(tname) command builds the package. This is equivalent to
         invoke:";
     `Pre "ocaml ./pkg/pkg.ml build $(i,BUILD_CONF)...";
-  ] @ Cli.common_opts_man @ [
-    `S "EXIT STATUS";
+    `Blocks (Cli.common_opts_man);
+    `S Manpage.s_exit_status;
     `P "The $(tname) command exits with one of the following values:";
     `I ("0", "the build succeeded.");
     `I ("1", "the build failed.");
     `I (">1", "an error occured.");
-    `S "ENVIRONMENT VARIABLES";
-  ] @ Cli.see_also ~cmds:[]
+    `Blocks (Cli.see_also ~cmds:[]); ]
 
 let cmd =
   let info = Term.info "build" ~sdocs:Cli.common_opts ~doc ~man in

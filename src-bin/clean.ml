@@ -36,15 +36,14 @@ open Cmdliner
 
 let doc = "Clean the package's build"
 let man =
-  [ `S "SYNOPSIS";
-     `P "$(mname) $(tname) [$(i,OPTION)]...";
-    `S "DESCRIPTION";
+  [ `S Manpage.s_synopsis;
+    `P "$(mname) $(tname) [$(i,OPTION)]...";
+    `S Manpage.s_description;
     `P "The $(tname) command deletes the package's build and its OPAM
         install file. This is equivalent to invoke:";
     `Pre "ocaml ./pkg/pkg.ml clean";
-  ] @ Cli.common_opts_man @ [
-    `S "ENVIRONMENT VARIABLES";
-  ] @ Cli.see_also ~cmds:["topkg-build"]
+    `Blocks (Cli.common_opts_man);
+    `Blocks (Cli.see_also ~cmds:["topkg-build"]); ]
 
 let cmd =
   let info = Term.info "clean" ~sdocs:Cli.common_opts ~doc ~man in

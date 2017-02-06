@@ -98,7 +98,7 @@ let dev =
 
 let doc = "Build the package's API documentation"
 let man =
-  [ `S "DESCRIPTION";
+  [ `S Manpage.s_description;
     `P "The $(tname) command builds the package's API documentation. Use
         the option $(b,-r) to open or refresh the documentation in
         a WWW browser (see $(b,--browser) for details).";
@@ -112,9 +112,8 @@ let man =
         files that are copied over to the generated documentation directory.";
     `P "If the doc/ directory has no doc/style.css file but odig(1) is
         installed, its ocamldoc stylesheet is used.";
-  ] @ Cli.common_opts_man @ [
-    `S "ENVIRONMENT VARIABLES";
-  ] @ Cli.see_also ~cmds:[]
+    `Blocks (Cli.common_opts_man);
+    `Blocks (Cli.see_also ~cmds:[]); ]
 
 let cmd =
   let info = Term.info "doc" ~sdocs:Cli.common_opts ~doc ~man in

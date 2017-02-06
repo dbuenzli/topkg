@@ -158,10 +158,9 @@ let pkg_descr =
 
 let doc = "Interaction with OPAM and the OCaml OPAM repository"
 let man =
-  [
-    `S "SYNOPSIS";
+  [ `S Manpage.s_synopsis;
     `P "$(mname) $(tname) [$(i,OPTION)]... $(i,ACTION)";
-    `S "DESCRIPTION";
+    `S Manpage.s_description;
     `P "The $(tname) command provides a few actions to interact with
         OPAM and the OCaml OPAM repository.";
     `S "ACTIONS";
@@ -178,13 +177,12 @@ let man =
          installed.");
     `I ("$(b,field) $(i,FIELD)",
         "outputs the field $(i,FIELD) of the package's OPAM file.");
-    `S "ARGUMENTS";
-    `S "OPTIONS";
-  ] @ Cli.common_opts_man @ [
-    `S "ENVIRONMENT VARIABLES";
+    `S Manpage.s_arguments;
+    `Blocks Cli.common_opts_man;
+    `S Manpage.s_environment;
     `I ("$(i,TOPKG_OPAM_PUBLISH)", "The opam-publish tool to use to submit
-         packages.")
-  ] @ Cli.see_also ~cmds:["topkg-distrib"]
+         packages.");
+    `Blocks (Cli.see_also ~cmds:["topkg-distrib"]) ]
 
 let cmd =
   let info = Term.info "opam" ~sdocs:Cli.common_opts ~doc ~man in

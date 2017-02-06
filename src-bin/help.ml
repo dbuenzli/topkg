@@ -9,11 +9,13 @@ let version = "%%VERSION%%"
 
 (* Help manuals *)
 
+open Cmdliner
+
 let release =
   ("TOPKG-RELEASE", 7, "", version, topkg_manual),
-  [ `S "NAME";
+  [ `S Manpage.s_name;
     `P "topkg-release - How to release a (topkg) package";
-    `S "DESCRIPTION";
+    `S Manpage.s_description;
     `P "The basic release script is the following. Each step is
         refined and explained with more details below.";
     `Pre "\
@@ -141,13 +143,13 @@ topkg log commit";
          between the OPAM file in the distribution archive and the one
          you submitted to the OPAM repository. If this happens to be a
          problem, start over with a new patch version release.");
- ] @ Cli.see_also ~cmds:[]
+    `Blocks (Cli.see_also ~cmds:[]); ]
 
 let delegate =
   ("TOPKG-DELEGATE", 7, "", version, topkg_manual),
-  [ `S "NAME";
+  [ `S Manpage.s_name;
     `P "topkg-delegate - The topkg delegate";
-    `S "DESCRIPTION";
+    `S Manpage.s_description;
     `P "The delegate of a package is a program invoked by topkg to perform
         actions that are difficult or not desirable to standardize within
         topkg itself, namely:";
@@ -293,13 +295,13 @@ let main () =
 
 let () = exit (main ())
 ";
-  ] @ Cli.see_also ~cmds:["topkg-issue"; "topkg-publish"]
+    `Blocks (Cli.see_also ~cmds:["topkg-issue"; "topkg-publish"]); ]
 
 let troubleshoot =
   ("TOPKG-TROUBLESHOOT", 7, "", version, topkg_manual),
-  [ `S "NAME";
+  [ `S Manpage.s_name;
     `P "topkg-troubleshoot - A few troubleshooting tips";
-    `S "DESCRIPTION";
+    `S Manpage.s_description;
     `P "If you get into trouble try the following to get a better undersanding
         of what is happening.";
     `S "ASK FOR MORE LOGGING";
@@ -322,8 +324,8 @@ let troubleshoot =
          invoke OPAM as follows:";
     `P "TOPKG_VERBOSITY=debug opam upgrade mypkg -v";
     `S "RELEASE PROCESS TROUBLES";
-    `P "See the TROUBLESHOOTING section of topkg-release(7)."
-  ] @ Cli.see_also ~cmds:[]
+    `P "See the TROUBLESHOOTING section of topkg-release(7).";
+    `Blocks (Cli.see_also ~cmds:[]) ]
 
 (* Help command *)
 
@@ -359,10 +361,10 @@ let topic =
 
 let doc = "Show help about topkg"
 let man =
-  [ `S "DESCRIPTION";
+  [ `S Manpage.s_description;
     `P "The $(tname) command shows help about $(mname).";
     `P "Use `topics' as $(i,TOPIC) to get a list of topics.";
-  ] @ Cli.see_also ~cmds:[]
+    `Blocks (Cli.see_also ~cmds:[]) ]
 
 let cmd =
   let info = Term.info "help" ~doc ~man in

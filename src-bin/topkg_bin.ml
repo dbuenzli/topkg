@@ -17,7 +17,7 @@ let main () = `Help (`Pager, None)
 
 let doc = "Topkg package care"
 let man =
-  [ `S "DESCRIPTION";
+  [ `S Manpage.s_description;
     `P "$(mname) takes care of topkg packages.";
     `P "Use '$(mname) help release' for help to release a package.";
     `Noblank;
@@ -26,11 +26,10 @@ let man =
     `P "Use '$(mname) help troubleshoot' for a few troubleshooting tips.";
     `Noblank;
     `P "Use '$(mname) help $(i,COMMAND)' for help about $(i,COMMAND).";
-  ] @ Cli.common_opts_man @ [
-    `S "ENVIRONMENT VARIABLES";
-    `S "BUGS";
+    `Blocks Cli.common_opts_man;
+    `S Manpage.s_bugs;
     `P "Report them, see $(i,%%PKG_HOMEPAGE%%) for contact information.";
-    `S "AUTHOR";
+    `S Manpage.s_authors;
     `P "Daniel C. Buenzli, $(i,http://erratique.ch)"; ]
 
 let main =

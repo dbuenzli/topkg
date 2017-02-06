@@ -91,9 +91,9 @@ let artefacts =
 
 let doc = "Publish package distribution archives and derived artefacts"
 let man =
-  [ `S "SYNOPSIS";
+  [ `S Manpage.s_synopsis;
     `P "$(mname) $(tname) [$(i,OPTION)]... [$(i,ARTEFACT)]...";
-    `S "DESCRIPTION";
+    `S Manpage.s_description;
     `P "The $(tname) command publishes package distribution archives
         and other artefacts via the package delegate. See topkg-delegate(7) for
         more details.";
@@ -110,13 +110,12 @@ let man =
          is left to the delegate, it could be anything, an email,
          a pointless tweet, a feed entry etc. See topkg-delegate(7) for
          more details.");
-    `S "ARGUMENTS";
-    `S "OPTIONS";
-  ] @ Cli.common_opts_man @ [
-    `S "ENVIRONMENT VARIABLES";
+    `S Manpage.s_arguments;
+    `Blocks (Cli.common_opts_man);
+    `S Manpage.s_environment;
     `I ("$(i,TOPKG_DELEGATE)",
         "The package delegate to use, see topkg-delegate(7).");
-  ] @ Cli.see_also ~cmds:["topkg-distrib"]
+    `Blocks (Cli.see_also ~cmds:["topkg-distrib"]); ]
 
 let cmd =
   let info = Term.info "publish" ~sdocs:Cli.common_opts ~doc ~man in

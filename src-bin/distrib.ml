@@ -102,7 +102,7 @@ let skip_tests =
 
 let doc = "Create a package distribution archive"
 let man =
-  [ `S "DESCRIPTION";
+  [ `S Manpage.s_description;
     `P "The $(tname) command creates a package distribution
         archive in the build directory of the package.  The generated
         archive should be bit-wise reproducible. There are however a few
@@ -117,8 +117,7 @@ let man =
         distribution; one should still worry about it though.
         These checks can be prevented by using the $(b,--skip-lint) and
         $(b,--skip-build) options.";
-    `S "OPTIONS";
-  ] @ Cli.common_opts_man @ [
+    `Blocks Cli.common_opts_man;
     `S "REPRODUCIBLE DISTRIBUTION ARCHIVES";
     `P "Given the package name, the HEAD commit identifier
         and the version string, the $(tname) command should always
@@ -149,13 +148,13 @@ let man =
          across platforms.");
     `I ("Topkg changes", "Topkg could change its distribution procedure in
          the future, for example to correct bugs.");
-    `S "ENVIRONMENT VARIABLES";
+    `S Manpage.s_environment;
     `I ("$(i,TOPKG_BZIP2)", "The bzip2 tool to use to compress the
         archive. Gets the archive on stdin and must output the result on
         standard out.");
     `I ("$(i,TOPKG_TAR)", "The tar tool to use to unarchive a tbz
         archive (archive creation itself is handled by topkg).");
-  ] @ Cli.see_also ~cmds:["topkg-lint"]
+    `Blocks (Cli.see_also ~cmds:["topkg-lint"]); ]
 
 let cmd =
   let info = Term.info "distrib" ~sdocs:Cli.common_opts ~doc ~man in

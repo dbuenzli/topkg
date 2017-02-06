@@ -114,9 +114,9 @@ let msg =
 
 let doc = "Interact with the package's issue tracker"
 let man =
-  [ `S "SYNOPSIS";
+  [ `S Manpage.s_synopsis;
     `P "$(mname) $(tname) [$(i,OPTION)]... [$(i,ACTION)]...";
-    `S "DESCRIPTION";
+    `S Manpage.s_description;
     `P "The $(tname) command interacts with the package's issue
         tracker via the package delegate. See topkg-delegate(7) for more
         details.";
@@ -133,8 +133,8 @@ let man =
         "Close issue $(i,ID).");
     `S "ARGUMENTS";
     `S "OPTIONS";
-  ] @ Cli.common_opts_man @ [
-    `S "ENVIRONMENT VARIABLES";
+    `Blocks (Cli.common_opts_man);
+    `S Manpage.s_environment;
     `I ("$(i,EDITOR)", "The editor used to edit issue messages.");
     `I ("$(i,TOPKG_DELEGATE)", "The package delegate to use,
         see topkg-delegate(7).");

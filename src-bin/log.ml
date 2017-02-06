@@ -75,7 +75,7 @@ let last_version =
 
 let doc = "Show and edit the package's change log"
 let man =
-  [ `S "DESCRIPTION";
+  [ `S Manpage.s_description;
     `P "The $(tname) command shows, edits and commits
         the package's change log.";
     `S "CHANGE LOG FORMAT";
@@ -112,14 +112,13 @@ etc.";
     `I ("$(b,edit)", "edit the package's change log.");
     `I ("$(b,commit)", "commit changes made to the package's change log to the
                         VCS.");
-    `S "ARGUMENTS";
-    `S "OPTIONS";
-  ] @ Cli.common_opts_man @ [
-    `S "ENVIRONMENT VARIABLES";
+    `S Manpage.s_arguments;
+    `Blocks (Cli.common_opts_man);
+    `S Manpage.s_environment;
     `I ("$(i,EDITOR)", "The editor used to edit the change log.");
     `I ("$(i,PAGER)", "The pager used to consult the change log.");
     `I ("$(i,TERM)", "See option $(b,--no-pager).");
-  ] @ Cli.see_also ~cmds:["topkg-publish"; "topkg-tag"; "topkg-opam"]
+    `Blocks (Cli.see_also ~cmds:["topkg-publish"; "topkg-tag"; "topkg-opam"]) ]
 
 let cmd =
   let info = Term.info "log" ~sdocs:Cli.common_opts ~doc ~man in

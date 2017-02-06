@@ -38,7 +38,7 @@ let ignore_pkg =
 
 let doc = "Check package distribution consistency and conventions"
 let man =
-  [ `S "DESCRIPTION";
+  [ `S Manpage.s_description;
     `P "The $(tname) command makes tests on a package distribution or
         source repository. It checks that standard files exist, that
         ocamlfind META files pass the ocamlfind lint test, that OPAM package
@@ -46,14 +46,13 @@ let man =
         consistent with those of the build system.";
     `P "Linting is automatically performed on distribution generation, see
         topkg-distrib(1) for more details.";
-  ] @ Cli.common_opts_man @ [
-    `S "EXIT STATUS";
+    `Blocks (Cli.common_opts_man);
+    `S Manpage.s_exit_status;
     `P "The $(tname) command exits with one of the following values:";
     `I ("0", "the lint succeeded.");
     `I ("1", "the lint failed.");
     `I (">1", "an error occured.");
-    `S "ENVIRONMENT VARIABLES";
-  ] @ Cli.see_also ~cmds:["topkg-distrib"]
+    `Blocks (Cli.see_also ~cmds:["topkg-distrib"]); ]
 
 let cmd =
   let info = Term.info "lint" ~sdocs:Cli.common_opts ~doc ~man in

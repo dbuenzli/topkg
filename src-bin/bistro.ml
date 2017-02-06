@@ -24,7 +24,7 @@ open Cmdliner
 
 let doc = "For when you are in a hurry or need to go for a drink"
 let man =
-  [ `S "DESCRIPTION";
+  [ `S Manpage.s_description;
     `P "The $(tname) command (quick in Russian) is equivalent to invoke:";
   `Pre "\
 topkg distrib       # Create the distribution archive
@@ -32,8 +32,8 @@ topkg publish       # Publish it on the WWW with its documentation
 topkg opam pkg      # Create an OPAM package
 topkg opam submit   # Submit it to OCaml's OPAM repository";
     `P "See topkg-release(7) for more information.";
-  ] @ Cli.common_opts_man @ [
-  ] @ Cli.see_also ~cmds:[]
+    `Blocks Cli.common_opts_man;
+    `Blocks (Cli.see_also ~cmds:[])]
 
 let cmd =
   let info = Term.info "bistro" ~sdocs:Cli.common_opts ~doc ~man in

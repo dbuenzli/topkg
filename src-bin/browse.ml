@@ -110,15 +110,14 @@ let man =
     let pad = String.v ~len:(max_target_len - String.length t) (fun _ -> ' ') in
     `Pre (strf "%s$(b,%s) %s" pad t doc) :: `Noblank :: acc
   in
-  [ `S "DESCRIPTION";
+  [ `S Manpage.s_description;
     `P "The $(tname) command opens or reloads URIs mentioned in the
         OPAM file in a WWW browser. A few other useful logical target are
         provided and arbitrary file, http or https schemed URIs can also
-        be specified as the target."; ]
-  @ List.(tl @@ rev @@ fold_left target [] targets) @ [
-  ] @ Cli.common_opts_man @ [
-    `S "ENVIRONMENT VARIABLES";
-  ] @ Cli.see_also ~cmds:[]
+        be specified as the target.";
+    `Blocks (List.(tl @@ rev @@ fold_left target [] targets));
+    `Blocks Cli.common_opts_man;
+    `Blocks (Cli.see_also ~cmds:[]) ]
 
 let cmd =
   let info = Term.info "browse" ~sdocs:Cli.common_opts ~doc ~man in
