@@ -26,8 +26,8 @@ topkg log commit    # Commit the release notes
 topkg tag           # Tag the distribution with a version
 topkg distrib       # Create the distribution archive
 topkg publish       # Publish it on the WWW with its documentation
-topkg opam pkg      # Create an OPAM package
-topkg opam submit   # Submit it to OCaml's OPAM repository";
+topkg opam pkg      # Create an opam package
+topkg opam submit   # Submit it to OCaml's opam repository";
     `P "The last four steps can be performed via a single invocation
         to topkg-bistro(1).";
     `S "BASIC CHECKS";
@@ -44,7 +44,7 @@ topkg opam submit   # Submit it to OCaml's OPAM repository";
         environment and that the package tests pass.";
     `Pre "\
 topkg lint
-topkg build # Check out the generated OPAM install file too
+topkg build # Check out the generated opam install file too
 topkg test";
     `S "WRITE THE RELEASE NOTES";
     `P "Carefully write the release notes in the package's change log, these
@@ -107,10 +107,10 @@ topkg log commit";
         regenerate the archive or provide, in the subsequent commands,
         the archive manually via the $(b,--dist-file) option, see
         topkg-opam(1) for details.";
-    `P "To add the package to OCaml's OPAM repository, start by creating an
-        OPAM package description in the build directory with:";
+    `P "To add the package to OCaml's opam repository, start by creating an
+        opam package description in the build directory with:";
     `Pre "topkg opam pkg";
-    `P "then simply submit it to the OPAM repository with:";
+    `P "then simply submit it to the opam repository with:";
     `Pre "topkg opam publish";
     `P "The latter does nothing more than invoking opam-publish-submit(1) on
         the package description generated earlier.";
@@ -122,26 +122,26 @@ topkg log commit";
          like a failing $(b,topkg distrib), is easy to resolve. Delete the
          version tag of your VCS, a $(b,topkg tag -d) will do, add
          some commits, adjust your release notes and start over.");
-    `I ("OPAM submission build failure",
+    `I ("opam submission build failure",
         "If the build failure is due to a missing constraint, follow the
-         instruction of the next item to correct the OPAM file. If the failure
+         instruction of the next item to correct the opam file. If the failure
          is due to a defect in the distribution archive, call it a day and
          start over with a patch version release that corrects the problem.
          Do not try to reuse the version string of the failed release, other
          systems may already have picked up the broken archive.");
-    `I ("OPAM repository maintainer and robot complaints",
+    `I ("opam repository maintainer and robot complaints",
         "These pesky but loved maintainers and robots... If they
-         complain about certain aspects of your OPAM submission, you can either
-         try to correct it manually from the OPAM package description found
+         complain about certain aspects of your opam submission, you can either
+         try to correct it manually from the opam package description found
          in the build directory and reinvoke $(b,topkg opam submit) or edit
-         the opam file of the source repository and regenerate the OPAM Package
+         the opam file of the source repository and regenerate the opam Package
          description with $(b,topkg opam pkg) and the $(b,--pkg-opam)
          option. Note that if the VCS moved meanwhile you may have to use
          the various command line options of topkg-opam(1) to make sure
          you point to the right package version and distribution archive.
          In either case you should be aware that there will be a mismatch
-         between the OPAM file in the distribution archive and the one
-         you submitted to the OPAM repository. If this happens to be a
+         between the opam file in the distribution archive and the one
+         you submitted to the opam repository. If this happens to be a
          problem, start over with a new patch version release.");
     `Blocks (Cli.see_also ~cmds:[]); ]
 
@@ -167,7 +167,7 @@ let delegate =
     `I ("3. Environment variable.", "Specified in the TOPKG_DELEGATE
          environment variable.");
     `I ("4. Homepage derived discovery.", "Consult the 'homepage' field of the
-        package's OPAM file, extract the second-level domain of the URI as
+        package's opam file, extract the second-level domain of the URI as
         \\$NAME and uses the tool $(b,\\$NAME-topkg-delegate) iff it exists
         in the executable search path. For example if the homepage is
         http://www.example.org/mypackage, an existing
@@ -223,7 +223,7 @@ let delegate =
         "Publish the documentation directory $(i,DOCDIR) for the package
          named $(i,NAME) at version $(i,VERSION) with publication message
          $(i,MSG). $(i,DOC_URI) has the value of the doc field of the
-         package's OPAM file.");
+         package's opam file.");
     `I ("publish alt $(i,DISTRIB_URI) $(i,KIND) $(i,NAME) $(i,VERSION)
          $(i,MSG) $(i,ARCHIVE)",
         "Alternative publication artefact named $(i,KIND). The semantics
@@ -233,7 +233,7 @@ let delegate =
     `P "Issue delegation requests have the form:";
     `P "issue $(i,ACTION) $(i,ISSUES_URI) $(i,ARG) ...";
     `P "with $(i,ISSUES_URI) the value of the bug-reports field of the
-        package's OPAM file or \"\" if there is no such field.";
+        package's opam file or \"\" if there is no such field.";
     `P "The following actions are currently defined.";
     `I ("issue list $(i,ISSUES_URI)",
         "List open issues on standard output. Each issue should be on its
@@ -312,7 +312,7 @@ let troubleshoot =
         by 'topkg:' while those comming from the package description are
         prefixed by its base name, usually 'pkg.ml:'.";
     `S "DEBUG THE GENERATED OPAM INSTALL FILE";
-    `P "To debug the generated OPAM install file according to the build
+    `P "To debug the generated opam install file according to the build
         configuration you don't need to build the package. Use the
         $(b,--dry-run) (or $(b,-d)) option and add a little bit of logging to
         output the build configuration that was determined:";
@@ -320,8 +320,8 @@ let troubleshoot =
     `Pre "topkg build -d -v [OPTION]...      # mostly equivalent";
     `S "DEBUG PIN INSTALLS";
      `P "If you need more information about what happens when you
-         pin a package in OPAM, for example the actual watermark values,
-         invoke OPAM as follows:";
+         pin a package in opam, for example the actual watermark values,
+         invoke opam as follows:";
     `P "TOPKG_VERBOSITY=debug opam upgrade mypkg -v";
     `S "RELEASE PROCESS TROUBLES";
     `P "See the TROUBLESHOOTING section of topkg-release(7).";

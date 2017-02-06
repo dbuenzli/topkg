@@ -1,10 +1,10 @@
 Package structure
 -----------------
 
-This repo is the base of two OPAM packages:
+This repo is the base of two opam packages:
 
-- `topkg`, with OPAM file [topkg.opam](topkg.opam)
-- `topkg-care` with OPAM file [topkg-care.opam](topkg-care.opam)
+- `topkg`, with opam file [topkg.opam](topkg.opam)
+- `topkg-care` with opam file [topkg-care.opam](topkg-care.opam)
 
 Both share the same [pkg/pkg.ml](pkg/pkg.ml) file. `topkg` simply
 builds the `Topkg` library and `topkg-care` builds the `Topkg_care`

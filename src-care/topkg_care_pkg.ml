@@ -146,13 +146,13 @@ let opam_descr p =
       >>= fun descr_file -> OS.File.exists descr_file
       >>= function
       | true ->
-          Logs.info (fun m -> m "Found OPAM descr file %a" Fpath.pp descr_file);
+          Logs.info (fun m -> m "Found opam descr file %a" Fpath.pp descr_file);
           read descr_file
       | false ->
           readme p
           >>= fun readme ->
           Logs.info
-            (fun m -> m "Extracting OPAM descr from %a" Fpath.pp readme);
+            (fun m -> m "Extracting opam descr from %a" Fpath.pp readme);
           Topkg_care_opam.Descr.of_readme_file readme
 
 let change_logs p = match p.change_logs with
@@ -400,7 +400,7 @@ let lint_metas p =
 let lint_opams p =
   begin
     pkg p >>= fun p -> match Topkg.Private.Pkg.lint_opams p with
-    | [] -> Ok (lint_log "No OPAM file to lint")
+    | [] -> Ok (lint_log "No opam file to lint")
     | opams ->
         (* We first run opam lint with -s and if there's something beyond
            5 we rerun it without it for the error messages. It's ugly
@@ -420,8 +420,8 @@ let lint_opams p =
           begin
             Fpath.of_string f >>| fun f ->
             if not lint
-            then lint_log (strf "OPAM file lint disabled for %a" Fpath.pp f)
-            else lint_file_with_cmd "OPAM file" ~cmd f errs (handle_exit f)
+            then lint_log (strf "opam file lint disabled for %a" Fpath.pp f)
+            else lint_file_with_cmd "opam file" ~cmd f errs (handle_exit f)
           end
           |> Logs.on_error_msg ~use:(fun () -> errs + 1)
         in
@@ -479,14 +479,14 @@ let lint_opam_deps errs (opam, _, exclude) =
     | None ->
         Ok (lint_disabled @@
             Fmt.(strf_like
-                   stdout "OPAM dependency linting for %a" pp_path opam))
+                   stdout "opam dependency linting for %a" pp_path opam))
     | Some exclude ->
         let tags = Fpath.v "_tags" in
         let exclude = String.Set.of_list exclude in
         lint_deps ~exclude ~opam ~tags
         >>| function
         | None ->
-            Logs.app (fun m -> m "%a @[OPAM file %a@ and %a dependency check."
+            Logs.app (fun m -> m "%a @[opam file %a@ and %a dependency check."
                          pp_status `Ok pp_path opam pp_path tags);
             errs
         | Some miss ->
@@ -501,7 +501,7 @@ let lint_opam_deps errs (opam, _, exclude) =
 let lint_deps p =
   begin
     pkg p >>= fun p -> match Topkg.Private.Pkg.lint_opams p with
-    | [] -> Ok (lint_log "No OPAM file to dependency lint")
+    | [] -> Ok (lint_log "No opam file to dependency lint")
     | opams -> Ok (List.fold_left lint_opam_deps 0 opams)
   end
   |> Logs.on_error_msg ~use:(fun () -> 1)

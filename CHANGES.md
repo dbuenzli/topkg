@@ -64,7 +64,7 @@ v0.7.7 2016-07-13 Cambridge (UK)
 v0.7.6 2016-07-01 Cambridge (UK)
 --------------------------------
 
-- Add `pkg/pkg.ml clean` command. Removes the OPAM install file
+- Add `pkg/pkg.ml clean` command. Removes the opam install file
   and performs an effect that can be specified via `clean` in the
  `Pkg.build` description. The `topkg clean` command now simply forwards
   to this command.
@@ -87,7 +87,7 @@ v0.7.6 2016-07-01 Cambridge (UK)
   checkout. Thanks to Thomas Gazagnaire for reporting.
 - Improve error message of some `Topkg.OS` functions (#57).
 - Remove deprecated `--installer` configuration key.
-- `topkg lint` fix regression in error OPAM lint report.
+- `topkg lint` fix regression in error opam lint report.
 
 v0.7.5 2016-06-22 Cambridge (UK)
 --------------------------------
@@ -103,11 +103,11 @@ v0.7.4 2016-06-17 Cambridge (UK)
   set of default publication artefacts in the package description. The cli
   syntax of `topkg publish` for alternative artefacts changes from
   `alt KIND` to `alt-KIND`.
-- Distributed (and thus installed) OPAM files are now properly
+- Distributed (and thus installed) opam files are now properly
   versioned via the `version:` field.
 - Improve tarball reproducibility across systems by not relying on the
   VCS checkout state for determining the read and write rights (#43).
-- OPAM package submission: use the `opam-publish` submit message
+- opam package submission: use the `opam-publish` submit message
   to append the release notes to the submission.
 - Toy GitHub delegate: improve user authentication by trying to steal
   an existing opam-publish token.
@@ -119,7 +119,7 @@ v0.7.4 2016-06-17 Cambridge (UK)
 v0.7.3 2016-06-12 Cambridge (UK)
 --------------------------------
 
-- Change pin build detection (#44). This changes OPAM build
+- Change pin build detection (#44). This changes opam build
   instruction for packages. Substitute `"--installer" "true"` by
   `"--pinned" "%{pinned}%"` in build instructions. The
   `--installer` option is deprecated and has no effect.

@@ -30,10 +30,10 @@ val pkg_file : Fpath.t Term.t
 (** A [--pkg-file] option to specify the package description file to use. *)
 
 val pkg_name : string option Term.t
-(** A [--pkg-name] option to specify the OPAM package name. *)
+(** A [--pkg-name] option to specify the opam package name. *)
 
 val opam : Fpath.t option Term.t
-(** An [--opam] option for defining an OPAM file. *)
+(** An [--opam] option for defining an opam file. *)
 
 val dist_name : string option Term.t
 (** A [--dist-name] option to define the package name of the distribution. *)
@@ -48,7 +48,7 @@ val dist_uri : string option Term.t
 (** A [--dist-uri] option to define the distribution archive URI on the WWW. *)
 
 val dist_opam : Fpath.t option Term.t
-(** An [--dist-opam] option to define the OPAM file. *)
+(** An [--dist-opam] option to define the opam file. *)
 
 val readme : Fpath.t option Term.t
 (** A [--readme] option to define the readme. *)
@@ -57,7 +57,7 @@ val change_log : Fpath.t option Term.t
 (** A [--change-log] option to define the change log. *)
 
 val opam : Fpath.t option Term.t
-(** An [--opam] option to define an OPAM file. *)
+(** An [--opam] option to define an opam file. *)
 
 val delegate : Bos.Cmd.t option Term.t
 (** A [--delegate] option to define the delegate. *)

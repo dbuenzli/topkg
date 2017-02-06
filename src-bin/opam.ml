@@ -20,10 +20,10 @@ let descr pkg =
 
 let pkg pkg dist_pkg opam_pkg_dir =
   let log_pkg dir =
-    Logs.app (fun m -> m "Wrote OPAM package %a" Topkg_care.Pp.path dir)
+    Logs.app (fun m -> m "Wrote opam package %a" Topkg_care.Pp.path dir)
   in
   let warn_if_vcs_dirty () =
-    Cli.warn_if_vcs_dirty "The OPAM package may be inconsistent with the \
+    Cli.warn_if_vcs_dirty "The opam package may be inconsistent with the \
     distribution."
   in
   get_pkg_dir pkg opam_pkg_dir
@@ -115,7 +115,7 @@ let field =
   Arg.(value & pos 1 (some string) None & info [] ~doc ~docv:"FIELD")
 
 let pkg_opam_dir =
-  let doc = "Directory to use to write the OPAM package. If absent the
+  let doc = "Directory to use to write the opam package. If absent the
              directory $(i,BUILD_DIR)/$(i,PKG_NAME).$(i,PKG_VERSION) of the
              build directory is used (see options $(b,--build-dir),
              $(b,--pkg-name) and $(b,--pkg-version))"
@@ -124,26 +124,26 @@ let pkg_opam_dir =
   Arg.(value & opt (some Cli.path_arg) None & info ["pkg-opam-dir"] ~doc ~docv)
 
 let pkg_version =
-  let doc = "The version string $(docv) of the OPAM package. If absent provided
+  let doc = "The version string $(docv) of the opam package. If absent provided
              provided by the VCS tag description of the HEAD commit."
   in
   let docv = "PKG_NAME" in
   Arg.(value & opt (some string) None & info ["pkg-version"] ~doc ~docv)
 
 let pkg_opam =
-  let doc = "The OPAM file to use for the OPAM package. If absent uses the
-             OPAM file mentioned in the package description that corresponds
-             to the OPAM package name $(i,PKG_NAME) (see option
+  let doc = "The opam file to use for the opam package. If absent uses the
+             opam file mentioned in the package description that corresponds
+             to the opam package name $(i,PKG_NAME) (see option
              $(b,--pkg-name))"
   in
   let docv = "FILE" in
   Arg.(value & opt (some Cli.path_arg) None & info ["pkg-opam"] ~doc ~docv)
 
 let pkg_descr =
-  let doc = "The OPAM descr file to use for the OPAM package. If absent and
-             the OPAM file name (see $(b,--pkg-opam)) has a `.opam`
+  let doc = "The opam descr file to use for the opam package. If absent and
+             the opam file name (see $(b,--pkg-opam)) has a `.opam`
              extension, uses an existing file with the same path but a `.descr`
-             extension. If the OPAM file name is `opam` uses a `descr`
+             extension. If the opam file name is `opam` uses a `descr`
              file in the same directory. If these files are not found
              a description is extracted from the the readme (see
              option $(b,--readme)) as follow: the first marked up
@@ -156,27 +156,27 @@ let pkg_descr =
   let docv = "FILE" in
   Arg.(value & opt (some Cli.path_arg) None & info ["pkg-descr"] ~doc ~docv)
 
-let doc = "Interaction with OPAM and the OCaml OPAM repository"
+let doc = "Interaction with opam and the OCaml opam repository"
 let man =
   [ `S Manpage.s_synopsis;
     `P "$(mname) $(tname) [$(i,OPTION)]... $(i,ACTION)";
     `S Manpage.s_description;
     `P "The $(tname) command provides a few actions to interact with
-        OPAM and the OCaml OPAM repository.";
+        opam and the OCaml opam repository.";
     `S "ACTIONS";
     `I ("$(b,descr)",
-        "extract and print an OPAM descr file. This is used by the
+        "extract and print an opam descr file. This is used by the
          $(b,pkg) action. See the $(b,--pkg-descr) option for details.");
     `I ("$(b,pkg)",
-        "create an OPAM package description for a distribution.
+        "create an opam package description for a distribution.
          The action needs a distribution archive to operate, see
          topkg-distrib(1) or the $(b,--dist-file) option.");
     `I ("$(b,submit)",
         "submits a package created with the action $(b,pkg) the OCaml
-         OPAM repository. Requires the $(b,opam-publish) tool to be
+         opam repository. Requires the $(b,opam-publish) tool to be
          installed.");
     `I ("$(b,field) $(i,FIELD)",
-        "outputs the field $(i,FIELD) of the package's OPAM file.");
+        "outputs the field $(i,FIELD) of the package's opam file.");
     `S Manpage.s_arguments;
     `Blocks Cli.common_opts_man;
     `S Manpage.s_environment;

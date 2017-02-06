@@ -4,11 +4,11 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-(** OPAM interaction.
+(** opam interaction.
 
     See {!Topkg_care.Opam}. *)
 
-(** {1 OPAM} *)
+(** {1 opam} *)
 
 open Bos_setup
 

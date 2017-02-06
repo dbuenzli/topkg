@@ -4,7 +4,7 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-(** OPAM helpers.
+(** opam helpers.
 
     See also {!Topkg.Private.Opam}. *)
 
@@ -16,16 +16,16 @@ module File : sig
   val fields : Topkg_fpath.t -> t result
 end
 
-(** OPAM install file.
+(** opam install file.
 
-    A module to generate OPAM install files.
+    A module to generate opam install files.
 
     {b Reference}.
     {{:http://opam.ocaml.org/doc/manual/dev-manual.html#sec25}
-    Syntax and semantics} of OPAM install files. *)
+    Syntax and semantics} of opam install files. *)
 module Install : sig
 
-  (** {1 OPAM install files} *)
+  (** {1 opam install files} *)
 
   type field =
     [ `Bin
@@ -41,7 +41,7 @@ module Install : sig
     | `Stublibs
     | `Toplevel
     | `Unknown of string ]
-  (** The type for OPAM install file fields. *)
+  (** The type for opam install file fields. *)
 
   type move
   (** The type for file moves. *)
@@ -58,7 +58,7 @@ module Install : sig
       comment and a list of field moves. *)
 
   val to_string : t -> string
-  (** [to_string t] is [t] as syntactically valid OPAM install file. *)
+  (** [to_string t] is [t] as syntactically valid opam install file. *)
 end
 
 (*---------------------------------------------------------------------------

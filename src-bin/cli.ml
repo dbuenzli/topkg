@@ -33,14 +33,14 @@ let pkg_file =
        info ["pkg-file"] ~docs:common_opts ~doc ~docv)
 
 let pkg_name =
-  let doc = "The name $(docv) of the OPAM package. If absent provided
+  let doc = "The name $(docv) of the opam package. If absent provided
              by the package description."
   in
   let docv = "PKG_NAME" in
   Arg.(value & opt (some string) None & info ["n"; "pkg-name"] ~doc ~docv)
 
 let opam =
-  let doc = "The OPAM file to use. If absent uses the default OPAM file
+  let doc = "The opam file to use. If absent uses the default opam file
              mentioned in the package description."
   in
   let docv = "FILE" in
@@ -70,7 +70,7 @@ let dist_file =
   Arg.(value & opt (some path_arg) None & info ["dist-file"] ~doc ~docv)
 
 let dist_opam =
-  let doc = "OPAM file to use for the distribution. If absent uses the OPAM
+  let doc = "opam file to use for the distribution. If absent uses the opam
              file mentioned in the package description that corresponds to
              the distribution package name $(i,NAME) (see option
              $(b,--dist-name))."

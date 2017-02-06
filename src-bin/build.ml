@@ -43,7 +43,7 @@ let args =
   Arg.(value & pos_all string [] & info [] ~doc ~docv:"BUILD_CONF")
 
 let pkg_name =
-  let doc = "The name $(docv) of the package (and of the OPAM install file).
+  let doc = "The name $(docv) of the package (and of the opam install file).
              This is equivalent to specify the same option after the -- token.
              If absent provided by the package description."
   in
@@ -59,7 +59,7 @@ let build_dir =
   Arg.(value & opt (some Cli.path_arg) None & info ["build-dir"] ~doc ~docv)
 
 let dry_run =
-  let doc = "Do not run build instructions, only determine and write the OPAM
+  let doc = "Do not run build instructions, only determine and write the opam
              install file. This is equivalent to specify the same option after
              the -- token."
   in

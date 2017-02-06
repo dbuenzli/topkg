@@ -6,14 +6,14 @@
 
 open Topkg_result
 
-(* OPAM File *)
+(* opam File *)
 
 module File = struct
   type t = (string * string list) list
 
   let codec =
     Topkg_codec.version 0 @@
-    Topkg_codec.with_kind "OPAM fields" @@
+    Topkg_codec.with_kind "opam fields" @@
     Topkg_codec.(list (pair string (list string)))
 
   let topkg_cmd = Topkg_cmd.v "topkg"
@@ -37,10 +37,10 @@ module File = struct
       >>= fun s -> (Topkg_codec.dec_result codec s)
     end
     |> R.reword_error_msg ~replace:true
-      (fun msg -> R.msgf "OPAM fields of %s: %s" file msg)
+      (fun msg -> R.msgf "opam fields of %s: %s" file msg)
 end
 
-(* OPAM install file *)
+(* opam install file *)
 
 module Install = struct
 

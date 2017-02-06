@@ -88,12 +88,12 @@ module File = struct
       (* FIXME add OpamFile.OPAM.extensions when supported *)
       known_fields
     in
-    Logs.info (fun m -> m "Parsing OPAM file %a" Fpath.pp file);
+    Logs.info (fun m -> m "Parsing opam file %a" Fpath.pp file);
     try Ok (parse file) with
     | exn ->
         (* Apparently in at least opam-lib 1.2.2, the error will be logged
              on stdout. *)
-        R.error_msgf "%a: could not parse OPAM file" Fpath.pp file
+        R.error_msgf "%a: could not parse opam file" Fpath.pp file
 
   let deps ?(opts = true) fields =
     let deps = match String.Map.find "depends" fields with
@@ -111,14 +111,14 @@ module Descr = struct
   type t = string * string
 
   let of_string s = match String.cuts "\n" s with
-  | [] ->  R.error_msgf "Cannot extract OPAM descr."
+  | [] ->  R.error_msgf "Cannot extract opam descr."
   | synopsis :: descr -> Ok (synopsis, String.concat ~sep:"\n" descr)
 
   let to_string (synopsis, descr) = strf "%s\n%s" synopsis descr
 
   let of_readme ?flavour r =
     let parse_synopsis l =
-      let error l = R.error_msgf "%S: can't extract OPAM synopsis" l in
+      let error l = R.error_msgf "%S: can't extract opam synopsis" l in
       let ok s = Ok String.(Ascii.capitalize @@ String.Sub.to_string s) in
       let not_white c = not (Char.Ascii.is_white c) in
       let skip_non_white l = String.Sub.drop ~sat:not_white l in
@@ -143,7 +143,7 @@ module Descr = struct
     in
     let keep_line l = not (drop_line l) in
     match Topkg_care_text.head ?flavour r with
-    | None -> R.error_msgf "Could not extract OPAM description."
+    | None -> R.error_msgf "Could not extract opam description."
     | Some (title, text) ->
         let sep = "\n" in
         let title = Topkg_care_text.header_title ?flavour title in

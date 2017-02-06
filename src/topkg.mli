@@ -728,14 +728,14 @@ module Conf : sig
 
   val with_pkg : ?default:bool -> string -> bool key
   (** [with_pkg ~default pkg] is a boolean configuration key named
-      [(strf "with-%s" pkg)] to assert existence of OPAM packages.
+      [(strf "with-%s" pkg)] to assert existence of opam packages.
       If absent defaults to [default].
 
-      Usually specified in OPAM build instructions with:
+      Usually specified in opam build instructions with:
       {["--with-thatpkg" thatpkg:installed]} along with an entry in the
-      depopt field of the OPAM file.
+      depopt field of the opam file.
 
-      {b Warning.} Only use this combinator for denoting OPAM
+      {b Warning.} Only use this combinator for denoting opam
       package existence, the resulting key may switch to a discovery
       process in the future. *)
 
@@ -754,8 +754,8 @@ module Conf : sig
   (** [pkg_name c] is either the value of the package name as given to
       {!Pkg.describe} or the value of a predefined key [--pkg-name] which
       overrides the package name. This defines the name of the generated
-      OPAM install file. Used to handle {{!multiopam}multiple
-      OPAM packages}. *)
+      opam install file. Used to handle {{!multiopam}multiple
+      opam packages}. *)
 
   val build_dir : t -> fpath
   (** [build_dir c] is either the value of build directory as given
@@ -771,9 +771,9 @@ module Conf : sig
 
   val pinned : t -> bool
   (** [pinned c] is the value of a predefined key [--pinned].
-      It is [true] if the build is initiated by an installer like OPAM
+      It is [true] if the build is initiated by an installer like opam
       and the package is pinned. If absent defaults to [false].
-      Usually specified in OPAM build instructions with:
+      Usually specified in opam build instructions with:
 {["--pinned" "%{pinned}%"]} *)
 
   type build_context = [`Dev | `Distrib | `Pin ]
@@ -962,7 +962,7 @@ module Pkg : sig
 
   (** {1:install Installation description}
 
-      The installation description generates an OPAM install file
+      The installation description generates an opam install file
       which is simply a description of file moves (in the [mv] sense)
       from the build or source directory to standard install
       directories. Describing these moves in a given build
@@ -1058,13 +1058,13 @@ Pkg.mllib ~cond:jsoo "src/mylib_jsoo.mllib"
   val man : field
   (** [man] is a field that installs to a common [man/] directory. See
       the {{:https://opam.ocaml.org/doc/manual/dev-manual.html#sec25}
-      OPAM manual} for details. *)
+      opam manual} for details. *)
 
   val misc : field
   (** [misc] is a field that installs to an arbitrary absolute path,
       the user is prompted for authorization,
       see the {{:https://opam.ocaml.org/doc/manual/dev-manual.html#sec25}
-      OPAM manual} for details. *)
+      opam manual} for details. *)
 
   val sbin : exec_field
   (** [sbin] is a field that installs to a common [sbin/] directory. *)
@@ -1253,9 +1253,9 @@ let clean os ~build_dir = OS.Cmd.run @@ Pkg.clean_cmd os ~build_dir
          distribution. May be post-fixed by ["dirty"] in
          {{!Conf.build_context}pin builds}.}
       {- [`Opam (file, field, sep)], is the values of the field
-         [field] concatenated with separator [sep] of the OPAM file
+         [field] concatenated with separator [sep] of the opam file
          [file], expressed relative to the distribution root directory, if
-         [file] is [None] this is the package's default OPAM file, see
+         [file] is [None] this is the package's default opam file, see
          {!describe}. Not all fields are supported see the value of
          {!Topkg_care.Opam.File.field_names}.  {b Warning.} In
          {{!Conf.build_context}pin builds}, [`Opam] watermarks are only
@@ -1300,15 +1300,15 @@ let clean os ~build_dir = OS.Cmd.run @@ Pkg.clean_cmd os ~build_dir
          by the distribution version string and ["$(VERSION_NUM)"] by the
          distribution version string, chopping an initial
          ['v'] or ['V'] character if present. This argument is used to
-         generate the [url] file of an OPAM package for the distribution;
+         generate the [url] file of an opam package for the distribution;
          it will be deprecated in the future in favour of a [x-distrib-uri]
-         field in the OPAM file. If the value is unspecified it defaults to:
+         field in the opam file. If the value is unspecified it defaults to:
 {[PKG_HOMEPAGE/releases/$(NAME)-$(VERSION_NUM).tbz]}
-         where PKG_HOMEPAGE is the package's OPAM file [homepage] field.
+         where PKG_HOMEPAGE is the package's opam file [homepage] field.
          As a special case if the
          hostname of PKG_HOMEPAGE is [github] the following is used:
 {[PKG_DEV_REPO/releases/download/$(VERSION)/$(NAME)-$(VERSION_NUM).tbz]}
-         where PKG_DEV_REPO is the package's OPAM file [dev-repo] field
+         where PKG_DEV_REPO is the package's opam file [dev-repo] field
          without the [.git] suffix.}} *)
 
   val watermarks : watermark list
@@ -1387,14 +1387,14 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
   val opam_file :
     ?lint:bool -> ?lint_deps_excluding:string list option -> ?install:bool ->
     fpath -> opam_file
-  (** [opam_file ~lint ~lint_deps_excluding ~install p] is an OPAM file
+  (** [opam_file ~lint ~lint_deps_excluding ~install p] is an opam file
       [p] expressd relative to the distribution root directory such that:
       {ul
       {- If [install] is [true] (default), it is automatically installed
          in the {!lib} field.}
-      {- If [lint] is [true] (default), it is OPAM linted.}
+      {- If [lint] is [true] (default), it is opam linted.}
       {- If [lint_deps_excluding] is [Some excludes], [topkg]
-         checks that each of the OPAM package dependencies is mentioned
+         checks that each of the opam package dependencies is mentioned
          as a root package in the OCamlbuild [_tags] file and vice-versa. The
          following package names are excluded from this test:
          {ul
@@ -1433,10 +1433,10 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
          Automatic install is in the {!doc} field.}
       {- [metas] the package's ocamlfind META files, defaults to
          [[ meta_file "pkg/META" ]].}
-      {- [opams] the package's OPAM package files, defaults to
-         [[opam_file "opam"]]. The default OPAM file used by a package
+      {- [opams] the package's opam package files, defaults to
+         [[opam_file "opam"]]. The default opam file used by a package
          description depends on the package [name] (which can
-         be overriden from the command line). The OPAM file lookup
+         be overriden from the command line). The opam file lookup
          procedure selects the first path in [opams] whose filename is
          [(name ^ ".opam")] and, failing
          to do so, it fallbacks to an ["opam"] file at the root of the
@@ -1488,7 +1488,7 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
          {- Invoke the [files_to_watermark] function of [distrib] in the
             distribution build directory to determine the files to watermark
             with [watermarks] and perform the watermarking process.}
-         {- Adds a version field with value [$VERSION] to the OPAM files
+         {- Adds a version field with value [$VERSION] to the opam files
             mentioned by {!Pkg.describe}.}
          {- Run the [massage] function of [distrib] in the distribution
             build directory. This can be used to create distribution time
@@ -1702,7 +1702,7 @@ module Private : sig
     (** [licenses p] is [p]'s license files. *)
 
     val opam : name:string -> t -> fpath
-    (** [opam name p] is [p]'s OPAM file for OPAM package [name]. *)
+    (** [opam name p] is [p]'s opam file for opam package [name]. *)
 
     (** {1:distrib Distrib} *)
 
@@ -1734,7 +1734,7 @@ module Private : sig
     (** [lint_metas p] are [p]'s META file to OCamlfind lint. *)
 
     val lint_opams : t -> (fpath * bool * string list option) list
-    (** [lint_opams p] are [p]'s OPAM file OPAM lint and dependency
+    (** [lint_opams p] are [p]'s opam file opam lint and dependency
         lint. *)
 
     (** {1:codec Codec} *)
@@ -1778,19 +1778,19 @@ module Private : sig
         prepare a distribution in directory [dist_build_dir]. This
         sets the cwd to [dist_build_dir], performs the distribution
         watermarking process with [name] used for [`Name], [version] used
-        for [`Version] and [opam] as the default file for OPAM watermarks.
+        for [`Version] and [opam] as the default file for opam watermarks.
         It then performs distribution massaging and returns the file paths
         to exclude from the distribution archive. *)
   end
 
-  (** OPAM helpers. *)
+  (** opam helpers. *)
   module Opam : sig
 
-    (** {1:opam OPAM} *)
+    (** {1:opam opam} *)
 
-    (** OPAM package file access.
+    (** opam package file access.
 
-        Normally OPAM metadata access is only needed at distribution
+        Normally opam metadata access is only needed at distribution
         time and this is handled by {!Topkg_care.Opam.File} using the
         [opam-lib] library.
 
@@ -1801,24 +1801,24 @@ module Private : sig
 
         Since we don't want [Topkg] to have any dependency and that
         [opam] currently doesn't allow to consult the fields of arbitrary
-        OPAM files (see
+        opam files (see
         {{:https://github.com/ocaml/opam/issues/2446} issue #2446}) we
         assume a pin build has the [topkg] tool installed and call
-        to it to get the OPAM fields for watermarking (if [topkg] is
+        to it to get the opam fields for watermarking (if [topkg] is
         unavailable the watermarks are simply undefined). *)
     module File : sig
 
-      (** {1:file OPAM file} *)
+      (** {1:file opam file} *)
 
       type t = (string * string list) list
-      (** The type for a simplified model the fields of an OPAM
+      (** The type for a simplified model the fields of an opam
           file. See {!Topkg_care.Opam.File}. *)
 
       val codec : t Codec.t
-      (** [codec] is a codec for OPAM file fields. *)
+      (** [codec] is a codec for opam file fields. *)
 
       val fields : fpath -> ((string * string list) list) result
-      (** [fields file] are the fields of the OPAM file [file] which
+      (** [fields file] are the fields of the opam file [file] which
           are obtained by calling the [topkg] topkg executable. *)
     end
   end
@@ -1827,7 +1827,7 @@ end
 (** {1:basics Basics}
 
 {!Topkg} is a packager for distributing OCaml software. Fundamentally
-it only provides a simple and flexible mechanism to describe an OPAM
+it only provides a simple and flexible mechanism to describe an opam
 {{:http://opam.ocaml.org/doc/manual/dev-manual.html#sec25}[install]
 file} according to the build configuration which is used to infer one
 corresponding invocation of your build system.
@@ -1835,8 +1835,8 @@ corresponding invocation of your build system.
 This simple idea brings the following advantages:
 {ol
 {- It frees you from implementing an install procedure in your build
-   system: this task is delegated to {{:http://opam.ocaml.org}OPAM},
-   to the [opam-installer] tool or anything that understands an OPAM
+   system: this task is delegated to {{:http://opam.ocaml.org}opam},
+   to the [opam-installer] tool or anything that understands an opam
    install file.}
 {- It doesn't reclaim control over your build system. It only invokes
    it {e once} with a list of targets determined by the package
@@ -1871,7 +1871,7 @@ The root of you source repository should have the following layout:
     META file describing your package. See {!Pkg.describe} to configure this.}
 {- [_tags], ocamlbuild file with at least a [true : bin_annot] line.
    See {{!cmt}handling cmt and cmti} files for details.}
-{- [opam], the package's OPAM metadata. See {!build}.}
+{- [opam], the package's opam metadata. See {!build}.}
 {- [README.md], your readme file. See {!Pkg.describe} to configure this.}
 {- [LICENSE.md], your license file. See {!Pkg.describe} to configure this.}
 {- [CHANGES.md], your change log. See {!Pkg.describe} to configure this.}}
@@ -1890,16 +1890,16 @@ v}
 
 and you have a library that is [{opam,ocamlfind}]-able with correct
 version watermarks on releases and opam pins. You are now only a few
-invocations away to release it in the OCaml OPAM repository, see
+invocations away to release it in the OCaml opam repository, see
 [topkg help release] for doing so; but don't forget to document it and
 make it do something useful.
 
-{1:build OPAM and package build instructions}
+{1:build opam and package build instructions}
 
 The package needs to build-depend on [topkg] as well as [ocamlfind]
 which is used by the package description file [pkg/pkg.ml] to find the
 [topkg] library; it is likely that you are using [ocamlbuild] too. So
-the depends field of your OPAM file should at least have:
+the depends field of your opam file should at least have:
 
 {v
 depends: [
@@ -1923,28 +1923,28 @@ The ["--pinned" "%{pinned}%"] configuration key specification is used to
 inform the package description about the {{!Conf.build_context}build
 context}. This invocation of [pkg/pkg.ml] executes your build system
 with a set of targets determined from the build configuration and
-generates in the root directory of your distribution an OPAM [install]
-file that OPAM uses to install and uninstall your package.
+generates in the root directory of your distribution an opam [install]
+file that opam uses to install and uninstall your package.
 
 This is all you need to specify. Do not put anything in the remove
-field of the OPAM file. Likewise there is no need to invoke
+field of the opam file. Likewise there is no need to invoke
 [ocamlfind] with your [META] file. Your [META] file should simply be
 installed in the directory of the [lib] field which happens
 automatically by default.
 
 If you described {{!Pkg.tests}tests} then you can also add the
-following field to the OPAM file to instruct how to build and execute
+following field to the opam file to instruct how to build and execute
 them (unfortunately this involves the repetition of the build line
-at the moment with OPAM but might change in the future):
+at the moment with opam but might change in the future):
 {v
 build-test: [
  [ "ocaml" "pkg/pkg.ml" "build" "--pinned" "%{pinned}%" "--tests" "true" ]
  [ "ocaml" "pkg/pkg.ml" "test" ]]
 v}
 
-{b Beyond OPAM.} If you need to support another package system you
+{b Beyond opam.} If you need to support another package system you
 can invoke [pkg/pkg.ml] as above and then manage the installation and
-uninstallation at a given [$DESTDIR] with the generated OPAM [install]
+uninstallation at a given [$DESTDIR] with the generated opam [install]
 file using [opam-installer] tool or any other program that understand
 these files.
 
@@ -1992,7 +1992,7 @@ To debug package descriptions it useful to dry run the build. This
 prevents the package from building and only writes the [mylib.install] file
 determined according to the build configuration.
 {[
-topkg build -d    # Only write the OPAM install file
+topkg build -d    # Only write the opam install file
 topkg build -d -v # Also print the build configuration
 topkg help troubleshoot # More troubleshooting tips
 ]}
@@ -2007,19 +2007,19 @@ v}
 
 {1:installdescr Install description}
 
-An OPAM [install] file is a description of a standard UNIX install. It
+An opam [install] file is a description of a standard UNIX install. It
 has fields for each of the standard directories [lib], [bin], [man],
 [etc], etc. Each of these fields lists the files to install in the
 corresponding directory (or subdirectories). See the
 {{:http://opam.ocaml.org/doc/manual/dev-manual.html#sec25}install file
-specification} in the OPAM developer manual for more information.
+specification} in the opam developer manual for more information.
 
 A topkg install description is just a convenient and compact way to
-describe an OPAM install file according to the build configuration. In
+describe an opam install file according to the build configuration. In
 turn this also describes what needs to be built which allows topkg to
 call the build system appropriately.
 
-For each OPAM install field there is a corresponding field function
+For each opam install field there is a corresponding field function
 that you can use to generate install moves. The documentation of
 {!Pkg.field} and {!Pkg.exec_field} describes how you can use or omit
 their various arguments to simplify the description. Topkg also provides
@@ -2060,7 +2060,7 @@ fields.
 
 {2:installbin Installing binaries}
 
-In OPAM, binaries can only be installed by using the [bin], [sbin] and
+In opam, binaries can only be installed by using the [bin], [sbin] and
 [libexec] fields. Trying to install a binary in other fields will not
 set its executable bit
 ({{:https://github.com/ocaml/opam/issues/2430}discussion}).
@@ -2086,7 +2086,7 @@ the extension business for Windows platforms.
 
 An easy and readable way to handle conditional installs is to use the
 [cond] argument of {{!Pkg.field}field functions}. The following shows
-how to conditionaly build and install a binary depending on the OPAM
+how to conditionaly build and install a binary depending on the opam
 [cmdliner] package being installed:
 {[
 let cmdliner = Conf.with_pkg "cmdliner"
@@ -2100,7 +2100,7 @@ call to {!Pkg.describe}. Their value can then be accessed with the
 {!Conf.value} from the configuration given to the install move
 function you specify.
 
-For this conditional install the OPAM build instructions look like this:
+For this conditional install the opam build instructions look like this:
 {[
 depopts: [ "cmdliner" ]
 build: [[
@@ -2168,7 +2168,7 @@ OCamlbuild you should add this line to your [_tags] file:
 true : bin_annot
 ]}
 this will build them as a side effect of other build invocations. In
-the generated OPAM install file the [cmt] and [cmti] files are
+the generated opam install file the [cmt] and [cmti] files are
 prefixed by a ? so that if they are not built the install does not
 fail.
 
@@ -2180,7 +2180,7 @@ provided by {!Pkg.describe} helps you with these tasks.
 
 For example [topkg lint] makes sure that the package source repository
 or distribution follows a few established (or your) conventions and
-that the META and OPAM files of the package pass their respective
+that the META and opam files of the package pass their respective
 linter.  [topkg distrib] will create watermarked and reproducible
 distribution archives (see {!Pkg.distrib}) while [topkg publish] and
 [topkg opam] will help publishing them. All this and more is described
@@ -2267,7 +2267,7 @@ of the install [etc] directory.}
 [src/mypkg_etc.ml] with its actual value on [`Pin] and [`Distrib] builds.}
 {- We install the [etc/mypkg.conf] configuration in the install [etc]
    directory.}}
-The OPAM build instructions for the package are:
+The opam build instructions for the package are:
 {v
 build: [
   "ocaml" "pkg/pkg.ml" "build"
@@ -2275,9 +2275,9 @@ build: [
           "--etc-dir" mypkg:etc ]
 v}
 
-{2:multiopam Multiple OPAM packages for a single distribution}
+{2:multiopam Multiple opam packages for a single distribution}
 
-It is not too hard to define multiple OPAM packages for the same
+It is not too hard to define multiple opam packages for the same
 distribution. Topkg itself
 {{:https://github.com/dbuenzli/topkg/blob/master/DEVEL.md}uses this
 trick} to manage its dependencies between [topkg] and [topkg-care].
@@ -2288,7 +2288,7 @@ the package install description on the package name
 you'll likely have one [$PKG.opam] per [$PKG] at the root of your source
 repository, you should declare them in the description too, so that
 they get properly linted and used by the [topkg] tool when appropriate
-(see how the OPAM file is looked up according to the package name
+(see how the opam file is looked up according to the package name
 in {!Pkg.describe}). Here is a blueprint:
 {[
 let () =
@@ -2308,7 +2308,7 @@ let () =
   | other ->
       R.error_msgf "unknown package name: %s" other
 ]}
-The build instructions of these OPAM files need to give the name of
+The build instructions of these opam files need to give the name of
 the package to the build invocation so that the right install description
 can be selected:
 {v
@@ -2318,10 +2318,10 @@ build: [
           "--pinned" "%{pinned}%" ]
 v}
 
-In general you will use the default, main, package name and its OPAM file to
+In general you will use the default, main, package name and its opam file to
 create and publish the distribution archive file and all packages
-will use the same distribution; the OPAM packages will only differ in their
-OPAM file. Releasing the set of packages then becomes:
+will use the same distribution; the opam packages will only differ in their
+opam file. Releasing the set of packages then becomes:
 {v
 # Release the distribution and base package (use topkg bistro
 # for doing this via a single invocation)
@@ -2330,7 +2330,7 @@ topkg publish
 topkg opam pkg
 topkg opam submit
 
-# Create and release the other OPAM package based on the ditrib
+# Create and release the other opam package based on the ditrib
 topkg opam pkg --pkg-name mypkg-snd
 topkg opam submit --pkg-name mypkg-snd
 v}
@@ -2346,7 +2346,7 @@ complexity.
 
 In all these packages the readme, change log and license file are
 automatically installed in the directory of the [doc] field and the
-ocamlfind META file and OPAM file of the package are automatically installed
+ocamlfind META file and opam file of the package are automatically installed
 in the directory of the [lib] field.
 
 {{:https://github.com/dbuenzli/hmap/blob/master/pkg/pkg.ml}Hmap}
@@ -2376,9 +2376,9 @@ in the directory of the [lib] field.
 {- Single module library archive ([fmt]).}
 {- Private library archive [fmt_top] for toplevel support.}
 {- Single module library archive [fmt_tty]
-   conditional on the presence of the OPAM [base-unix] package.}
+   conditional on the presence of the opam [base-unix] package.}
 {- Single module library archive [fmt_cli] conditional
-   on the presence of the OPAM [cmdliner] package.}}
+   on the presence of the opam [cmdliner] package.}}
 
 {{:https://github.com/dbuenzli/ptime/blob/master/pkg/pkg.ml}Ptime}
 ({{:https://github.com/dbuenzli/ptime/blob/master/pkg/META}META},
@@ -2391,7 +2391,7 @@ in the directory of the [lib] field.
    with a private library archive [ptime_clock_top] for toplevel support.}
 {- Library archive [ptime_clock] targeting
    JavaScript installed in the [jsoo/] subdirectory of [lib] field conditional
-   on the presence of the OPAM [js_of_ocaml] package.}
+   on the presence of the opam [js_of_ocaml] package.}
 {- Installation of sample code in the [doc/] directory.}}
 
 {{:https://github.com/dbuenzli/uucp/blob/master/pkg/pkg.ml}Uucp}
@@ -2433,13 +2433,13 @@ topkg-care.opam})
 {ul
 {- Ignore the funky source bootstraping ([#mod_use] directives), that's
    only for using [topkg] on itself.}
-{- Makes {{!multiopam}multiple OPAM packages} for the same
+{- Makes {{!multiopam}multiple opam packages} for the same
    distribution.}
-{- Multiple OPAM file declaration and dependency linting exclusions:
+{- Multiple opam file declaration and dependency linting exclusions:
    the build system mentions packages that are not relevant to
-   all OPAM files. Manual, per package, OPAM file install in the [lib]
+   all opam files. Manual, per package, opam file install in the [lib]
    field.}
-{- Manual [META] install, a single one is installed for all OPAM packages
+{- Manual [META] install, a single one is installed for all opam packages
    by the base package [topkg]. This leverages the [if_exists] ocamlfind
    mecanism.}
 {- The [topkg] package installs the library archive [topkg] namespaced

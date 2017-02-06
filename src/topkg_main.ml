@@ -43,7 +43,7 @@ let pp_help ppf () =
   prf ppf "Build options:@,";
   prf ppf "  -d, --dry-run@,";
   prf ppf "      @[Do not run build instructions,@ only@ determine@ and@ \
-                   write@ the@ OPAM@ install@ file.@]@,@,";
+                   write@ the@ opam@ install@ file.@]@,@,";
   prf ppf "  @[%a@]@,@," Topkg_conf.pp_keys_cli_opts ();
   prf ppf "Test options:@,";
   prf ppf "  --build-dir BUILD_DIR (absent=discovered)@,";
@@ -54,7 +54,7 @@ let pp_help ppf () =
   prf ppf "  --build-dir BUILD_DIR (absent=discovered)@,";
   prf ppf "      @[Specifies the build directory BUILD_DIR.@]@,";
   prf ppf "  -n NAME, --pkg-name NAME  (absent=discovered)@,";
-  prf ppf "      @[The name NAME of the package (and hence the OPAM \
+  prf ppf "      @[The name NAME of the package (and hence the opam \
                   install file).@ If absent provided by the package@ \
                   description.@]@,";
   ()

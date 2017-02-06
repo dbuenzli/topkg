@@ -10,7 +10,7 @@ distribution, creation and publication procedures.
 The optional topkg-care package provides the `topkg` command line tool
 which helps with various aspects of a package's life cycle: creating
 and linting a distribution, releasing it on the WWW, publish its
-documentation, add it to the OCaml OPAM repository, etc.
+documentation, add it to the OCaml opam repository, etc.
 
 Topkg is distributed under the ISC license and has **no**
 dependencies. This is what your packages will need as a *build*

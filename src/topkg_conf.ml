@@ -164,7 +164,7 @@ let with_pkg ?(default = true) pkg =
 (* Predefined keys *)
 
 let pkg_name =
-  let doc = "The name $(docv) of the package (and hence the OPAM install \
+  let doc = "The name $(docv) of the package (and hence the opam install \
              file). If absent provided by the package description."
   in
   let absent () = assert false (* handled specially by [of_cli_args] *) in
@@ -184,7 +184,7 @@ let vcs =
   discovered_key "vcs" bool ~absent ~doc
 
 let pinned =
-  let doc = "Specifies that the build is a pinned package build (e.g. in OPAM)"
+  let doc = "Specifies that the build is a pinned package build (e.g. in opam)"
   in
   key "pinned" bool ~absent:false ~doc
 

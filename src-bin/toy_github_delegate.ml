@@ -11,7 +11,7 @@ open Bos_setup
 let repo_docdir_owner_repo_and_path_from_doc_uri uri =
   (* Parses the $PATH of $SCHEME://$HOST/$REPO/$PATH *)
   let uri_error uri =
-    R.msgf "Could not derive publication directory $PATH from OPAM doc \
+    R.msgf "Could not derive publication directory $PATH from opam doc \
             field value %a; expected the pattern \
             $SCHEME://$OWNER.github.io/$REPO/$PATH" String.dump uri
   in
@@ -70,7 +70,7 @@ let publish_doc_gh_pages uri name version docdir =
 
 let repo_and_owner_of_uri uri =
   let uri_error uri =
-    R.msgf "Could not derive owner and repo from OPAM dev-repo \
+    R.msgf "Could not derive owner and repo from opam dev-repo \
             field value %a; expected the pattern \
             $SCHEME://$HOST/$OWNER/$REPO[.$EXT][/$DIR]" String.dump uri
   in
@@ -274,7 +274,7 @@ let main_cmd =
      `I ("$(b,topkg publish doc)",
          "Commits and pushes the documentation to the gh-pages of the
           source repository. The publication directory PATH in the branch is
-          determined by matching the OPAM 'doc' field against the
+          determined by matching the opam 'doc' field against the
           pattern SCHEME://OWNER.github.io/REPO/PATH.");
      `I ("$(b,topkg publish distrib)",
          "This requires curl(1). Creates a GitHub release with the
@@ -302,7 +302,7 @@ let main_cmd =
          "As a last resort the username used for authentication is
           the name of the GitHub owner of the repo (determined from
           the $(i,DISTRIB_URI) URI, itself determined from the 'dev-repo'
-          field of the OPAM file, see topkg-delegate(7) and topkg's API
+          field of the opam file, see topkg-delegate(7) and topkg's API
           documentation for more details); in this case your GitHub
           password will be prompted twice on the command line by curl (ugh).");
      `S "ENVIRONMENT VARIABLES";

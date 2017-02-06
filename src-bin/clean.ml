@@ -39,7 +39,7 @@ let man =
   [ `S Manpage.s_synopsis;
     `P "$(mname) $(tname) [$(i,OPTION)]...";
     `S Manpage.s_description;
-    `P "The $(tname) command deletes the package's build and its OPAM
+    `P "The $(tname) command deletes the package's build and its opam
         install file. This is equivalent to invoke:";
     `Pre "ocaml ./pkg/pkg.ml clean";
     `Blocks (Cli.common_opts_man);

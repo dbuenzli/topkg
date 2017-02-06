@@ -29,8 +29,8 @@ let man =
   `Pre "\
 topkg distrib       # Create the distribution archive
 topkg publish       # Publish it on the WWW with its documentation
-topkg opam pkg      # Create an OPAM package
-topkg opam submit   # Submit it to OCaml's OPAM repository";
+topkg opam pkg      # Create an opam package
+topkg opam submit   # Submit it to OCaml's opam repository";
     `P "See topkg-release(7) for more information.";
     `Blocks Cli.common_opts_man;
     `Blocks (Cli.see_also ~cmds:[])]

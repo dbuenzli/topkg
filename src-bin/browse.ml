@@ -9,16 +9,16 @@ open Bos_setup
 (* Targets *)
 
 let opam_doc_field =
-  "doc", `Opam "doc", "doc OPAM file field"
+  "doc", `Opam "doc", "doc opam file field"
 
 let opam_homepage_field =
-  "homepage", `Opam "homepage", "homepage OPAM file field"
+  "homepage", `Opam "homepage", "homepage opam file field"
 
 let opam_issues_field =
-  "issues", `Opam "bug-reports", "bug-reports OPAM file field"
+  "issues", `Opam "bug-reports", "bug-reports opam file field"
 
 let opam_repo_field =
-  "repo", `Opam "dev-repo", "dev-repo OPAM file field"
+  "repo", `Opam "dev-repo", "dev-repo opam file field"
 
 let topkg_api =
   "topkg-api", `Uri "%%PKG_DOC%%", "topkg's API docs"
@@ -36,10 +36,10 @@ let ocamlbuild_man =
   "OCamlbuild manual"
 
 let opam_man =
-  "opam-man", `Uri "http://opam.ocaml.org/doc/Manual.html", "OPAM manual"
+  "opam-man", `Uri "http://opam.ocaml.org/doc/Manual.html", "opam manual"
 
 let packages =
-  "packages", `Uri "http://opam.ocaml.org/packages/", "OCaml OPAM repository"
+  "packages", `Uri "http://opam.ocaml.org/packages/", "OCaml opam repository"
 
 let planet =
   "planet", `Uri "https://ocaml.org/community/planet/", "OCaml Planet"
@@ -65,7 +65,7 @@ let parse_target, max_target_len =
   let index, max = List.fold_left add ([], 0) targets in
   fst (Cmdliner.Arg.enum index) (* This gives us trie lookup *) , max
 
-(* OPAM field uris *)
+(* opam field uris *)
 
 let opam_field_uri opam field =
   Topkg_care.Opam.File.fields opam
@@ -112,7 +112,7 @@ let man =
   in
   [ `S Manpage.s_description;
     `P "The $(tname) command opens or reloads URIs mentioned in the
-        OPAM file in a WWW browser. A few other useful logical target are
+        opam file in a WWW browser. A few other useful logical target are
         provided and arbitrary file, http or https schemed URIs can also
         be specified as the target.";
     `Blocks (List.(tl @@ rev @@ fold_left target [] targets));

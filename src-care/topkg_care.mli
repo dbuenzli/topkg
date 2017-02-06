@@ -119,7 +119,7 @@ module Pp : sig
   (** [status] formats a result status. *)
 end
 
-(** [OPAM] helpers. *)
+(** [opam] helpers. *)
 module Opam : sig
 
   (** {1:cmd Command} *)
@@ -136,21 +136,21 @@ module Opam : sig
 
   val submit : ?msg:string -> pkg_dir:Fpath.t -> (unit, R.msg) result
   (** [submit ~pkg_dir] submits the package [pkg_dir] with [opam-publish]
-      and submission message [msg] (if any) to the OCaml OPAM repository. *)
+      and submission message [msg] (if any) to the OCaml opam repository. *)
 
   (** {1:pkgs Packages} *)
 
   val ocaml_base_packages : String.set
-  (** [ocaml_base_packages] are the base OPAM packages distributed
+  (** [ocaml_base_packages] are the base opam packages distributed
       with OCaml: ["base-bigarray"], ["base-bytes"], ["base-threads"],
       ["base-unix"]. *)
 
   (** {1:file Files} *)
 
-  (** OPAM files *)
+  (** opam files *)
   module File : sig
 
-    (** {1:file OPAM file} *)
+    (** {1:file opam file} *)
 
     val field_names : String.set
     (** [field_names] is the maximal domain of the map returned by
@@ -158,7 +158,7 @@ module Opam : sig
         [opam-lib] 1.2.2). *)
 
     val fields : Fpath.t -> ((string list) String.map , R.msg) result
-    (** [fields f] returns a simplified model of the fields of the OPAM
+    (** [fields f] returns a simplified model of the fields of the opam
         file [f]. The domain of the result is included in
         {!field_names}. Note that the [depends:] and [depopts:] fields
         are returned without version constraints. *)
@@ -177,7 +177,7 @@ module Opam : sig
     (** {1:descr Descr file} *)
 
     type t = string * string
-    (** The type for OPAM [descr] files, the package synopsis and the
+    (** The type for opam [descr] files, the package synopsis and the
         description. *)
 
     val of_string : string -> (t, R.msg) result
@@ -188,11 +188,11 @@ module Opam : sig
 
     val of_readme :
       ?flavour:Text.flavour -> string -> (t, R.msg) result
-    (** [of_readme r] extracts an OPAM description file from a readme [r]
+    (** [of_readme r] extracts an opam description file from a readme [r]
         with a certain structure. *)
 
     val of_readme_file : Fpath.t -> (t, R.msg) result
-    (** [of_readme_file f] extracts an OPAM description file from
+    (** [of_readme_file f] extracts an opam description file from
         a readme file [f] using {!Text.flavour_of_fpath} and
         {!of_readme}. *)
   end
@@ -334,16 +334,16 @@ module Pkg : sig
   (** [build_dir p] is [p]'s build directory. *)
 
   val opam : t -> (Fpath.t, R.msg) result
-  (** [opam p] is [p]'s OPAM file. *)
+  (** [opam p] is [p]'s opam file. *)
 
   val opam_descr : t -> (Opam.Descr.t, R.msg) result
-  (** [opam_descr p] is [p]'s OPAM description. *)
+  (** [opam_descr p] is [p]'s opam description. *)
 
   val opam_field : t -> string -> (string list option, R.msg) result
-  (** [opam_field p f] looks up field [f] of [p]'s OPAM file. *)
+  (** [opam_field p f] looks up field [f] of [p]'s opam file. *)
 
   val opam_fields : t -> (string list String.map, R.msg) result
-  (** [opam_fields p] are [p]'s OPAM file fields. *)
+  (** [opam_fields p] are [p]'s opam file fields. *)
 
   val readmes : t -> (Fpath.t list, R.msg) result
   (** [readmes p] are [p]'s readme files. *)
@@ -399,7 +399,7 @@ module Pkg : sig
   val distrib_filename : ?opam:bool -> t -> (Fpath.t, R.msg) result
   (** [distrib_filename ~opam p] is a distribution filename for [p].
       If [opam] is [true] (defaults to [false]), the name follows
-      OPAM's naming conventions. *)
+      opam's naming conventions. *)
 
   val publish_artefacts : t ->
     ([ `Distrib | `Doc | `Alt of string ] list, R.msg) result

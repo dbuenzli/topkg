@@ -41,8 +41,8 @@ let man =
   [ `S Manpage.s_description;
     `P "The $(tname) command makes tests on a package distribution or
         source repository. It checks that standard files exist, that
-        ocamlfind META files pass the ocamlfind lint test, that OPAM package
-        files pass the OPAM lint test and that the OPAM dependencies are
+        ocamlfind META files pass the ocamlfind lint test, that opam package
+        files pass the opam lint test and that the opam dependencies are
         consistent with those of the build system.";
     `P "Linting is automatically performed on distribution generation, see
         topkg-distrib(1) for more details.";
