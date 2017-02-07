@@ -826,6 +826,12 @@ module Conf : sig
       absent the value is [false] or the value of the environment variable
       TOPKG_CONF_PROFILE if specified. *)
 
+  val coverage : t -> bool
+  (** [coverage c] is the value of a predefined key [--coverage] that indicates
+      if the build artefacts include run-time coverage support using bisect_ppx.
+      If absent the value is [false] or the value of the environment variable
+      TOPKG_CONF_COVERAGE if specified. *)
+
   val dump : Format.formatter -> t -> unit
   (** [dump ppf c] formats an unspecified representation of [c] on [ppf]. *)
 
@@ -1202,8 +1208,9 @@ let clean os ~build_dir = OS.Cmd.run @@ Pkg.clean_cmd os ~build_dir
   let build_dir = Conf.build_dir c in
   let debug = Cmd.(on (Conf.debug c) (v "-tag" % "debug")) in
   let profile = Cmd.(on (Conf.profile c) (v "-tag" % "profile")) in
+  let coverage = Cmd.(on (Conf.coverage c) (v "-pkg" % "bisect_ppx")) in
   Cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %% debug %%
-                    profile % "-build-dir" % build_dir)]} *)
+                    profile %% coverage % "-build-dir" % build_dir)]} *)
 
   val clean_cmd : Conf.os -> build_dir:fpath -> Cmd.t
   (** [clean_cmd os ~build_dir] is the default clean command. Its value

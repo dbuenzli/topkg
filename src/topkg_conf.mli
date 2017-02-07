@@ -72,6 +72,7 @@ val build_tests : t -> bool
 val debug : t -> bool
 val debugger_support : t -> bool
 val profile : t -> bool
+val coverage : t -> bool
 
 
 (** {1 OCaml configuration} *)
