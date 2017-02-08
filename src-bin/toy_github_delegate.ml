@@ -265,6 +265,11 @@ let ipc_cmd =
 
 let main_cmd =
   let doc = "Topkg's toy GitHub delegate" in
+  let envs =
+    [ Term.env_info "TOPKG_GITHUB_AUTH" ~doc:"GitHub authentication data, see
+      the section GITHUB AUTHENTICATION for details." ]
+  in
+  let man_xrefs = [ `Tool "topkg" ] in
   let man =
    [ `S "DESCRIPTION";
      `P "$(mname) is a toy topkg delegate for GitHub. It will disappear
@@ -306,14 +311,10 @@ let main_cmd =
           documentation for more details); in this case your GitHub
           password will be prompted twice on the command line by curl (ugh).")]
   in
-  let envs =
-    [ Term.env_info "TOPKG_GITHUB_AUTH" ~doc:"GitHub authentication data, see
-      the section GITHUB AUTHENTICATION for details." ]
-  in
   let version = "%%VERSION%%" in
-  let info = Term.info "toy-github-topkg-delegate" ~version ~doc ~man ~envs in
-  let t = Term.(ret (const main_cmd $ const ())) in
-  (t, info)
+  Term.(ret (const main_cmd $ const ())),
+  Term.info "toy-github-topkg-delegate" ~version ~doc ~envs ~man ~man_xrefs
+
 
 let main () =
   Topkg.Private.disable_main ();

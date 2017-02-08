@@ -29,12 +29,13 @@ let clean () pkg_file name build_dir =
   end
   |> Cli.handle_error
 
-
 (* Command line interface *)
 
 open Cmdliner
 
 let doc = "Clean the package's build"
+let sdocs = Cli.common_opts
+let man_xrefs = [`Main; `Cmd "build"]
 let man =
   [ `S Manpage.s_synopsis;
     `P "$(mname) $(tname) [$(i,OPTION)]...";
@@ -42,11 +43,10 @@ let man =
     `P "The $(tname) command deletes the package's build and its opam
         install file. This is equivalent to invoke:";
     `Pre "ocaml ./pkg/pkg.ml clean";
-    `Blocks (Cli.common_opts_man);
-    `Blocks (Cli.see_also ~cmds:["topkg-build"]); ]
+    `Blocks (Cli.common_opts_man) ]
 
 let cmd =
-  let info = Term.info "clean" ~sdocs:Cli.common_opts ~doc ~man in
+  let info = Term.info "clean" ~doc ~sdocs ~man ~man_xrefs in
   let t = Term.(pure clean $ Cli.setup $ Cli.pkg_file $ Cli.pkg_name $
                 Cli.build_dir)
   in

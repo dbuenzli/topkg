@@ -16,6 +16,7 @@ let main () = `Help (`Pager, None)
 (* Command line interface *)
 
 let doc = "Topkg package care"
+let sdocs = Cli.common_opts
 let man =
   [ `S Manpage.s_description;
     `P "$(mname) takes care of topkg packages.";
@@ -34,7 +35,7 @@ let man =
 
 let main =
   let version = "%%VERSION%%" in
-  let info = Term.info "topkg" ~version ~doc ~sdocs:Cli.common_opts ~man in
+  let info = Term.info "topkg" ~version ~doc ~sdocs ~man in
   let t = Term.(ret (const main $ Cli.setup)) in
   (t, info)
 

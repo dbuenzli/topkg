@@ -360,16 +360,16 @@ let topic =
   Arg.(value & pos 0 (some string) None & info [] ~docv:"TOPIC" ~doc)
 
 let doc = "Show help about topkg"
+let sdocs = Cli.common_opts
+let man_xrefs = [`Main]
 let man =
   [ `S Manpage.s_description;
     `P "The $(tname) command shows help about $(mname).";
-    `P "Use `topics' as $(i,TOPIC) to get a list of topics.";
-    `Blocks (Cli.see_also ~cmds:[]) ]
+    `P "Use `topics' as $(i,TOPIC) to get a list of topics." ]
 
 let cmd =
-  let info = Term.info "help" ~doc ~man in
-  let t = Term.(ret (const help $ Term.man_format $ topic $
-                      Term.choice_names))
+  let info = Term.info "help" ~doc ~man ~man_xrefs in
+  let t = Term.(ret (const help $ Term.man_format $ topic $ Term.choice_names))
   in
   (t, info)
 

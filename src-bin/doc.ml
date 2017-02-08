@@ -97,6 +97,8 @@ let dev =
   Arg.(value & flag & info ["d"; "dev"] ~doc)
 
 let doc = "Build the package's API documentation"
+let sdocs = Cli.common_opts
+let man_xrefs = [ `Main ]
 let man =
   [ `S Manpage.s_description;
     `P "The $(tname) command builds the package's API documentation. Use
@@ -112,11 +114,10 @@ let man =
         files that are copied over to the generated documentation directory.";
     `P "If the doc/ directory has no doc/style.css file but odig(1) is
         installed, its ocamldoc stylesheet is used.";
-    `Blocks (Cli.common_opts_man);
-    `Blocks (Cli.see_also ~cmds:[]); ]
+    `Blocks Cli.common_opts_man; ]
 
 let cmd =
-  let info = Term.info "doc" ~sdocs:Cli.common_opts ~doc ~man in
+  let info = Term.info "doc" ~doc ~sdocs ~man ~man_xrefs in
   let t = Term.(pure doc_cmd $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $
                 dev $ reload_browser $ Webbrowser_cli.background $
                 Webbrowser_cli.browser)

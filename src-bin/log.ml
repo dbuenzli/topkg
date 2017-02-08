@@ -74,6 +74,13 @@ let last_version =
   Arg.(value & flag & info ["t"; "last-version"] ~doc)
 
 let doc = "Show and edit the package's change log"
+let sdocs = Cli.common_opts
+let envs =
+  [ Term.env_info "EDITOR" ~doc:"The editor used to edit the change log.";
+    Term.env_info "PAGER" ~doc:"The pager used to consult the change log.";
+    Term.env_info "TERM" ~doc:"See option $(b,--no-pager)." ]
+
+let man_xrefs = [ `Main; `Cmd "publish"; `Cmd "tag"; `Cmd "opam"; ]
 let man =
   [ `S Manpage.s_description;
     `P "The $(tname) command shows, edits and commits
@@ -112,18 +119,10 @@ etc.";
     `I ("$(b,edit)", "edit the package's change log.");
     `I ("$(b,commit)", "commit changes made to the package's change log to the
                         VCS.");
-    `S Manpage.s_arguments;
-    `Blocks Cli.common_opts_man;
-    `S Manpage.s_environment;
-    `Blocks (Cli.see_also ~cmds:["topkg-publish"; "topkg-tag"; "topkg-opam"]) ]
-
-let envs =
-  [ Term.env_info "EDITOR" ~doc:"The editor used to edit the change log.";
-    Term.env_info "PAGER" ~doc:"The pager used to consult the change log.";
-    Term.env_info "TERM" ~doc:"See option $(b,--no-pager)." ]
+    `Blocks Cli.common_opts_man ]
 
 let cmd =
-  let info = Term.info "log" ~sdocs:Cli.common_opts ~doc ~man ~envs in
+  let info = Term.info "log" ~doc ~sdocs ~envs ~man in
   let t = Term.(pure log $ Cli.setup $ Cli.pkg_file $ Cli.change_log $ action $
                 last $ last_version $ no_pager)
   in

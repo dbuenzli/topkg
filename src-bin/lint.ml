@@ -37,6 +37,8 @@ let ignore_pkg =
   Arg.(value & flag & info ["i"; "ignore-pkg" ] ~doc)
 
 let doc = "Check package distribution consistency and conventions"
+let sdocs = Cli.common_opts
+let man_xrefs = [`Main; `Cmd "distrib"]
 let man =
   [ `S Manpage.s_description;
     `P "The $(tname) command makes tests on a package distribution or
@@ -46,16 +48,15 @@ let man =
         consistent with those of the build system.";
     `P "Linting is automatically performed on distribution generation, see
         topkg-distrib(1) for more details.";
-    `Blocks (Cli.common_opts_man);
+    `Blocks Cli.common_opts_man;
     `S Manpage.s_exit_status;
     `P "The $(tname) command exits with one of the following values:";
     `I ("0", "the lint succeeded.");
     `I ("1", "the lint failed.");
-    `I (">1", "an error occured.");
-    `Blocks (Cli.see_also ~cmds:["topkg-distrib"]); ]
+    `I (">1", "an error occured."); ]
 
 let cmd =
-  let info = Term.info "lint" ~sdocs:Cli.common_opts ~doc ~man in
+  let info = Term.info "lint" ~doc ~sdocs ~man ~man_xrefs in
   let t = Term.(pure lint $ Cli.setup $ Cli.pkg_file $ ignore_pkg $ lints) in
   (t, info)
 

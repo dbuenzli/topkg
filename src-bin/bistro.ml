@@ -23,6 +23,8 @@ let bistro () =
 open Cmdliner
 
 let doc = "For when you are in a hurry or need to go for a drink"
+let sdocs = Cli.common_opts
+let man_xrefs = [ `Main; `Cmd "distrib"; `Cmd "publish"; `Cmd "opam" ]
 let man =
   [ `S Manpage.s_description;
     `P "The $(tname) command (quick in Russian) is equivalent to invoke:";
@@ -32,11 +34,10 @@ topkg publish       # Publish it on the WWW with its documentation
 topkg opam pkg      # Create an opam package
 topkg opam submit   # Submit it to OCaml's opam repository";
     `P "See topkg-release(7) for more information.";
-    `Blocks Cli.common_opts_man;
-    `Blocks (Cli.see_also ~cmds:[])]
+    `Blocks Cli.common_opts_man;]
 
 let cmd =
-  let info = Term.info "bistro" ~sdocs:Cli.common_opts ~doc ~man in
+  let info = Term.info "bistro" ~doc ~sdocs ~man ~man_xrefs in
   let t = Term.(pure bistro $ Cli.setup) in
   (t, info)
 

@@ -101,6 +101,15 @@ let skip_tests =
   Arg.(value & flag & info ["skip-tests"] ~doc)
 
 let doc = "Create a package distribution archive"
+let sdocs = Cli.common_opts
+let envs =
+  [ Term.env_info "TOPKG_BZIP2" ~doc:"The $(b,bzip2) tool to use to compress the
+    archive. Gets the archive on stdin and must output the result on
+    standard out.";
+    Term.env_info "TOPKG_TAR" ~doc:"The $(b,tar) tool to use to unarchive a tbz
+    archive (archive creation itself is handled by topkg)."; ]
+
+let man_xrefs = [ `Main ]
 let man =
   [ `S Manpage.s_description;
     `P "The $(tname) command creates a package distribution
@@ -149,15 +158,8 @@ let man =
     `I ("Topkg changes", "Topkg could change its distribution procedure in
          the future, for example to correct bugs."); ]
 
-let envs =
-  [ Term.env_info "TOPKG_BZIP2" ~doc:"The $(b,bzip2) tool to use to compress the
-    archive. Gets the archive on stdin and must output the result on
-    standard out.";
-    Term.env_info "TOPKG_TAR" ~doc:"The $(b,tar) tool to use to unarchive a tbz
-    archive (archive creation itself is handled by topkg)."; ]
-
 let cmd =
-  let info = Term.info "distrib" ~sdocs:Cli.common_opts ~doc ~man ~envs in
+  let info = Term.info "distrib" ~doc ~sdocs ~envs ~man ~man_xrefs  in
   let t = Term.(pure distrib $ Cli.setup $ Cli.pkg_file $
                 Cli.dist_opam $ Cli.build_dir $ Cli.dist_name $
                 Cli.dist_version $ keep_build_dir $ skip_lint $ skip_build $

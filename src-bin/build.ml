@@ -81,6 +81,8 @@ let debug =
   Arg.(value & opt (some bool) None  & info ["debug"] ~env ~doc ~docv:"BOOL")
 
 let doc = "Build the package"
+let sdocs = Cli.common_opts
+let man_xrefs = [ `Main ]
 let man =
   [ `S Manpage.s_synopsis;
     `P "$(mname) $(tname) [$(i,OPTION)]... [-- $(i,BUILD_CONF)...]";
@@ -93,11 +95,10 @@ let man =
     `P "The $(tname) command exits with one of the following values:";
     `I ("0", "the build succeeded.");
     `I ("1", "the build failed.");
-    `I (">1", "an error occured.");
-    `Blocks (Cli.see_also ~cmds:[]); ]
+    `I (">1", "an error occured.") ]
 
 let cmd =
-  let info = Term.info "build" ~sdocs:Cli.common_opts ~doc ~man in
+  let info = Term.info "build" ~doc ~sdocs ~man ~man_xrefs in
   let t = Term.(pure build $ Cli.setup $ Cli.pkg_file $ pkg_name $ build_dir $
                 dry_run $ tests $ debug $ args)
   in

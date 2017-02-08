@@ -90,6 +90,12 @@ let artefacts =
   Arg.(value & pos_all artefact [] & info [] ~doc ~docv:"ARTEFACT")
 
 let doc = "Publish package distribution archives and derived artefacts"
+let sdocs = Cli.common_opts
+let envs =
+  [ Term.env_info "TOPKG_DELEGATE" ~doc:"The package delegate to use, see
+    topkg-delegate(7)."; ]
+
+let man_xrefs = [`Main; `Cmd "distrib" ]
 let man =
   [ `S Manpage.s_synopsis;
     `P "$(mname) $(tname) [$(i,OPTION)]... [$(i,ARTEFACT)]...";
@@ -110,16 +116,10 @@ let man =
          is left to the delegate, it could be anything, an email,
          a pointless tweet, a feed entry etc. See topkg-delegate(7) for
          more details.");
-    `S Manpage.s_arguments;
-    `Blocks Cli.common_opts_man;
-    `Blocks (Cli.see_also ~cmds:["topkg-distrib"]); ]
-
-let envs =
-  [ Term.env_info "TOPKG_DELEGATE" ~doc:"The package delegate to use, see
-    topkg-delegate(7)."; ]
+    `Blocks Cli.common_opts_man; ]
 
 let cmd =
-  let info = Term.info "publish" ~sdocs:Cli.common_opts ~doc ~man ~envs in
+  let info = Term.info "publish" ~doc ~sdocs ~envs ~man ~man_xrefs in
   let t = Term.(pure publish $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $
                 Cli.dist_name $ Cli.dist_version $ Cli.dist_opam $
                 Cli.delegate $ Cli.change_log $ Cli.dist_uri $ Cli.dist_file $

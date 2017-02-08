@@ -104,6 +104,8 @@ let target =
   Arg.(value & pos 0 string "homepage" & info [] ~doc ~docv:"TARGET or URI")
 
 let doc = "Browse the package's WWW links"
+let sdocs = Cli.common_opts
+let man_xrefs = [ `Main ]
 let man =
   let target acc (t, _, doc) =
     if doc = "" then acc else
@@ -116,11 +118,10 @@ let man =
         provided and arbitrary file, http or https schemed URIs can also
         be specified as the target.";
     `Blocks (List.(tl @@ rev @@ fold_left target [] targets));
-    `Blocks Cli.common_opts_man;
-    `Blocks (Cli.see_also ~cmds:[]) ]
+    `Blocks Cli.common_opts_man ]
 
 let cmd =
-  let info = Term.info "browse" ~sdocs:Cli.common_opts ~doc ~man in
+  let info = Term.info "browse" ~doc ~sdocs ~man ~man_xrefs in
   let t = Term.(pure browse $ Cli.setup $ Cli.pkg_file $ Cli.opam $
                 Webbrowser_cli.browser $ Webbrowser_cli.prefix $
                 Webbrowser_cli.background $ target)

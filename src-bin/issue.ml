@@ -113,6 +113,13 @@ let msg =
   Arg.(value & opt (some string) None & info ["m"; "message"] ~doc ~docv)
 
 let doc = "Interact with the package's issue tracker"
+let sdocs = Cli.common_opts
+let envs =
+  [ Term.env_info "EDITOR" ~doc:"The editor used to edit issue messages.";
+    Term.env_info "TOPKG_DELEGATE" ~doc:"The package delegate to use, see
+    topkg-delegate(7)." ]
+
+let man_xrefs = [ `Main ]
 let man =
   [ `S Manpage.s_synopsis;
     `P "$(mname) $(tname) [$(i,OPTION)]... [$(i,ACTION)]...";
@@ -133,16 +140,10 @@ let man =
         "Close issue $(i,ID).");
     `S "ARGUMENTS";
     `S "OPTIONS";
-    `Blocks Cli.common_opts_man;
-    `Blocks (Cli.see_also ~cmds:[])]
-
-let envs =
-  [ Term.env_info "EDITOR" ~doc:"The editor used to edit issue messages.";
-    Term.env_info "TOPKG_DELEGATE" ~doc:"The package delegate to use, see
-    topkg-delegate(7)." ]
+    `Blocks Cli.common_opts_man; ]
 
 let cmd =
-  let info = Term.info "issue" ~sdocs:Cli.common_opts ~doc ~man ~envs in
+  let info = Term.info "issue" ~doc ~sdocs ~envs ~man ~man_xrefs in
   let t = Term.(pure issue $ Cli.setup $ Cli.pkg_file $ Cli.opam $
                 Cli.delegate $ action $ id $ msg) in
   (t, info)

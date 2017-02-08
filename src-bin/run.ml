@@ -82,6 +82,8 @@ let exec =
   Arg.(required & pos 0 (some string) None & info [] ~doc ~docv)
 
 let doc = "Run built executables"
+let sdocs = Cli.common_opts
+let man_xrefs = [ `Main ]
 let man =
   [ `S Manpage.s_synopsis;
     `P "$(mname) $(tname) [$(i,OPTION)]... $(i,EXEC) \
@@ -91,16 +93,15 @@ let man =
         in the build directory.";
     `P "$(b,WARNING) The way this command works is subject to change
         in the future.";
-    `Blocks (Cli.common_opts_man);
+    `Blocks Cli.common_opts_man;
     `S Manpage.s_exit_status;
     `P "The $(tname) command exits with one of the following values:";
     `I ("0", "the run exited normally.");
     `I ("1", "the run exited abnormally.");
-    `I (">1", "an error occured.");
-    `Blocks (Cli.see_also ~cmds:[]); ]
+    `I (">1", "an error occured.") ]
 
 let cmd =
-  let info = Term.info "run" ~sdocs:Cli.common_opts ~doc ~man in
+  let info = Term.info "run" ~doc ~sdocs ~man ~man_xrefs in
   let t = Term.(pure run $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $
                 exec $ args)
   in

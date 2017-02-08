@@ -38,14 +38,15 @@ let args =
   Arg.(value (pos_all string [] & info [] ~doc ~docv:"ARG"))
 
 let doc = "Interprocess communication with package description files"
+let sdocs = Cli.common_opts
+let man_xrefs = [`Main]
 let man =
   [ `S Manpage.s_description;
     `P "The $(tname) command is used by package description files. It is
-        undocumented.";
-    `Blocks (Cli.see_also ~cmds:[]) ]
+        undocumented." ]
 
 let cmd =
-  let info = Term.info "ipc" ~sdocs:Cli.common_opts ~doc ~man in
+  let info = Term.info "ipc" ~doc ~sdocs ~man ~man_xrefs in
   let t = Term.(ret (pure ipc $ Cli.setup $ args)) in
   (t, info)
 
