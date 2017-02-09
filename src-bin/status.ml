@@ -72,22 +72,21 @@ let until =
 
 let doc = "List commits to publish in the next distribution"
 let sdocs = Cli.common_opts
+let exits =
+  (Term.exit_info 0 ~doc:"changes have been detected.") ::
+  (Term.exit_info 1 ~doc:"no changes have been detected.") ::
+  Term.default_error_exits
+
 let man_xrefs = [ `Main ]
 let man =
   [ `S Manpage.s_description;
     `P "The $(tname) command consults the package's VCS and outputs the
         list of commits that define the changes for the next distribution.";
-    `Blocks Cli.common_opts_man;
-    `S Manpage.s_exit_status;
-    `P "The $(tname) command exits with one of the following values:";
-    `I ("0", "changes have been detected.");
-    `I ("1", "no changes have been detected.");
-    `I (">1", "an error occured.") ]
+    `Blocks Cli.common_opts_man ]
 
 let cmd =
-  let info = Term.info "status" ~doc ~sdocs ~man ~man_xrefs in
-  let t = Term.(pure status $ Cli.setup $ Cli.pkg_file $ after $ until) in
-  (t, info)
+  Term.(pure status $ Cli.setup $ Cli.pkg_file $ after $ until),
+  Term.info "status" ~doc ~sdocs ~exits ~man ~man_xrefs
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

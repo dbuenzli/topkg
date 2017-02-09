@@ -98,6 +98,7 @@ let dev =
 
 let doc = "Build the package's API documentation"
 let sdocs = Cli.common_opts
+let exits = Cli.exits
 let man_xrefs = [ `Main ]
 let man =
   [ `S Manpage.s_description;
@@ -117,12 +118,9 @@ let man =
     `Blocks Cli.common_opts_man; ]
 
 let cmd =
-  let info = Term.info "doc" ~doc ~sdocs ~man ~man_xrefs in
-  let t = Term.(pure doc_cmd $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $
-                dev $ reload_browser $ Webbrowser_cli.background $
-                Webbrowser_cli.browser)
-  in
-  (t, info)
+  Term.(pure doc_cmd $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $ dev $
+        reload_browser $ Webbrowser_cli.background $ Webbrowser_cli.browser),
+  Term.info "doc" ~doc ~sdocs ~exits ~man ~man_xrefs
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

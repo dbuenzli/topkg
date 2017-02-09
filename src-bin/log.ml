@@ -75,6 +75,7 @@ let last_version =
 
 let doc = "Show and edit the package's change log"
 let sdocs = Cli.common_opts
+let exits = Cli.exits
 let envs =
   [ Term.env_info "EDITOR" ~doc:"The editor used to edit the change log.";
     Term.env_info "PAGER" ~doc:"The pager used to consult the change log.";
@@ -122,11 +123,9 @@ etc.";
     `Blocks Cli.common_opts_man ]
 
 let cmd =
-  let info = Term.info "log" ~doc ~sdocs ~envs ~man in
-  let t = Term.(pure log $ Cli.setup $ Cli.pkg_file $ Cli.change_log $ action $
-                last $ last_version $ no_pager)
-  in
-  (t, info)
+  Term.(pure log $ Cli.setup $ Cli.pkg_file $ Cli.change_log $ action $
+        last $ last_version $ no_pager),
+  Term.info "log" ~doc ~sdocs ~exits ~envs ~man
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

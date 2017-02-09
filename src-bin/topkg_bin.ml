@@ -17,6 +17,7 @@ let main () = `Help (`Pager, None)
 
 let doc = "Topkg package care"
 let sdocs = Cli.common_opts
+let exits = Cli.exits
 let man =
   [ `S Manpage.s_description;
     `P "$(mname) takes care of topkg packages.";
@@ -34,17 +35,12 @@ let man =
     `P "Daniel C. Buenzli, $(i,http://erratique.ch)"; ]
 
 let main =
-  let version = "%%VERSION%%" in
-  let info = Term.info "topkg" ~version ~doc ~sdocs ~man in
-  let t = Term.(ret (const main $ Cli.setup)) in
-  (t, info)
+  Term.(ret (const main $ Cli.setup)),
+  Term.info "topkg" ~version:"%%VERSION%%" ~doc ~sdocs ~exits ~man
 
 let main () =
   Topkg.Private.disable_main ();
-  match Term.eval_choice main cmds with
-  | `Error _ -> exit 3
-  | `Ok ret when ret <> 0 -> exit ret
-  | _ -> if Logs.err_count () > 0 then exit 3 else exit 0
+  Term.(exit @@ eval_choice main cmds)
 
 let () = main ()
 

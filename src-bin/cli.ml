@@ -182,7 +182,14 @@ let warn_if_vcs_dirty msg =
         (fun m -> m "The repo is %a. %a" Topkg_care.Pp.dirty () Fmt.text msg);
       Ok ()
 
-let handle_error r = Logs.on_error_msg ~use:(fun _ -> 3) r
+let handle_error = function
+| Ok 0 -> if Logs.err_count () > 0 then 3 else 0
+| Ok n -> n
+| Error _ as r -> Logs.on_error_msg ~use:(fun _ -> 3) r
+
+let exits =
+  Term.exit_info 3 ~doc:"on indiscriminate errors reported on stderr." ::
+  Term.default_exits
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

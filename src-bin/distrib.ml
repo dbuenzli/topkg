@@ -102,6 +102,7 @@ let skip_tests =
 
 let doc = "Create a package distribution archive"
 let sdocs = Cli.common_opts
+let exits = Cli.exits
 let envs =
   [ Term.env_info "TOPKG_BZIP2" ~doc:"The $(b,bzip2) tool to use to compress the
     archive. Gets the archive on stdin and must output the result on
@@ -159,13 +160,10 @@ let man =
          the future, for example to correct bugs."); ]
 
 let cmd =
-  let info = Term.info "distrib" ~doc ~sdocs ~envs ~man ~man_xrefs  in
-  let t = Term.(pure distrib $ Cli.setup $ Cli.pkg_file $
-                Cli.dist_opam $ Cli.build_dir $ Cli.dist_name $
-                Cli.dist_version $ keep_build_dir $ skip_lint $ skip_build $
-                skip_tests)
-  in
-  (t, info)
+  Term.(pure distrib $ Cli.setup $ Cli.pkg_file $ Cli.dist_opam $
+        Cli.build_dir $ Cli.dist_name $ Cli.dist_version $ keep_build_dir $
+        skip_lint $ skip_build $ skip_tests),
+  Term.info "distrib" ~doc ~sdocs ~exits ~envs ~man ~man_xrefs
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

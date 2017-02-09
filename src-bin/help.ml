@@ -361,6 +361,7 @@ let topic =
 
 let doc = "Show help about topkg"
 let sdocs = Cli.common_opts
+let exits = Cli.exits
 let man_xrefs = [`Main]
 let man =
   [ `S Manpage.s_description;
@@ -368,10 +369,8 @@ let man =
     `P "Use `topics' as $(i,TOPIC) to get a list of topics." ]
 
 let cmd =
-  let info = Term.info "help" ~doc ~man ~man_xrefs in
-  let t = Term.(ret (const help $ Term.man_format $ topic $ Term.choice_names))
-  in
-  (t, info)
+  Term.(ret (const help $ Term.man_format $ topic $ Term.choice_names)),
+  Term.info "help" ~doc ~exits ~man ~man_xrefs
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

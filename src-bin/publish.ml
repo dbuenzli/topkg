@@ -91,6 +91,7 @@ let artefacts =
 
 let doc = "Publish package distribution archives and derived artefacts"
 let sdocs = Cli.common_opts
+let exits = Cli.exits
 let envs =
   [ Term.env_info "TOPKG_DELEGATE" ~doc:"The package delegate to use, see
     topkg-delegate(7)."; ]
@@ -119,13 +120,11 @@ let man =
     `Blocks Cli.common_opts_man; ]
 
 let cmd =
-  let info = Term.info "publish" ~doc ~sdocs ~envs ~man ~man_xrefs in
-  let t = Term.(pure publish $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $
-                Cli.dist_name $ Cli.dist_version $ Cli.dist_opam $
-                Cli.delegate $ Cli.change_log $ Cli.dist_uri $ Cli.dist_file $
-                Cli.publish_msg $ artefacts)
-  in
-  (t, info)
+  Term.(pure publish $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $
+        Cli.dist_name $ Cli.dist_version $ Cli.dist_opam $
+        Cli.delegate $ Cli.change_log $ Cli.dist_uri $ Cli.dist_file $
+        Cli.publish_msg $ artefacts),
+  Term.info "publish" ~doc ~sdocs ~exits ~envs ~man ~man_xrefs
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

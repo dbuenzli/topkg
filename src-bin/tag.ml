@@ -66,6 +66,7 @@ let delete =
 
 let doc = "Tag the package's source repository with a version"
 let sdocs = Cli.common_opts
+let exits = Cli.exits
 let man_xrefs = [ `Main; `Cmd "log" ]
 let man =
   [ `S Manpage.s_description;
@@ -76,11 +77,9 @@ let man =
     `Blocks Cli.common_opts_man ]
 
 let cmd =
-  let info = Term.info "tag" ~doc ~sdocs ~man ~man_xrefs in
-  let t = Term.(pure tag $ Cli.setup $ Cli.pkg_file $ Cli.change_log $
-                version $ commit $ force $ sign $ delete $ msg)
-  in
-  (t, info)
+  Term.(pure tag $ Cli.setup $ Cli.pkg_file $ Cli.change_log $
+        version $ commit $ force $ sign $ delete $ msg),
+  Term.info "tag" ~doc ~sdocs ~exits ~man ~man_xrefs
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

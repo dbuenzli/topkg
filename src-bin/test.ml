@@ -56,6 +56,7 @@ let list =
 
 let doc = "Run built package tests"
 let sdocs = Cli.common_opts
+let exits = Term.exit_info 1 ~doc:"on test failure." :: Cli.exits
 let man_xrefs = [ `Main ]
 let man =
   [ `S Manpage.s_synopsis;
@@ -73,18 +74,12 @@ let man =
        test 'mytest' use one of the following invocation:";
     `Pre "topkg test -- mytest -- arg"; `Noblank;
     `Pre "topkg test mytest -- -- arg";
-    `Blocks Cli.common_opts_man;
-    `S Manpage.s_exit_status;
-    `P "The $(tname) command exits with one of the following values:";
-    `I ("0", "the tests succeeded.");
-    `I ("1", "the tests failed.");
-    `I (">1", "an error occured."); ]
+    `Blocks Cli.common_opts_man ]
 
 let cmd =
-  let info = Term.info "test" ~doc ~sdocs ~man ~man_xrefs in
-  let t = Term.(pure test $ Cli.setup $ Cli.pkg_file $ build_dir $ list $ args)
-  in
-  (t, info)
+  Term.(pure test $ Cli.setup $ Cli.pkg_file $ build_dir $ list $ args),
+  Term.info "test" ~doc ~sdocs ~exits ~man ~man_xrefs
+
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

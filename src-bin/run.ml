@@ -83,6 +83,7 @@ let exec =
 
 let doc = "Run built executables"
 let sdocs = Cli.common_opts
+let exits = Term.exit_info 1 ~doc:"on run non-zero status exit." :: Cli.exits
 let man_xrefs = [ `Main ]
 let man =
   [ `S Manpage.s_synopsis;
@@ -93,19 +94,11 @@ let man =
         in the build directory.";
     `P "$(b,WARNING) The way this command works is subject to change
         in the future.";
-    `Blocks Cli.common_opts_man;
-    `S Manpage.s_exit_status;
-    `P "The $(tname) command exits with one of the following values:";
-    `I ("0", "the run exited normally.");
-    `I ("1", "the run exited abnormally.");
-    `I (">1", "an error occured.") ]
+    `Blocks Cli.common_opts_man; ]
 
 let cmd =
-  let info = Term.info "run" ~doc ~sdocs ~man ~man_xrefs in
-  let t = Term.(pure run $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $
-                exec $ args)
-  in
-  (t, info)
+  Term.(pure run $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $ exec $ args),
+  Term.info "run" ~doc ~sdocs ~exits ~man ~man_xrefs
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

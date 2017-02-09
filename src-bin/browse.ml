@@ -105,6 +105,7 @@ let target =
 
 let doc = "Browse the package's WWW links"
 let sdocs = Cli.common_opts
+let exits = Cli.exits
 let man_xrefs = [ `Main ]
 let man =
   let target acc (t, _, doc) =
@@ -121,12 +122,10 @@ let man =
     `Blocks Cli.common_opts_man ]
 
 let cmd =
-  let info = Term.info "browse" ~doc ~sdocs ~man ~man_xrefs in
-  let t = Term.(pure browse $ Cli.setup $ Cli.pkg_file $ Cli.opam $
-                Webbrowser_cli.browser $ Webbrowser_cli.prefix $
-                Webbrowser_cli.background $ target)
-  in
-  (t, info)
+  Term.(pure browse $ Cli.setup $ Cli.pkg_file $ Cli.opam $
+        Webbrowser_cli.browser $ Webbrowser_cli.prefix $
+        Webbrowser_cli.background $ target),
+  Term.info "browse" ~doc ~sdocs ~exits ~man ~man_xrefs
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

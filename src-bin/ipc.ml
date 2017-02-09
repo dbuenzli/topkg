@@ -39,6 +39,7 @@ let args =
 
 let doc = "Interprocess communication with package description files"
 let sdocs = Cli.common_opts
+let exits = Cli.exits
 let man_xrefs = [`Main]
 let man =
   [ `S Manpage.s_description;
@@ -46,9 +47,8 @@ let man =
         undocumented." ]
 
 let cmd =
-  let info = Term.info "ipc" ~doc ~sdocs ~man ~man_xrefs in
-  let t = Term.(ret (pure ipc $ Cli.setup $ args)) in
-  (t, info)
+  Term.(ret (pure ipc $ Cli.setup $ args)),
+  Term.info "ipc" ~doc ~sdocs ~exits ~man ~man_xrefs
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli
