@@ -68,6 +68,10 @@ val build_dir : Fpath.t option Term.t
 val publish_msg : string option Term.t
 (** A [--msg] option to define a publication message. *)
 
+val ocamldoc_flags : string option Term.t
+(** A [--docflags] option to add custom comma-separated ocamldoc flags.
+    The initial flags are -colorize-code, -charset, and utf-8. *)
+
 (** {1 Terms} *)
 
 val setup : unit Term.t

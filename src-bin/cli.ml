@@ -124,6 +124,12 @@ let publish_msg =
   let docv = "MSG" in
   Arg.(value & opt (some string) None & info ["m"; "message"] ~doc ~docv)
 
+let ocamldoc_flags =
+  let doc = "Specifies additional flags to ocamldoc."
+  in
+  let docv = "OCAMLDOC_FLAGS" in
+  Arg.(value & opt (some string) None & info ["docflags"] ~doc ~docv)
+
 (* Terms *)
 
 let logs_to_topkg_log_level = function
