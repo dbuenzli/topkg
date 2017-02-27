@@ -1802,7 +1802,7 @@ module Private : sig
 
         Normally opam metadata access is only needed at distribution
         time and this is handled by {!Topkg_care.Opam.File} using the
-        [opam-lib] library.
+        [opam-format] library.
 
         However there is one case where we want to be able to access
         the metadata from [Topkg]: on pin builds where the

@@ -18,7 +18,7 @@ dependency.
 
 Topkg-care is distributed under the ISC license it depends on
 [fmt][fmt], [logs][logs], [bos][bos], [cmdliner][cmdliner],
-[webbrowser][webbrowser] and `opam-lib`.
+[webbrowser][webbrowser] and `opam-format`.
 
 [fmt]: http://erratique.ch/software/fmt
 [logs]: http://erratique.ch/software/logs

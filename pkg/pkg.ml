@@ -33,7 +33,7 @@ let () =
   let opams =
     let install = false in
     let not_topkg_deps =
-      Some ["fmt"; "logs"; "bos"; "cmdliner"; "webbrowser"; "opam-lib"]
+      Some ["fmt"; "logs"; "bos"; "cmdliner"; "webbrowser"; "opam-format"]
     in
     [ Pkg.opam_file ~install "topkg.opam" ~lint_deps_excluding:not_topkg_deps;
       Pkg.opam_file ~install "topkg-care.opam" ]
