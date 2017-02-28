@@ -1,4 +1,9 @@
 
+- Deprecate `--pinned` in favor of `--dev-pkg` in the `build` command.
+  The semantics is the same and with opam < 2.0 it should still be set
+  to `"%{pinned}%"`. With opam >= 2.0 it should be set to `"%{dev}%"`
+  this allows to infer the correct build context for (non-pinned) VCS
+  packages (#79).
 - Add the `cma`, `cmxa` and `cmxs` optional arguments to `Pkg.mllib`.
   These allow to precisely specify what you (don't) want to build. They
   all default to `true`. Thanks to Stephen Dolan for the suggestion.

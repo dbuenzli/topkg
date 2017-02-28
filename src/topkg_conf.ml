@@ -184,9 +184,14 @@ let vcs =
   discovered_key "vcs" bool ~absent ~doc
 
 let pinned =
-  let doc = "Specifies that the build is a pinned package build (e.g. in opam)"
+  let doc = "Deprecated, use --dev-pkg. The semantics is the same."
   in
   key "pinned" bool ~absent:false ~doc
+
+let dev_pkg =
+  let doc = "Specifies that the build is a dev package build (e.g. in opam)." in
+  key "dev-pkg" bool ~absent:false ~doc
+
 
 let tests =
   let doc = "Specifies whether tests should be built. If absent depends \
@@ -337,11 +342,12 @@ let build_dir c = value c build_dir
 let toolchain c = value c toolchain
 let vcs c = value c vcs
 let pinned c = value c pinned
+let dev_pkg c = value c dev_pkg
 
 type build_context = [`Dev | `Distrib | `Pin ]
 let build_context c =
   if not (vcs c) then `Distrib else
-  if (pinned c) then `Pin else
+  if (pinned c || dev_pkg c) then `Pin else
   `Dev
 
 let build_tests c = match value c tests with

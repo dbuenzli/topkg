@@ -318,10 +318,10 @@ let troubleshoot =
         output the build configuration that was determined:";
     `Pre "pkg/pkg.ml build -d -v [OPTION]...";`Noblank;
     `Pre "topkg build -d -v [OPTION]...      # mostly equivalent";
-    `S "DEBUG PIN INSTALLS";
-     `P "If you need more information about what happens when you
-         pin a package in opam, for example the actual watermark values,
-         invoke opam as follows:";
+    `S "DEBUG DEV PACKAGE INSTALLS";
+     `P "If you need more information about what happens when dev packages
+         are installed (VCS pins or VCS packages) in opam, for example the
+         actual watermark values, invoke opam as follows:";
     `P "TOPKG_VERBOSITY=debug opam upgrade mypkg -v";
     `S "RELEASE PROCESS TROUBLES";
     `P "See the TROUBLESHOOTING section of topkg-release(7).";

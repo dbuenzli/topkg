@@ -769,36 +769,49 @@ module Conf : sig
       automatically by using {!Topkg.Vcs.find} and used to determine
       the {!build_context}. *)
 
-  val pinned : t -> bool
-  (** [pinned c] is the value of a predefined key [--pinned].
+  val dev_pkg : t -> bool
+  (** [dev_pkg c] is the value of a predefined key [--dev-pkg].
       It is [true] if the build is initiated by an installer like opam
-      and the package is pinned. If absent defaults to [false].
-      Usually specified in opam build instructions with:
-{["--pinned" "%{pinned}%"]} *)
+      and the package sources are a checkout from a VCS rather
+      than a distribution archive. Usually specified in opam build instruction
+      with either:
+{v
+"--dev-pkg" "%{dev}%"    # for opam >= 2.0
+"--dev-pkg" "%{pinned}%" #           < 2.0 v}
+*)
+
+  val pinned : t -> bool
+  (** @deprecated use {!dev_pkg}
+
+      [pinned c] is the value of a predefined key [--pinned]. It has
+      exactly the same semantics as {!dev_pkg} but is misnamed. *)
 
   type build_context = [`Dev | `Distrib | `Pin ]
   (** The type for build contexts. See {!val:build_context} for semantics. *)
 
   val build_context : t -> [`Dev | `Distrib | `Pin ]
   (** [build_context c] is the build context of [c]. This is derived from
-      {!vcs} and {!pinned} as follows.
+      {!vcs} and {!dev_pkg} (or the deprecated {!pinned}) as follows.
       {ul
       {- [`Distrib] iff [not (vcs c)]. No VCS is present, this is a build from
          a distribution. If there are configuration bits they should
          be setup according to the build configuration.}
-      {- [`Dev] iff [vcs c && not (pinned c)]. This is a development
-         build invoked manually in a source repository. The repository checkout
-         should likely not be touched and configuration bits not be setup.
-         This is happening for example if the developer is testing the package
-         description in her working source repository by invoking
-         [pkg/pkg.ml] or [topkg build].}
-      {- [`Pin] iff [vcs c && pinned c]. This is a package manager pin build.
-         In this case the repository checkout may need to be massaged
-         into a pseudo-distribution for the package to be installed. This means
-         that distribution watermarking and massaging should be performed,
-         see {!Pkg.distrib} and the [prepare_on_pin] argument of {!Pkg.build}.
-         Besides exisiting configuration bits should be setup according to the
-         build environment.}} *)
+      {- [`Dev] iff [vcs c && not (dev_pkg c || pinned c)]. This is a
+         development build invoked manually in a source repository. The
+         repository checkout should likely not be touched and configuration
+         bits not be setup. This is happening for example if the developer
+         is testing the package description in her working source repository
+         by invoking [pkg/pkg.ml] or [topkg build].}
+      {- [`Pin] iff [vcs c && (dev_pkg c || pinned c)]. This is a package
+         manager development build. In this case the repository checkout may
+         need to be massaged into a pseudo-distribution for the package to be
+         installed. This means that distribution watermarking and massaging
+         should be performed, see {!Pkg.distrib} and the [prepare_on_pin]
+         argument of {!Pkg.build}. Besides exisiting configuration bits
+         should be setup according to the
+         build environment. {b Note.} This is called [`Pin] due to a blind
+         spot, a more approriate name would be something like [`Dev_pkg]
+         build.}} *)
 
   val build_tests : t -> bool
   (** [build_tests c] is the value of a predefined key [--tests] that
@@ -829,7 +842,8 @@ module Conf : sig
   val toolchain : t -> string option
   (** [toolchain c] is the value of a predefined key [--toolchain] that
       specifies the ocamlbuild toolchain. If absent the value is [None] or
-      the value of the environment variable TOPKG_CONF_TOOLCHAIN if specified. *)
+      the value of the environment variable TOPKG_CONF_TOOLCHAIN if
+      specified. *)
 
   val dump : Format.formatter -> t -> unit
   (** [dump ppf c] formats an unspecified representation of [c] on [ppf]. *)
@@ -1270,15 +1284,16 @@ let clean os ~build_dir = OS.Cmd.run @@ Pkg.clean_cmd os ~build_dir
          leading ['v'] or ['V'] dropped.}
       {- [`Vcs `Commit_id], is the commit identifier (hash) of the
          distribution. May be post-fixed by ["dirty"] in
-         {{!Conf.build_context}pin builds}.}
+         {{!Conf.build_context}dev package ([`Pin]) builds}.}
       {- [`Opam (file, field, sep)], is the values of the field
          [field] concatenated with separator [sep] of the opam file
          [file], expressed relative to the distribution root directory, if
          [file] is [None] this is the package's default opam file, see
          {!describe}. Not all fields are supported see the value of
          {!Topkg_care.Opam.File.field_names}.  {b Warning.} In
-         {{!Conf.build_context}pin builds}, [`Opam] watermarks are only
-         substituted if the package [topkg-care] is installed.}}
+         {{!Conf.build_context}dev package ([`Pin]) builds}, [`Opam]
+         watermarks are only substituted if the package [topkg-care] is
+         installed.}}
 
       When a file is watermarked with an identifier ["ID"], any occurence of
       the sequence [%%ID%%] in its content is substituted by its definition. *)
@@ -1543,9 +1558,9 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
       Watermarking by default all the non binary files of the
       distribution allows one to write %‌%VERSION%% in any context and
       be sure it is be substituted with the right version number in
-      pin and distribution {{!Conf.build_context}build contexts}
-      (this occurence was not subsituted
-      because a ZERO WIDTH NON-JOINER U+200C was introduced between
+      dev package ([`Pin]) and distribution ([`Distrib])
+      {{!Conf.build_context}build contexts} (this occurence was not
+      subsituted because a ZERO WIDTH NON-JOINER U+200C was introduced between
       the first two percent characters).
 
       If this scheme poses a problem for certain files or you remain
@@ -1933,17 +1948,19 @@ build configuration on the command line. In the simplest case, if
 your package has no configuration options, this simply boils
 down to:
 {v
-build: [
-  "ocaml" "pkg/pkg.ml" "build"
-          "--pinned" "%{pinned}%" ]
+# For opam >= 2.0
+build: [[ "ocaml" "pkg/pkg.ml" "build" "--dev-pkg" "%{dev}%" ]]
+
+# For opam < 2.0
+build: [[ "ocaml" "pkg/pkg.ml" "build" "--dev-pkg" "%{pinned}%" ]]
 v}
 
-The ["--pinned" "%{pinned}%"] configuration key specification is used to
-inform the package description about the {{!Conf.build_context}build
-context}. This invocation of [pkg/pkg.ml] executes your build system
-with a set of targets determined from the build configuration and
-generates in the root directory of your distribution an opam [install]
-file that opam uses to install and uninstall your package.
+The ["--dev-pkg"] configuration key is used to inform the package
+description about the {{!Conf.build_context}build context}. This
+invocation of [pkg/pkg.ml] executes your build system with a set of
+targets determined from the build configuration and generates in the
+root directory of your distribution an opam [install] file that opam
+uses to install and uninstall your package.
 
 This is all you need to specify. Do not put anything in the remove
 field of the opam file. Likewise there is no need to invoke
@@ -1951,13 +1968,25 @@ field of the opam file. Likewise there is no need to invoke
 installed in the directory of the [lib] field which happens
 automatically by default.
 
-If you described {{!Pkg.tests}tests} then you can also add the
-following field to the opam file to instruct how to build and execute
-them (unfortunately this involves the repetition of the build line
-at the moment with opam but might change in the future):
+If you described {{!Pkg.tests}tests} then you should specify
+the instructions as follows (unfortunately for opam < 2.0 this involves
+the repetition of the build line):
 {v
-build-test: [
- [ "ocaml" "pkg/pkg.ml" "build" "--pinned" "%{pinned}%" "--tests" "true" ]
+# For opam >= 2.0
+
+build:
+[[ "ocaml" "pkg/pkg.ml" "build" "--dev-pkg" "%{dev}%"
+                                "--tests" "%{build-test}%" ]]
+run-test:
+[[ "ocaml" "pkg/pkg.ml" "test" ]]
+
+# For opam < 2.0
+
+build:
+[[ "ocaml" "pkg/pkg.ml" "build" "--dev-pkg" "%{pinned}%" ]]
+
+build-test:
+[[ "ocaml" "pkg/pkg.ml" "build" "--dev-pkg" "%{pinned}%" "--tests" "true" ]
  [ "ocaml" "pkg/pkg.ml" "test" ]]
 v}
 
@@ -2124,7 +2153,7 @@ For this conditional install the opam build instructions look like this:
 depopts: [ "cmdliner" ]
 build: [[
   "ocaml" "pkg/pkg.ml" "build"
-          "--pinned" "%{pinned}%"
+          "--dev-pkg" "%{dev}%" # use "%{pinned}%" for opam < 2.0
           "--with-cmdliner" cmdliner:installed ]]
 ]}
 
@@ -2288,10 +2317,10 @@ of the install [etc] directory.}
    directory.}}
 The opam build instructions for the package are:
 {v
-build: [
+build: [[
   "ocaml" "pkg/pkg.ml" "build"
-          "--pinned" "%{pinned}%"
-          "--etc-dir" mypkg:etc ]
+          "--dev-pkg" "%{dev}%" # use "%{pinned}%" for opam < 2.0
+          "--etc-dir" mypkg:etc ]]
 v}
 
 {2:multiopam Multiple opam packages for a single distribution}
@@ -2331,10 +2360,11 @@ The build instructions of these opam files need to give the name of
 the package to the build invocation so that the right install description
 can be selected:
 {v
-build: [
+build: [[
   "ocaml" "pkg/pkg.ml" "build"
           "--pkg-name" name
-          "--pinned" "%{pinned}%" ]
+          "--dev-pkg" "%{dev}%" # use "%{pinned}%" for opam < 2.0
+]]
 v}
 
 In general you will use the default, main, package name and its opam file to

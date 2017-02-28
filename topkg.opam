@@ -12,7 +12,7 @@ depends: [
   "ocamlfind" {build & >= "1.6.1"}
   "ocamlbuild" {build}
   "result" ]
-build: [
+build: [[
   "ocaml" "pkg/pkg.ml" "build"
           "--pkg-name" name
-          "--pinned" "%{pinned}%" ]
+          "--dev-pkg" "%{pinned}%" ]]

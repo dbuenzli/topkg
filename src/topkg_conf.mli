@@ -64,6 +64,7 @@ val pkg_name : t -> string
 val build_dir : t -> Topkg_fpath.t
 val vcs : t -> bool
 val pinned : t -> bool
+val dev_pkg : t -> bool
 
 type build_context = [`Dev | `Distrib | `Pin ]
 val build_context : t -> [`Dev | `Distrib | `Pin ]
