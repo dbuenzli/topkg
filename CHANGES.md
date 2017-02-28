@@ -22,7 +22,7 @@
   is used with the `-toolchain` option introduced in
   `ocamlbuild` 0.11.0 in default build command `Pkg.build_cmd`. If
   unspecified the default build command is left unchanged. Thanks to
-  Peter Zotov for the patch.
+  whitequark for the patch.
 
 
 v0.8.1 2016-11-02 Zagreb
