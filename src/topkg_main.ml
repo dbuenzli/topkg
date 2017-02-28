@@ -86,8 +86,8 @@ let build_cmd pkg dry_run args =
   >>= fun c -> Ok (log_conf c; adjust_pkg_to_conf pkg c)
   >>= fun pkg -> Topkg_pkg.build pkg ~dry_run c `Host_os
 
-let test_cmd pkg build_dir list tests args =
-  let pkg = Topkg_pkg.with_name_and_build_dir ?build_dir pkg in
+let test_cmd pkg name build_dir list tests args =
+  let pkg = Topkg_pkg.with_name_and_build_dir ?name ?build_dir pkg in
   Topkg_pkg.test pkg list tests args
 
 let clean_cmd pkg name build_dir =
@@ -101,7 +101,8 @@ let run_cmd pkg cmd args = match cmd with
 | `Help -> help_cmd pkg
 | `Version -> version_cmd pkg
 | `Build dry_run -> build_cmd pkg dry_run args
-| `Test (bdir, list, tests, args) -> test_cmd pkg bdir list tests args
+| `Test (pkg_name, bdir, list, tests, args) ->
+    test_cmd pkg pkg_name bdir list tests args
 | `Clean (pkg_name, bdir) -> clean_cmd pkg pkg_name bdir
 | `Ipc -> ipc_cmd pkg args
 
@@ -144,17 +145,20 @@ let parse_build_args args =
   loop false [] args
 
 let parse_test_args args =
-  let rec loop build_dir list tests = function
+  let rec loop pkg_name build_dir list tests = function
   | ("--" :: args) ->
-      Ok (build_dir, list, List.rev tests, Some (Topkg_cmd.of_list args))
-  | [] -> Ok (build_dir, list, List.rev tests, None)
-  | "--build-dir" :: bdir :: args -> loop (Some bdir) list tests args
-  | ("--list" | "-l") :: args -> loop build_dir true tests args
+      Ok (pkg_name, build_dir, list, List.rev tests,
+          Some (Topkg_cmd.of_list args))
+  | [] -> Ok (pkg_name, build_dir, list, List.rev tests, None)
+  | "--build-dir" :: bdir :: args -> loop pkg_name (Some bdir) list tests args
+  | ("-l" | "--list") :: args -> loop pkg_name build_dir true tests args
+  | ("-n" | "--pkg-name") :: n :: args ->
+      loop (Some n) build_dir list tests args
   | a :: args ->
       if is_opt a then R.error_msgf "unknown option `%s'" a else
-      loop build_dir list (a :: tests) args
+      loop pkg_name build_dir list (a :: tests) args
   in
-  loop None false [] args
+  loop None None false [] args
 
 let parse_clean_args args =
   let rec loop pkg_name build_dir = function
@@ -192,8 +196,9 @@ let parse_cli () =
               let dry_run, args = parse_build_args args in
               Ok (`Build dry_run, verbosity, args)
           | "test" :: args ->
-              parse_test_args args >>= fun (bdir, list, tests, args) ->
-              Ok (`Test (bdir, list, tests, args), verbosity, [])
+              parse_test_args args
+              >>= fun (pkg_name, bdir, list, tests, args) ->
+              Ok (`Test (pkg_name, bdir, list, tests, args), verbosity, [])
           | "clean" :: args ->
               parse_clean_args args >>= fun (pkg_name, bdir) ->
               Ok (`Clean (pkg_name, bdir), verbosity, [])
