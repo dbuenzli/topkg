@@ -32,7 +32,9 @@ module Install : sig
     | `Doc
     | `Etc
     | `Lib
+    | `Lib_root
     | `Libexec
+    | `Libexec_root
     | `Man
     | `Misc
     | `Sbin

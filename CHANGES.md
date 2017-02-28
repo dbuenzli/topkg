@@ -1,5 +1,7 @@
 
 
+- Add `Pkg.lib_root` and `Pkg.libexec_root` install fields. Warning
+  these are opam 2.0 only fields.
 - Change `test` command for multi-opam packages by mirroring the way
   the `build` command works. The `--pkg-name` or `-n` option specifies
   the package's test to run or list. If unspecified the default

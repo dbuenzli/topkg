@@ -49,7 +49,9 @@ module Install = struct
   | `Doc
   | `Etc
   | `Lib
+  | `Lib_root
   | `Libexec
+  | `Libexec_root
   | `Man
   | `Misc
   | `Sbin
@@ -64,7 +66,9 @@ module Install = struct
   | `Doc -> "doc"
   | `Etc -> "etc"
   | `Lib -> "lib"
+  | `Lib_root -> "lib_root"
   | `Libexec -> "libexec"
+  | `Libexec_root -> "libexec_root"
   | `Man -> "man"
   | `Misc -> "misc"
   | `Sbin -> "sbin"

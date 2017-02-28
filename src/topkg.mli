@@ -1056,9 +1056,16 @@ Pkg.mllib ~cond:jsoo "src/mylib_jsoo.mllib"
   (** [lib] is a field that installs to a package specific [lib/]
       directory. *)
 
+  val lib_root : field
+  (** [lib_root] is a field that install to a common [lib/] directory. *)
+
   val libexec : exec_field
   (** [libexec] is a field that installs to a package specific [lib/]
       directory but with the executable bit set. *)
+
+  val libexec_root : exec_field
+  (** [libexec_root] is a field that install to a common [lib/] directory
+      but with the executable bit set. *)
 
   val man : field
   (** [man] is a field that installs to a common [man/] directory. See

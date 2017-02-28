@@ -26,7 +26,9 @@ val bin : ?auto:bool -> field
 val doc : field
 val etc : field
 val lib : field
+val lib_root : field
 val libexec : ?auto:bool -> field
+val libexec_root : ?auto:bool -> field
 val man : field
 val misc : field
 val sbin : ?auto:bool -> field
