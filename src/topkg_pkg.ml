@@ -184,7 +184,9 @@ let publish_artefacts p = Topkg_publish.artefacts p.publish
 
 (* Test *)
 
-let tests_file p = Topkg_fpath.(build_dir p // "_topkg.tests")
+let tests_file p =
+  Topkg_fpath.(build_dir p // Topkg_string.strf "_topkg-%s.tests" (name p))
+
 let tests_file_codec = Topkg_codec.(option @@ list Topkg_test.codec)
 let write_tests_file p tests =
   Topkg_codec.write (tests_file p) tests_file_codec tests

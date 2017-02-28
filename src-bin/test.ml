@@ -6,7 +6,7 @@
 
 open Bos_setup
 
-let test_args build_dir list args =
+let test_args name build_dir list args =
   let on_some_use_opt opt to_arg = function
   | None -> Cmd.empty
   | Some value -> Cmd.(v opt % to_arg value)
@@ -14,11 +14,12 @@ let test_args build_dir list args =
   let verb = Cli.propagate_verbosity_to_pkg_file () in
   let build_dir = on_some_use_opt "--build-dir" Cmd.p build_dir in
   let list = if list then Cmd.(v "--list") else Cmd.empty in
-  Cmd.(verb %% list %% build_dir %% Cmd.of_list args)
+  let name = on_some_use_opt "--pkg-name" (fun n -> n) name in
+  Cmd.(verb %% name %% list %% build_dir %% Cmd.of_list args)
 
-let test () pkg_file build_dir list args =
+let test () pkg_file pkg_name build_dir list args =
   let pkg = Topkg_care.Pkg.v pkg_file in
-  let args = test_args build_dir list args in
+  let args = test_args pkg_name build_dir list args in
   let out = OS.Cmd.out_stdout in
   begin
     OS.Dir.current ()
@@ -77,7 +78,8 @@ let man =
     `Blocks Cli.common_opts_man ]
 
 let cmd =
-  Term.(pure test $ Cli.setup $ Cli.pkg_file $ build_dir $ list $ args),
+  Term.(pure test $ Cli.setup $ Cli.pkg_file $ Cli.pkg_name $ build_dir $
+        list $ args),
   Term.info "test" ~doc ~sdocs ~exits ~man ~man_xrefs
 
 
