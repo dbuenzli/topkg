@@ -154,7 +154,10 @@ let field_of_field field = (* hack, recover a field from a field function... *)
   | `Test (run, dir, args) -> assert false
   | #Topkg_opam.Install.field as field -> field
 
-let mllib ?(field = lib) ?(cond = true) ?api ?dst_dir mllib =
+let mllib
+    ?(field = lib) ?(cond = true) ?(cma = true) ?(cmxa = true) ?(cmxs = true)
+    ?api ?dst_dir mllib
+  =
   if not cond then [] else
   let debugger_support_field =
     _field ~debugger_support:true ~auto:false (field_of_field field)
@@ -178,7 +181,14 @@ let mllib ?(field = lib) ?(cond = true) ?api ?dst_dir mllib =
         List.iter warn orphans;
         api
   in
-  let library = field ?dst:(dst lib_base) ~exts:Topkg_fexts.library lib_base in
+  let library =
+    let add_if cond v vs = if cond then v :: vs else vs in
+    let exts =
+      add_if cma (`Ext ".cma") @@ add_if cmxa (`Ext ".cmxa") @@
+      add_if cmxa `Lib @@ add_if cmxs (`Ext ".cmxs") []
+    in
+    field ?dst:(dst lib_base) ~exts lib_base
+  in
   let add_mods acc mllib_content =
     let api = api mllib_content in
     let add_mod acc (m, path) =

@@ -1122,14 +1122,16 @@ Pkg.mllib ~cond:jsoo "src/mylib_jsoo.mllib"
       needed by debuggers whenever its value is [true]. *)
 
   val mllib :
-    ?field:field -> ?cond:bool -> ?api:string list -> ?dst_dir:fpath ->
-    fpath -> install
-  (** [mllib ~field ~cond ~api ~dst_dir mllib] installs an OCaml library
-      described by the
+    ?field:field -> ?cond:bool -> ?cma:bool -> ?cmxa:bool -> ?cmxs:bool ->
+    ?api:string list -> ?dst_dir:fpath -> fpath -> install
+  (** [mllib ~field ~cond ~cma ~cmxa ~cmxs ~api ~dst_dir mllib] installs an
+      OCaml library described by the
       {{:https://github.com/ocaml/ocamlbuild/blob/master/manual/manual.adoc#Sec_Archives_documentation}OCamlbuild .mllib file} [mllib] with:
       {ul
       {- [field] is the field where it gets installed (defaults to {!lib}).}
       {- If [cond] is [false] (defaults to [true]), no move is generated.}
+      {- [cma], [cmxa], [cmxs] determine if corresponding archives are
+         built and installed, they all default to [true].}
       {- [api] is the list of modules that defines the public interface
          of the library, if [None] all the modules mentioned in [mllib]
          are part of the public interface.}

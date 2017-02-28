@@ -1,5 +1,7 @@
 
-
+- Add the `cma`, `cmxa` and `cmxs` optional arguments to `Pkg.mllib`.
+  These allow to precisely specify what you (don't) want to build. They
+  all default to `true`. Thanks to Stephen Dolan for the suggestion.
 - Add `Pkg.lib_root` and `Pkg.libexec_root` install fields. Warning
   these are opam 2.0 only fields.
 - Change `test` command for multi-opam packages by mirroring the way
@@ -11,7 +13,7 @@
   `pkg/pkg.ml build -n PKG && pkg/pkg test -n PKG`.
 - Improve `ocamlbuild` cross-compilation support. Adds the
   `Conf.toolchain` configuration key. If specified on the command line
-  or via the `TOPKG_CONF_TOOLCHAIN` environment variable. It's value
+  or via the `TOPKG_CONF_TOOLCHAIN` environment variable, its value
   is used with the `-toolchain` option introduced in
   `ocamlbuild` 0.11.0 in default build command `Pkg.build_cmd`. If
   unspecified the default build command is left unchanged. Thanks to

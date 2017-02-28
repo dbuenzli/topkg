@@ -42,8 +42,8 @@ val test :
   ?run:bool -> ?dir:Topkg_fpath.t -> ?args:Topkg_cmd.t -> ?auto:bool -> field
 
 val mllib :
-  ?field:field -> ?cond:bool -> ?api:string list -> ?dst_dir:Topkg_fpath.t ->
-  Topkg_fpath.t -> t
+  ?field:field -> ?cond:bool -> ?cma:bool -> ?cmxa:bool -> ?cmxs:bool ->
+  ?api:string list -> ?dst_dir:Topkg_fpath.t -> Topkg_fpath.t -> t
 
 val clib :
   ?dllfield:field ->
