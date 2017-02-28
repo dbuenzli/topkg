@@ -185,7 +185,7 @@ let mllib
     let add_if cond v vs = if cond then v :: vs else vs in
     let exts =
       add_if cma (`Ext ".cma") @@ add_if cmxa (`Ext ".cmxa") @@
-      add_if cmxa `Lib @@ add_if cmxs (`Ext ".cmxs") []
+      add_if cmxs (`Ext ".cmxs") @@ add_if (cmxa || cmxs) `Lib []
     in
     field ?dst:(dst lib_base) ~exts lib_base
   in
