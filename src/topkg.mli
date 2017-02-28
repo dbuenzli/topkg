@@ -625,39 +625,6 @@ end
 (** Build configuration. *)
 module Conf : sig
 
-  (** {1:tool Tool lookup}
-
-      If your package description needs to run tools (e.g. in the
-      pre and post build hooks, see {!Pkg.build}) it should get the
-      tool to invoke with the following function. This allows to
-      control the executable being run which is useful for
-      cross-compilation scenarios. *)
-
-  type os = [ `Build_os | `Host_os ]
-  (** The type for operating systems.
-      {ul
-      {- [`Build_os] is the build OS, the OS on which the package is built.}
-      {- [`Host_os] is the host OS, the OS on which the package is hosted
-         and runs.}} *)
-
-  val tool : string -> os -> Cmd.t
-  (** [tool cmd os] is a command [cmd] which can be run on the build OS
-      which produces output suitable for the OS [os].
-
-      The actual command returned depends on the following lookup procedure,
-      here exemplified on the invocation [tool "mytool" `Host_os] (resp.
-      [`Build_os]).
-      {ol
-      {- [Cmd.v "cmd"], if the environment variable HOST_OS_MYTOOL (resp.
-         BUILD_OS_MYTOOL) is set to ["cmd"]}
-      {- [Cmd.v (Fpath.append path "mytool")], if the environment variable
-         HOST_OS_XBIN  (resp. BUILD_OS_BIN) is set to [path].}
-      {- [Cmd.v ("mytool" ^ "suff")], if the environment variable
-         HOST_OS_SUFF (resp. BUILD_OS_SUFF).}
-      {- [Cmd.(v "ocamlfind" % "mytool")] if ["mytool"] is part of
-         the OCaml tools that can be invoked through ocamlfind.}
-      {- [Cmd.v "mytool"] otherwise.}} *)
-
   (** {1:kconv Key value converters} *)
 
   type 'a conv
@@ -847,6 +814,43 @@ module Conf : sig
 
   val dump : Format.formatter -> t -> unit
   (** [dump ppf c] formats an unspecified representation of [c] on [ppf]. *)
+
+  (** {1:tool Tool lookup}
+
+      If your package description needs to run tools (e.g. in the
+      pre and post build hooks, see {!Pkg.build}) it should get the
+      tool to invoke with the following function. This allows to
+      control the executable being run which is useful for
+      cross-compilation scenarios. *)
+
+  type os = [ `Build_os | `Host_os ]
+  (** The type for operating systems.
+      {ul
+      {- [`Build_os] is the build OS, the OS on which the package is built.}
+      {- [`Host_os] is the host OS, the OS on which the package is hosted
+         and runs.}} *)
+
+  val tool : ?conf:t -> string -> os -> Cmd.t
+  (** [tool ~conf cmd os] is a command [cmd] which can be run on the build OS
+      which produces output suitable for the OS [os], taking into account
+      configuration [conf].
+
+      The actual command returned depends on the following lookup procedure,
+      here exemplified on the invocation [tool "mytool" `Host_os] (resp.
+      [`Build_os]).
+      {ol
+      {- [Cmd.v "cmd"], if the environment variable HOST_OS_MYTOOL (resp.
+         BUILD_OS_MYTOOL) is set to ["cmd"]}
+      {- [Cmd.v (Fpath.append path "mytool")], if the environment variable
+         HOST_OS_XBIN  (resp. BUILD_OS_BIN) is set to [path].}
+      {- [Cmd.v ("mytool" ^ "suff")], if the environment variable
+         HOST_OS_SUFF (resp. BUILD_OS_SUFF).}
+      {- [Cmd.(v "ocamlfind" % "-toolchain" % "toolchain" % "mytool")] if
+         ["mytool"] is part of the OCaml tools that can be invoked through
+         ocamlfind, [toolchain conf] is not [None], and [os] is [`Host_os].}
+      {- [Cmd.(v "ocamlfind" % "mytool")] if ["mytool"] is part of
+         the OCaml tools that can be invoked through ocamlfind.}
+      {- [Cmd.v "mytool"] otherwise.}} *)
 
   (** {1:ocaml OCaml configuration} *)
 

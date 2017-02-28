@@ -10,11 +10,6 @@
 
 open Topkg_result
 
-(** {1 Tool lookup} *)
-
-type os = [ `Build_os | `Host_os ]
-val tool : string -> os -> Topkg_cmd.t
-
 (** {1 Configuration key value converters} *)
 
 type 'a conv
@@ -75,6 +70,10 @@ val debugger_support : t -> bool
 val profile : t -> bool
 val toolchain : t -> string option
 
+(** {1 Tool lookup} *)
+
+type os = [ `Build_os | `Host_os ]
+val tool : ?conf:t -> string -> os -> Topkg_cmd.t
 
 (** {1 OCaml configuration} *)
 

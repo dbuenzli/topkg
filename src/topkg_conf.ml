@@ -6,44 +6,6 @@
 
 open Topkg_result
 
-(* Tool lookup *)
-
-type os = [ `Build_os | `Host_os ]
-
-let os_to_string = function
-| `Build_os -> "build-os"
-| `Host_os -> "host-os"
-
-let os_tool_env name os =
-  let pre = match os with `Build_os -> "BUILD_OS_" | `Host_os -> "HOST_OS_" in
-  pre ^ Topkg_string.uppercase name
-
-let os_bin_dir_env = function
-| `Build_os -> "BUILD_OS_BIN"
-| `Host_os -> "HOST_OS_XBIN"
-
-let os_suff_env = function
-| `Build_os -> "BUILD_OS_SUFF"
-| `Host_os -> "HOST_OS_SUFF"
-
-let ocamlfindable = function
-| "ocamlc" | "ocamlcp" | "ocamlmktop" | "ocamlopt" | "ocamldoc" | "ocamldep"
-| "ocamlmklib" | "ocamlbrowser" as c -> Some Topkg_cmd.(v "ocamlfind" % c)
-| _ -> None
-
-let tool name os = match Topkg_os.Env.var (os_tool_env name os) with
-| Some cmd -> Topkg_cmd.v cmd
-| None ->
-    match Topkg_os.Env.var (os_bin_dir_env os) with
-    | Some path -> Topkg_cmd.v Topkg_fpath.(path // name)
-    | None ->
-        match Topkg_os.Env.var (os_suff_env os) with
-        | Some suff -> Topkg_cmd.v (name ^ suff)
-        | None ->
-            match ocamlfindable name with
-            | Some cmd -> cmd
-            | None -> Topkg_cmd.v name
-
 (* Configuration value converters *)
 
 type 'a conv =
@@ -361,6 +323,53 @@ let debug c = value c debug
 let debugger_support c = value c debugger_support
 let profile c = value c profile
 
+(* Tool lookup *)
+
+type os = [ `Build_os | `Host_os ]
+
+let os_to_string = function
+| `Build_os -> "build-os"
+| `Host_os -> "host-os"
+
+let os_tool_env name os =
+  let pre = match os with `Build_os -> "BUILD_OS_" | `Host_os -> "HOST_OS_" in
+  pre ^ Topkg_string.uppercase name
+
+let os_bin_dir_env = function
+| `Build_os -> "BUILD_OS_BIN"
+| `Host_os -> "HOST_OS_XBIN"
+
+let os_suff_env = function
+| `Build_os -> "BUILD_OS_SUFF"
+| `Host_os -> "HOST_OS_SUFF"
+
+let ocamlfindable ?conf name os = match name with
+| "ocamlc" | "ocamlcp" | "ocamlmktop" | "ocamlopt" | "ocamldoc" | "ocamldep"
+| "ocamlmklib" | "ocamlbrowser" as tool ->
+  let toolchain =
+    match conf with
+    | None -> Topkg_cmd.empty
+    | Some c ->
+      match os, toolchain c with
+      | `Host_os, Some toolchain -> Topkg_cmd.(v "-toolchain" % toolchain)
+      | _ -> Topkg_cmd.empty
+  in
+  Some Topkg_cmd.(v "ocamlfind" %% toolchain % tool)
+| _ -> None
+
+let tool ?conf name os = match Topkg_os.Env.var (os_tool_env name os) with
+| Some cmd -> Topkg_cmd.v cmd
+| None ->
+    match Topkg_os.Env.var (os_bin_dir_env os) with
+    | Some path -> Topkg_cmd.v Topkg_fpath.(path // name)
+    | None ->
+        match Topkg_os.Env.var (os_suff_env os) with
+        | Some suff -> Topkg_cmd.v (name ^ suff)
+        | None ->
+            match ocamlfindable ?conf name os with
+            | Some cmd -> cmd
+            | None -> Topkg_cmd.v name
+
 (* OCaml configuration, as communicated by ocamlc -config  *)
 
 module OCaml = struct
@@ -382,7 +391,7 @@ module OCaml = struct
 
   let empty os = { os; conf = [] }
 
-  let read_config os =
+  let read_config c os =
     let parse_line acc l = match Topkg_string.cut ~sep:':' l with
     | Some (k, v) -> (k, String.trim v) :: acc
     | None ->
@@ -391,7 +400,7 @@ module OCaml = struct
         acc
     in
     begin
-      let ocamlc = tool "ocamlc" os in
+      let ocamlc = tool ?conf:c "ocamlc" os in
       Topkg_os.Cmd.(run_out Topkg_cmd.(ocamlc % "-config") |> to_lines)
       >>= fun lines -> Ok (List.(rev (fold_left parse_line [] lines)))
       >>= fun conf -> Ok { os; conf }
@@ -400,14 +409,13 @@ module OCaml = struct
       (fun msg -> R.msgf (conf " %s") (os_to_string os) msg)
     |> Topkg_log.on_error_msg ~level:Topkg_log.Warning ~use:(fun () -> empty os)
 
-  let host_os = lazy (read_config `Host_os)
-  let build_os = lazy (read_config `Build_os)
-  let v c (* We have the build configuration [c] here since we might give
-             the ability to override this info from the cli in the future,
-             ou pas. *)
-    = function
-    | `Host_os -> Lazy.force host_os
-    | `Build_os -> Lazy.force build_os
+  let cache = Hashtbl.create 2
+  let v c os =
+    try Hashtbl.find cache (c, os)
+    with Not_found ->
+      let config = read_config (Some c) os in
+      Hashtbl.add cache (c, os) config;
+      config
 
   let add_discovery k v c = c.conf <- (k, v) :: c.conf
   let find k c = try Some (List.assoc k c.conf) with Not_found -> None
