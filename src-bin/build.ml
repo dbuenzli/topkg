@@ -6,7 +6,7 @@
 
 open Bos_setup
 
-let build_args pkg_name build_dir dry_run tests debug args =
+let build_args pkg_name build_dir dry_run raws tests debug args =
   let on_some_use_opt opt to_arg = function
   | None -> Cmd.empty
   | Some value -> Cmd.(v opt % to_arg value)
@@ -15,14 +15,15 @@ let build_args pkg_name build_dir dry_run tests debug args =
   let pkg_name = on_some_use_opt "--pkg-name" (fun x -> x) pkg_name in
   let build_dir = on_some_use_opt "--build-dir" Cmd.p build_dir in
   let dry_run = if dry_run then Cmd.(v "--dry-run") else Cmd.empty in
+  let raws = Cmd.of_list ~slip:"--raw" raws in
   let tests = on_some_use_opt "--tests" String.of_bool tests in
   let debug = on_some_use_opt "--debug" String.of_bool debug in
-  Cmd.(verb %% dry_run %% pkg_name %% build_dir %% tests %% debug %%
+  Cmd.(verb %% dry_run %% raws %% pkg_name %% build_dir %% tests %% debug %%
        Cmd.of_list args)
 
-let build () pkg_file pkg_name build_dir dry_run tests debug args =
+let build () pkg_file pkg_name build_dir dry_run raws tests debug args =
   let pkg = Topkg_care.Pkg.v pkg_file in
-  let args = build_args pkg_name build_dir dry_run tests debug args in
+  let args = build_args pkg_name build_dir dry_run raws tests debug args in
   let out = OS.Cmd.out_stdout in
   begin
     OS.Dir.current ()
@@ -65,6 +66,12 @@ let dry_run =
   in
   Arg.(value & flag & info ["d"; "dry-run"] ~doc)
 
+let raws =
+  let doc = "Do not run build instructions or write the opam install file, only
+             invoke the build system with the given $(docv) argument."
+  in
+  Arg.(value & opt_all string [] & info ["r"; "raw"] ~doc ~docv:"ARG")
+
 let tests =
   let doc = "Specifies whether tests should be built. If absent depends on the
              build context, true for development and false otherwise. This is
@@ -95,7 +102,7 @@ let man =
 
 let cmd =
   Term.(pure build $ Cli.setup $ Cli.pkg_file $ pkg_name $ build_dir $
-        dry_run $ tests $ debug $ args),
+        dry_run $ raws $ tests $ debug $ args),
   Term.info "build" ~doc ~sdocs ~exits ~man ~man_xrefs
 
 (*---------------------------------------------------------------------------

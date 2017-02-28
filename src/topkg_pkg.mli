@@ -74,7 +74,9 @@ val test :
 
 (* Build *)
 
-val build : t -> dry_run:bool -> Topkg_conf.t -> Topkg_conf.os -> int result
+val build :
+  t -> kind:[`Build | `Dry_run | `Raw of string list ] ->
+  Topkg_conf.t -> Topkg_conf.os -> int result
 
 (* Clean *)
 

@@ -1,4 +1,7 @@
 
+- Add the `--raw ARG` repeteable option to the `build` command. Allows
+  to skip package build instructions and opam install file generation
+  to simply invoke the package build command with the `ARG` argument.
 - Deprecate `--pinned` in favor of `--dev-pkg` in the `build` command.
   The semantics is the same and with opam < 2.0 it should still be set
   to `"%{pinned}%"`. With opam >= 2.0 it should be set to `"%{dev}%"`

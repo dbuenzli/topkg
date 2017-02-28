@@ -276,27 +276,29 @@ let run_build_hook kind hook c =
   |> R.reword_error_msg ~replace:true
     (fun e -> R.msgf "%s-build hook failed: %s" kind e)
 
-let build p ~dry_run c os =
-  install p c
-  >>= fun is -> Ok (Topkg_install.to_build ~header:p.name c os is)
-  >>= fun (targets, install, tests) -> match dry_run with
-  | true -> write_opam_install_file p install >>= fun () -> Ok 0
-  | false ->
-      let is_pin = Topkg_conf.build_context c = `Pin in
-      let prepare = match Topkg_build.prepare_on_pin p.build && is_pin with
-      | false -> Ok ()
-      | true ->
-          (distrib_prepare_pin p)
-          |> R.reword_error_msg ~replace:true
-            (fun e -> R.msgf "Pin distribution preparation failed: %s" e)
-      in
-      prepare
-      >>= fun () -> run_build_hook "Pre" (Topkg_build.pre p.build) c
-      >>= fun () -> (Topkg_build.cmd p.build) c os targets
-      >>= fun () -> write_opam_install_file p install
-      >>= fun () -> write_tests_file p tests
-      >>= fun () -> run_build_hook "Post" (Topkg_build.post p.build) c
-      >>= fun () -> Ok 0
+let build p ~kind c os = match kind with
+| `Raw args -> (Topkg_build.cmd p.build) c os args >>= fun () -> Ok 0
+| `Dry_run | `Build ->
+    install p c
+    >>= fun is -> Ok (Topkg_install.to_build ~header:p.name c os is)
+    >>= fun (targets, install, tests) -> match kind = `Dry_run with
+    | true -> write_opam_install_file p install >>= fun () -> Ok 0
+    | false ->
+        let is_pin = Topkg_conf.build_context c = `Pin in
+        let prepare = match Topkg_build.prepare_on_pin p.build && is_pin with
+        | false -> Ok ()
+        | true ->
+            (distrib_prepare_pin p)
+            |> R.reword_error_msg ~replace:true
+              (fun e -> R.msgf "Pin distribution preparation failed: %s" e)
+        in
+        prepare
+        >>= fun () -> run_build_hook "Pre" (Topkg_build.pre p.build) c
+        >>= fun () -> (Topkg_build.cmd p.build) c os targets
+        >>= fun () -> write_opam_install_file p install
+        >>= fun () -> write_tests_file p tests
+        >>= fun () -> run_build_hook "Post" (Topkg_build.post p.build) c
+        >>= fun () -> Ok 0
 
 (* Clean *)
 

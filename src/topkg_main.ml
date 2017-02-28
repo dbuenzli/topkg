@@ -43,7 +43,11 @@ let pp_help ppf () =
   prf ppf "Build options:@,";
   prf ppf "  -d, --dry-run@,";
   prf ppf "      @[Do not run build instructions,@ only@ determine@ and@ \
-                   write@ the@ opam@ install@ file.@]@,@,";
+                   write@ the@ opam@ install@ file.@]@,";
+  prf ppf "  -r ARG, --raw ARG (repeatable)@,";
+  prf ppf "      @[Do not run build instructions or write@ the@ opam@ \
+                   install@ file,@ only@ invoke@ the build@ system@ with@ \
+                   the given ARG argument.@]@,@,";
   prf ppf "  @[%a@]@,@," Topkg_conf.pp_keys_cli_opts ();
   prf ppf "Test options:@,";
   prf ppf "  --build-dir BUILD_DIR (absent=discovered)@,";
@@ -71,7 +75,7 @@ let help_cmd pkg =
 
 let version_cmd pkg = print_endline "topkg %%VERSION%%"; Ok 0
 
-let build_cmd pkg dry_run args =
+let build_cmd pkg kind args =
   let log_conf c =
     Topkg_log.info (fun m -> m "Build configuration:@\n%a" Topkg_conf.dump c)
   in
@@ -84,7 +88,7 @@ let build_cmd pkg dry_run args =
   let build_dir = Topkg_pkg.build_dir pkg in
   Topkg_conf.of_cli_args ~pkg_name ~build_dir args
   >>= fun c -> Ok (log_conf c; adjust_pkg_to_conf pkg c)
-  >>= fun pkg -> Topkg_pkg.build pkg ~dry_run c `Host_os
+  >>= fun pkg -> Topkg_pkg.build pkg ~kind c `Host_os
 
 let test_cmd pkg name build_dir list tests args =
   let pkg = Topkg_pkg.with_name_and_build_dir ?name ?build_dir pkg in
@@ -100,7 +104,7 @@ let ipc_cmd pkg args =
 let run_cmd pkg cmd args = match cmd with
 | `Help -> help_cmd pkg
 | `Version -> version_cmd pkg
-| `Build dry_run -> build_cmd pkg dry_run args
+| `Build kind -> build_cmd pkg kind args
 | `Test (pkg_name, bdir, list, tests, args) ->
     test_cmd pkg pkg_name bdir list tests args
 | `Clean (pkg_name, bdir) -> clean_cmd pkg pkg_name bdir
@@ -136,13 +140,24 @@ let parse_cli_help_version_verbosity args =
   | args -> loop `Cmd default_verb [] args
 
 let parse_build_args args =
-  let is_dry_run = function "-d" | "--dry-run" -> true | _ -> false in
-  let rec loop dry_run acc = function
-  | a :: args when is_dry_run a -> loop true acc args
-  | a :: args -> loop dry_run (a :: acc) args
-  | [] -> dry_run, List.rev acc
+  let rec loop dry_run raws acc = function
+  | ("-r" | "--raw" as opt) :: args ->
+      if args = [] then R.error_msgf "option `%s': missing argument" opt else
+      loop dry_run (List.hd args :: raws) acc (List.tl args)
+  | ("-d" | "--dry-run") :: args ->
+      loop true raws acc args
+  | a :: args ->
+      loop dry_run raws (a :: acc) args
+  | [] ->
+      let args = List.rev acc in
+      match dry_run, raws with
+      | false, [] -> Ok (`Build, args)
+      | false, raws -> Ok (`Raw (List.rev raws), args)
+      | true, [] -> Ok (`Dry_run, args)
+      | true, _ ->
+          R.error_msg "option `--dry-run' and `--raw' are mutually exclusive"
   in
-  loop false [] args
+  loop false [] [] args
 
 let parse_test_args args =
   let rec loop pkg_name build_dir list tests = function
@@ -193,8 +208,8 @@ let parse_cli () =
       | `Cmd, verbosity, args ->
           match args with
           | "build" :: args ->
-              let dry_run, args = parse_build_args args in
-              Ok (`Build dry_run, verbosity, args)
+              parse_build_args args >>= fun (kind, args) ->
+              Ok (`Build kind, verbosity, args)
           | "test" :: args ->
               parse_test_args args
               >>= fun (pkg_name, bdir, list, tests, args) ->
