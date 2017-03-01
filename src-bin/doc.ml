@@ -11,13 +11,6 @@ let unixy_path p =
   let volume, p = Fpath.split_volume p in
   volume ^ (String.concat ~sep:"/" (Fpath.segs p))
 
-let ocamlbuild build_dir =
-  let ocamlbuild = Topkg_care.OCamlbuild.cmd in
-  Cmd.(ocamlbuild % "-classic-display" % "-use-ocamlfind" % "-no-links" %
-       "-no-plugin" % "-build-dir" % unixy_path build_dir)
-
-let docflags = Cmd.(v "-docflags" % "-colorize-code,-charset,utf-8")
-
 let copy_assets src_dir dst_dir =
   let copy_asset dst_dir file = match Fpath.get_ext file with
   | ".css" | ".svg" | ".svgz" | ".png" | ".jpeg" | ".gif" | ".woff" | ".ttf"
@@ -46,14 +39,24 @@ let copy_odig_css doc_dir dst_dir =
           OS.File.read Fpath.(etcdir / "ocamldoc.css")
           >>= fun cont -> OS.File.write Fpath.(dst_dir / "style.css") cont
 
-let build_doc dev build_dir =
+let doc_build_args pkg_name build_dir dev target =
+  let verb = Cli.propagate_verbosity_to_pkg_file () in
+  let pkg_name = Cmd.(v "--pkg-name" % pkg_name) in
+  let build_dir = Cmd.(v "--build-dir" % Cmd.p build_dir) in
+  let target = unixy_path target in
+  let doc_flags = ["-docflags"; "-colorize-code,-charset,utf-8"; target ] in
+  let raws = Cmd.of_list ~slip:"--raw" doc_flags in
+  Cmd.(verb %% pkg_name %% build_dir %% raws)
+
+let build_doc pkg pkg_name build_dir dev =
+  let out = OS.Cmd.to_stdout in
   let doc_dir = Fpath.v "doc" in
   let odocl = Fpath.(doc_dir / (if dev then "dev.odocl" else "api.odocl")) in
-  let ocamlbuild = ocamlbuild build_dir in
-  OS.Cmd.must_exist ocamlbuild
-  >>= fun _ -> OS.File.must_exist odocl
+  OS.File.must_exist odocl
   >>= fun _ -> Ok Fpath.(set_ext ".docdir" odocl / "index.html")
-  >>= fun target -> OS.Cmd.run Cmd.(ocamlbuild %% docflags % unixy_path target)
+  >>= fun target -> Ok (doc_build_args pkg_name build_dir dev target)
+  >>= fun args -> OS.Dir.current ()
+  >>= fun dir -> Topkg_care.Pkg.build pkg ~dir ~args ~out
   >>= fun () -> Ok Fpath.(build_dir // parent target)
   >>= fun dst_dir -> copy_assets doc_dir dst_dir
   >>= fun () -> copy_odig_css doc_dir dst_dir
@@ -69,15 +72,17 @@ let browser_reload reload ~background ~browser dir =
       Webbrowser.reload ~background ~prefix:true ?browser uri
       >>= fun () -> Ok abs_dir
 
-let doc_cmd () pkg_file build_dir dev reload background browser =
+let doc_cmd () pkg_file name build_dir dev reload background browser =
   begin
-    let pkg = Topkg_care.Pkg.v ?build_dir pkg_file in
-    Topkg_care.Pkg.build_dir pkg
-    >>= fun build_dir -> build_doc dev build_dir
+    let pkg = Topkg_care.Pkg.v ?build_dir ?name pkg_file in
+    Topkg_care.Pkg.name pkg
+    >>= fun pkg_name -> Topkg_care.Pkg.build_dir pkg
+    >>= fun build_dir -> build_doc pkg pkg_name build_dir dev
     >>= fun docdir -> browser_reload reload ~background ~browser docdir
     >>= fun abs_docdir ->
-    Logs.app (fun m -> m "Generated %s doc in %a"
-                 (if dev then "dev" else "API") Topkg_care.Pp.path abs_docdir);
+    Logs.app (fun m ->
+        m "Generated %s doc in %a"
+          (if dev then "dev" else "API") Topkg_care.Pp.path abs_docdir);
     Ok 0
   end
   |> Cli.handle_error
@@ -113,13 +118,16 @@ let man =
         documentation and the doc/dev.odocl the development documentation.
         The directory can also hold CSS, PNG, JPEG, GIF, SVG, WOFF, TTF, OTF
         files that are copied over to the generated documentation directory.";
+    `P "The package's build system is invoked via `--raw` with the
+        ocamlbuild documentation targets.";
     `P "If the doc/ directory has no doc/style.css file but odig(1) is
         installed, its ocamldoc stylesheet is used.";
     `Blocks Cli.common_opts_man; ]
 
 let cmd =
-  Term.(pure doc_cmd $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $ dev $
-        reload_browser $ Webbrowser_cli.background $ Webbrowser_cli.browser),
+  Term.(pure doc_cmd $ Cli.setup $ Cli.pkg_file $ Cli.pkg_name $ Cli.build_dir
+        $ dev $ reload_browser $ Webbrowser_cli.background $
+        Webbrowser_cli.browser),
   Term.info "doc" ~doc ~sdocs ~exits ~man ~man_xrefs
 
 (*---------------------------------------------------------------------------
