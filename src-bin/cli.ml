@@ -19,12 +19,7 @@ let see_also ~cmds =
 
 (* Converters and arguments *)
 
-let path_arg =
-  let parse s = match Fpath.of_string s with
-  | Error _ -> `Error (strf "%a: not a path" String.dump s)
-  | Ok s -> `Ok s
-  in
-  parse, Fpath.pp
+let path_arg = Arg.conv Fpath.(of_string, pp)
 
 let pkg_file =
   let doc = "Use $(docv) as the package description file." in
