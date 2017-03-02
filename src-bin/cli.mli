@@ -18,9 +18,6 @@ val common_opts : string
 val common_opts_man : Manpage.block list
 (** [common_opts_man] is the manual section for common options. *)
 
-val see_also : cmds:string list -> Manpage.block list
-(** [see_also cmds] is a "see also" manpage fragment. *)
-
 (** {1 Converters and options} *)
 
 val path_arg : Fpath.t Arg.converter

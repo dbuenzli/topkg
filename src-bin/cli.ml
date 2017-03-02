@@ -13,10 +13,6 @@ let common_opts = Manpage.s_common_options
 let common_opts_man =
   [ `S common_opts; `P "These options are common to all commands." ]
 
-let see_also ~cmds =
-  let cmds = (String.concat ~sep:"(1), " ("topkg" :: cmds)) ^ "(1)" in
-  [ `S Manpage.s_see_also; `P cmds ]
-
 (* Converters and arguments *)
 
 let path_arg = Arg.conv Fpath.(of_string, pp)

@@ -11,6 +11,10 @@ let version = "%%VERSION%%"
 
 open Cmdliner
 
+let see_also ~cmds =
+  let cmds = (Astring.String.concat ~sep:"(1), " ("topkg" :: cmds)) ^ "(1)" in
+  [ `S Manpage.s_see_also; `P cmds ]
+
 let release =
   ("TOPKG-RELEASE", 7, "", version, topkg_manual),
   [ `S Manpage.s_name;
@@ -143,7 +147,7 @@ topkg log commit";
          between the opam file in the distribution archive and the one
          you submitted to the opam repository. If this happens to be a
          problem, start over with a new patch version release.");
-    `Blocks (Cli.see_also ~cmds:[]); ]
+    `Blocks (see_also ~cmds:[]); ]
 
 let delegate =
   ("TOPKG-DELEGATE", 7, "", version, topkg_manual),
@@ -295,7 +299,7 @@ let main () =
 
 let () = exit (main ())
 ";
-    `Blocks (Cli.see_also ~cmds:["topkg-issue"; "topkg-publish"]); ]
+    `Blocks (see_also ~cmds:["topkg-issue"; "topkg-publish"]); ]
 
 let troubleshoot =
   ("TOPKG-TROUBLESHOOT", 7, "", version, topkg_manual),
@@ -325,7 +329,7 @@ let troubleshoot =
     `P "TOPKG_VERBOSITY=debug opam upgrade mypkg -v";
     `S "RELEASE PROCESS TROUBLES";
     `P "See the TROUBLESHOOTING section of topkg-release(7).";
-    `Blocks (Cli.see_also ~cmds:[]) ]
+    `Blocks (see_also ~cmds:[]) ]
 
 (* Help command *)
 
