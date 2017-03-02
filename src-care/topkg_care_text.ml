@@ -76,7 +76,7 @@ let head find_header text =
       let rec loop acc rest = match find_header acc rest with
       | None -> ret first (List.rev_append rest acc)
       | Some (n', h, before, rest) ->
-          if n' < n then loop (h :: before) rest else
+          if n' > n then loop (h :: before) rest else
           ret first before
       in
       loop [] rest

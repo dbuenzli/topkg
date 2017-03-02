@@ -1,4 +1,6 @@
 
+- Fix changelog parsing. Subsections of an entry were not being properly
+  parsed.
 - Add the `--raw ARG` repeteable option to the `build` command. Allows
   to skip package build instructions and opam install file generation
   to simply invoke the package build command with the `ARG` argument.
