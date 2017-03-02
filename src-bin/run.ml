@@ -82,7 +82,7 @@ let exec =
   Arg.(required & pos 0 (some string) None & info [] ~doc ~docv)
 
 let doc = "Run built executables"
-let sdocs = Cli.common_opts
+let sdocs = Manpage.s_common_options
 let exits = Term.exit_info 1 ~doc:"on run non-zero status exit." :: Cli.exits
 let man_xrefs = [ `Main ]
 let man =
@@ -93,8 +93,7 @@ let man =
     `P "The $(tname) command runs executable files found
         in the build directory.";
     `P "$(b,WARNING) The way this command works is subject to change
-        in the future.";
-    `Blocks Cli.common_opts_man; ]
+        in the future." ]
 
 let cmd =
   Term.(pure run $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $ exec $ args),

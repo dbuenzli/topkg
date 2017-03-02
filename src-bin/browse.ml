@@ -104,7 +104,7 @@ let target =
   Arg.(value & pos 0 string "homepage" & info [] ~doc ~docv:"TARGET or URI")
 
 let doc = "Browse the package's WWW links"
-let sdocs = Cli.common_opts
+let sdocs = Manpage.s_common_options
 let exits = Cli.exits
 let man_xrefs = [ `Main ]
 let man =
@@ -118,8 +118,7 @@ let man =
         opam file in a WWW browser. A few other useful logical target are
         provided and arbitrary file, http or https schemed URIs can also
         be specified as the target.";
-    `Blocks (List.(tl @@ rev @@ fold_left target [] targets));
-    `Blocks Cli.common_opts_man ]
+    `Blocks (List.(tl @@ rev @@ fold_left target [] targets)); ]
 
 let cmd =
   Term.(pure browse $ Cli.setup $ Cli.pkg_file $ Cli.opam $

@@ -9,18 +9,9 @@
 open Cmdliner
 open Rresult
 
-(** {1 Manual sections and fragments} *)
-
-val common_opts : string
-(** [common_opts] is the section name under which common options
-    are documented. *)
-
-val common_opts_man : Manpage.block list
-(** [common_opts_man] is the manual section for common options. *)
-
 (** {1 Converters and options} *)
 
-val path_arg : Fpath.t Arg.converter
+val path_arg : Fpath.t Arg.conv
 (** [path_arg] is a path argument converter. *)
 
 val pkg_file : Fpath.t Term.t

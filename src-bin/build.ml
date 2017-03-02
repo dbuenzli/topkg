@@ -88,7 +88,7 @@ let debug =
   Arg.(value & opt (some bool) None  & info ["debug"] ~env ~doc ~docv:"BOOL")
 
 let doc = "Build the package"
-let sdocs = Cli.common_opts
+let sdocs = Manpage.s_common_options
 let exits = Term.exit_info 1 ~doc:"on build failure." :: Cli.exits
 let man_xrefs = [ `Main ]
 let man =
@@ -97,8 +97,7 @@ let man =
     `S Manpage.s_description;
     `P "The $(tname) command builds the package. This is equivalent to
         invoke:";
-    `Pre "ocaml ./pkg/pkg.ml build $(i,BUILD_CONF)...";
-    `Blocks Cli.common_opts_man ]
+    `Pre "ocaml ./pkg/pkg.ml build $(i,BUILD_CONF)..."; ]
 
 let cmd =
   Term.(pure build $ Cli.setup $ Cli.pkg_file $ pkg_name $ build_dir $

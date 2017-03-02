@@ -102,7 +102,7 @@ let dev =
   Arg.(value & flag & info ["d"; "dev"] ~doc)
 
 let doc = "Build the package's API documentation"
-let sdocs = Cli.common_opts
+let sdocs = Manpage.s_common_options
 let exits = Cli.exits
 let man_xrefs = [ `Main ]
 let man =
@@ -121,8 +121,7 @@ let man =
     `P "The package's build system is invoked via `--raw` with the
         ocamlbuild documentation targets.";
     `P "If the doc/ directory has no doc/style.css file but odig(1) is
-        installed, its ocamldoc stylesheet is used.";
-    `Blocks Cli.common_opts_man; ]
+        installed, its ocamldoc stylesheet is used." ]
 
 let cmd =
   Term.(pure doc_cmd $ Cli.setup $ Cli.pkg_file $ Cli.pkg_name $ Cli.build_dir

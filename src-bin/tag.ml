@@ -65,7 +65,7 @@ let delete =
   Arg.(value & flag & info ["d"; "delete"] ~doc)
 
 let doc = "Tag the package's source repository with a version"
-let sdocs = Cli.common_opts
+let sdocs = Manpage.s_common_options
 let exits = Cli.exits
 let man_xrefs = [ `Main; `Cmd "log" ]
 let man =
@@ -73,8 +73,7 @@ let man =
     `P "The $(tname) command tags the package's VCS HEAD commit with a
         version. If the version is not specified on the command line it is
         automatically extracted from the package's change log; use
-        $(b,topkg log -t) to check the extracted value.";
-    `Blocks Cli.common_opts_man ]
+        $(b,topkg log -t) to check the extracted value." ]
 
 let cmd =
   Term.(pure tag $ Cli.setup $ Cli.pkg_file $ Cli.change_log $

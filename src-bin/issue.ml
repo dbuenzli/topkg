@@ -113,7 +113,7 @@ let msg =
   Arg.(value & opt (some string) None & info ["m"; "message"] ~doc ~docv)
 
 let doc = "Interact with the package's issue tracker"
-let sdocs = Cli.common_opts
+let sdocs = Manpage.s_common_options
 let exits = Cli.exits
 let envs =
   [ Term.env_info "EDITOR" ~doc:"The editor used to edit issue messages.";
@@ -138,8 +138,7 @@ let man =
     `I ("$(b,open)",
         "Open a new issue.");
     `I ("$(b,close) $(i,ID)",
-        "Close issue $(i,ID).");
-    `Blocks Cli.common_opts_man; ]
+        "Close issue $(i,ID).") ]
 
 let cmd =
   Term.(pure issue $ Cli.setup $ Cli.pkg_file $ Cli.opam $ Cli.delegate $

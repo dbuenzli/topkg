@@ -7,12 +7,6 @@
 open Bos_setup
 open Cmdliner
 
-(* Manual *)
-
-let common_opts = Manpage.s_common_options
-let common_opts_man =
-  [ `S common_opts; `P "These options are common to all commands." ]
-
 (* Converters and arguments *)
 
 let path_arg = Arg.conv Fpath.(of_string, pp)
@@ -21,7 +15,7 @@ let pkg_file =
   let doc = "Use $(docv) as the package description file." in
   let docv = "FILE" in
   Arg.(value & opt path_arg (Fpath.v "pkg/pkg.ml") &
-       info ["pkg-file"] ~docs:common_opts ~doc ~docv)
+       info ["pkg-file"] ~docs:Manpage.s_common_options ~doc ~docv)
 
 let pkg_name =
   let doc = "The name $(docv) of the opam package. If absent provided
@@ -139,17 +133,17 @@ let setup style_renderer log_level cwd =
 let setup =
   let style_renderer =
     let env = Arg.env_var "TOPKG_COLOR" in
-    Fmt_cli.style_renderer ~docs:common_opts ~env ()
+    Fmt_cli.style_renderer ~docs:Manpage.s_common_options ~env ()
   in
   let log_level =
     let env = Arg.env_var "TOPKG_VERBOSITY" in
-    Logs_cli.level ~docs:common_opts ~env ()
+    Logs_cli.level ~docs:Manpage.s_common_options ~env ()
   in
   let cwd =
     let doc = "Change to directory $(docv) before doing anything." in
     let docv = "DIR" in
     Arg.(value & opt (some path_arg) None & info ["C"; "pkg-dir"]
-           ~docs:common_opts ~doc ~docv)
+           ~docs:Manpage.s_common_options ~doc ~docv)
   in
   Term.(ret (const setup $ style_renderer $ log_level $ cwd))
 

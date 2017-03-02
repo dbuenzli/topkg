@@ -37,7 +37,7 @@ let ignore_pkg =
   Arg.(value & flag & info ["i"; "ignore-pkg"] ~doc)
 
 let doc = "Check package distribution consistency and conventions"
-let sdocs = Cli.common_opts
+let sdocs = Manpage.s_common_options
 let exits = Term.exit_info 1 ~doc:"on lint failure" :: Cli.exits
 let man_xrefs = [`Main; `Cmd "distrib"]
 let man =
@@ -48,8 +48,8 @@ let man =
         files pass the opam lint test and that the opam dependencies are
         consistent with those of the build system.";
     `P "Linting is automatically performed on distribution generation, see
-        topkg-distrib(1) for more details.";
-    `Blocks Cli.common_opts_man; ]
+        topkg-distrib(1) for more details." ]
+
 let cmd =
   Term.(pure lint $ Cli.setup $ Cli.pkg_file $ ignore_pkg $ lints),
   Term.info "lint" ~doc ~sdocs ~exits ~man ~man_xrefs

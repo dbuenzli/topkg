@@ -56,7 +56,7 @@ let list =
   Arg.(value & flag & info ["l"; "list"] ~doc)
 
 let doc = "Run built package tests"
-let sdocs = Cli.common_opts
+let sdocs = Manpage.s_common_options
 let exits = Term.exit_info 1 ~doc:"on test failure." :: Cli.exits
 let man_xrefs = [ `Main ]
 let man =
@@ -74,14 +74,12 @@ let man =
        need to specify the token -- twice. For example to pass 'arg' to a
        test 'mytest' use one of the following invocation:";
     `Pre "topkg test -- mytest -- arg"; `Noblank;
-    `Pre "topkg test mytest -- -- arg";
-    `Blocks Cli.common_opts_man ]
+    `Pre "topkg test mytest -- -- arg" ]
 
 let cmd =
   Term.(pure test $ Cli.setup $ Cli.pkg_file $ Cli.pkg_name $ build_dir $
         list $ args),
   Term.info "test" ~doc ~sdocs ~exits ~man ~man_xrefs
-
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

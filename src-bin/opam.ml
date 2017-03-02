@@ -157,7 +157,7 @@ let pkg_descr =
   Arg.(value & opt (some Cli.path_arg) None & info ["pkg-descr"] ~doc ~docv)
 
 let doc = "Interaction with opam and the OCaml opam repository"
-let sdocs = Cli.common_opts
+let sdocs = Manpage.s_common_options
 let envs =
   [ Term.env_info "TOPKG_OPAM_PUBLISH" ~doc:"The $(b,opam-publish) tool to use
     to submit packages." ]
@@ -182,8 +182,7 @@ let man =
          opam repository. Requires the $(b,opam-publish) tool to be
          installed.");
     `I ("$(b,field) $(i,FIELD)",
-        "outputs the field $(i,FIELD) of the package's opam file.");
-    `Blocks Cli.common_opts_man ]
+        "outputs the field $(i,FIELD) of the package's opam file."); ]
 
 let cmd =
   let info = Term.info "opam" ~doc ~sdocs ~envs ~man ~man_xrefs in

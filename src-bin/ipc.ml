@@ -38,7 +38,7 @@ let args =
   Arg.(value (pos_all string [] & info [] ~doc ~docv:"ARG"))
 
 let doc = "Interprocess communication with package description files"
-let sdocs = Cli.common_opts
+let sdocs = Manpage.s_common_options
 let exits = Cli.exits
 let man_xrefs = [`Main]
 let man =

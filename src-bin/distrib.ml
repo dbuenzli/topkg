@@ -101,7 +101,7 @@ let skip_tests =
   Arg.(value & flag & info ["skip-tests"] ~doc)
 
 let doc = "Create a package distribution archive"
-let sdocs = Cli.common_opts
+let sdocs = Manpage.s_common_options
 let exits = Cli.exits
 let envs =
   [ Term.env_info "TOPKG_BZIP2" ~doc:"The $(b,bzip2) tool to use to compress the
@@ -127,7 +127,6 @@ let man =
         distribution; one should still worry about it though.
         These checks can be prevented by using the $(b,--skip-lint) and
         $(b,--skip-build) options.";
-    `Blocks Cli.common_opts_man;
     `S "REPRODUCIBLE DISTRIBUTION ARCHIVES";
     `P "Given the package name, the HEAD commit identifier
         and the version string, the $(tname) command should always

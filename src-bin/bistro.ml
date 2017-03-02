@@ -23,7 +23,7 @@ let bistro () =
 open Cmdliner
 
 let doc = "For when you are in a hurry or need to go for a drink"
-let sdocs = Cli.common_opts
+let sdocs = Manpage.s_common_options
 let exits = Cli.exits
 let man_xrefs = [ `Main; `Cmd "distrib"; `Cmd "publish"; `Cmd "opam" ]
 let man =
@@ -34,8 +34,7 @@ topkg distrib       # Create the distribution archive
 topkg publish       # Publish it on the WWW with its documentation
 topkg opam pkg      # Create an opam package
 topkg opam submit   # Submit it to OCaml's opam repository";
-    `P "See topkg-release(7) for more information.";
-    `Blocks Cli.common_opts_man;]
+    `P "See topkg-release(7) for more information."; ]
 
 let cmd =
   Term.(pure bistro $ Cli.setup),

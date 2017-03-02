@@ -16,7 +16,7 @@ let main () = `Help (`Pager, None)
 (* Command line interface *)
 
 let doc = "Topkg package care"
-let sdocs = Cli.common_opts
+let sdocs = Manpage.s_common_options
 let exits = Cli.exits
 let man =
   [ `S Manpage.s_description;
@@ -28,7 +28,6 @@ let man =
     `P "Use '$(mname) help troubleshoot' for a few troubleshooting tips.";
     `Noblank;
     `P "Use '$(mname) help $(i,COMMAND)' for help about $(i,COMMAND).";
-    `Blocks Cli.common_opts_man;
     `S Manpage.s_bugs;
     `P "Report them, see $(i,%%PKG_HOMEPAGE%%) for contact information.";
     `S Manpage.s_authors;

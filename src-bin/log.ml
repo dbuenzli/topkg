@@ -74,7 +74,7 @@ let last_version =
   Arg.(value & flag & info ["t"; "last-version"] ~doc)
 
 let doc = "Show and edit the package's change log"
-let sdocs = Cli.common_opts
+let sdocs = Manpage.s_common_options
 let exits = Cli.exits
 let envs =
   [ Term.env_info "EDITOR" ~doc:"The editor used to edit the change log.";
@@ -119,8 +119,7 @@ etc.";
     `I ("$(b,show) (default)", "shows the package's change log.");
     `I ("$(b,edit)", "edit the package's change log.");
     `I ("$(b,commit)", "commit changes made to the package's change log to the
-                        VCS.");
-    `Blocks Cli.common_opts_man ]
+                        VCS.") ]
 
 let cmd =
   Term.(pure log $ Cli.setup $ Cli.pkg_file $ Cli.change_log $ action $

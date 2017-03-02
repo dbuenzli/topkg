@@ -90,7 +90,7 @@ let artefacts =
   Arg.(value & pos_all artefact [] & info [] ~doc ~docv:"ARTEFACT")
 
 let doc = "Publish package distribution archives and derived artefacts"
-let sdocs = Cli.common_opts
+let sdocs = Manpage.s_common_options
 let exits = Cli.exits
 let envs =
   [ Term.env_info "TOPKG_DELEGATE" ~doc:"The package delegate to use, see
@@ -116,8 +116,7 @@ let man =
          a distribution archive. The semantics of alternative artefacts
          is left to the delegate, it could be anything, an email,
          a pointless tweet, a feed entry etc. See topkg-delegate(7) for
-         more details.");
-    `Blocks Cli.common_opts_man; ]
+         more details."); ]
 
 let cmd =
   Term.(pure publish $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $

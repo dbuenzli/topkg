@@ -71,7 +71,7 @@ let until =
   Arg.(value & opt string "HEAD" & info ["until"] ~doc ~docv)
 
 let doc = "List commits to publish in the next distribution"
-let sdocs = Cli.common_opts
+let sdocs = Manpage.s_common_options
 let exits =
   (Term.exit_info 0 ~doc:"changes have been detected.") ::
   (Term.exit_info 1 ~doc:"no changes have been detected.") ::
@@ -81,8 +81,7 @@ let man_xrefs = [ `Main ]
 let man =
   [ `S Manpage.s_description;
     `P "The $(tname) command consults the package's VCS and outputs the
-        list of commits that define the changes for the next distribution.";
-    `Blocks Cli.common_opts_man ]
+        list of commits that define the changes for the next distribution." ]
 
 let cmd =
   Term.(pure status $ Cli.setup $ Cli.pkg_file $ after $ until),

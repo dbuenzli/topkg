@@ -364,7 +364,7 @@ let topic =
   Arg.(value & pos 0 (some string) None & info [] ~docv:"TOPIC" ~doc)
 
 let doc = "Show help about topkg"
-let sdocs = Cli.common_opts
+let sdocs = Manpage.s_common_options
 let exits = Cli.exits
 let man_xrefs = [`Main]
 let man =

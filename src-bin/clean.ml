@@ -34,7 +34,7 @@ let clean () pkg_file name build_dir =
 open Cmdliner
 
 let doc = "Clean the package's build"
-let sdocs = Cli.common_opts
+let sdocs = Manpage.s_common_options
 let exits = Term.exit_info 1 ~doc:"on clean failure." :: Cli.exits
 let man_xrefs = [`Main; `Cmd "build"]
 let man =
@@ -43,8 +43,7 @@ let man =
     `S Manpage.s_description;
     `P "The $(tname) command deletes the package's build and its opam
         install file. This is equivalent to invoke:";
-    `Pre "ocaml ./pkg/pkg.ml clean";
-    `Blocks Cli.common_opts_man ]
+    `Pre "ocaml ./pkg/pkg.ml clean";]
 
 let cmd =
   Term.(pure clean $ Cli.setup $ Cli.pkg_file $ Cli.pkg_name $ Cli.build_dir),
