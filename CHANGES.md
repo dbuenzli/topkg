@@ -1,4 +1,5 @@
 
+- `topkg run` do not run `.so` and `.cmxs` files.
 - Fix changelog parsing. Subsections of an entry were not being properly
   parsed.
 - Add the `--raw ARG` repeteable option to the `build` command. Allows

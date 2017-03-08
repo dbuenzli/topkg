@@ -8,16 +8,20 @@ open Bos_setup
 
 let pp_exec = Fmt.(quote string)
 
+let blacklist = [ ".so"; ".cmxs" ] (* Don't try to run these kind of files *)
+
 let exec_match exec p =
   OS.File.exists p >>= function
   | false -> Ok false
   | true ->
       OS.Path.Mode.get p >>= fun mode ->
       if mode land 0o111 = 0 then Ok false else
-      let p_base = Fpath.(to_string @@ rem_ext p) in
+      let p_base, ext = Fpath.split_ext p in
+      let p_base = Fpath.to_string p_base in
       let p = Fpath.to_string p in
-      Ok (String.is_suffix ~affix:exec p_base ||
-          String.is_suffix ~affix:exec p)
+      Ok (not (List.mem ext blacklist) &&
+          (String.is_suffix ~affix:exec p_base ||
+           String.is_suffix ~affix:exec p))
 
 let find_exec exec dir =
   let ambiguous l =
