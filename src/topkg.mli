@@ -1348,7 +1348,7 @@ let clean os ~build_dir = OS.Cmd.run @@ Pkg.clean_cmd os ~build_dir
          hostname of PKG_HOMEPAGE is [github] the following is used:
 {[PKG_DEV_REPO/releases/download/$(VERSION)/$(NAME)-$(VERSION_NUM).tbz]}
          where PKG_DEV_REPO is the package's opam file [dev-repo] field
-         without the [.git] suffix.}} *)
+         without the [.git] suffix and a possible [git+] prefix.}} *)
 
   val watermarks : watermark list
   (** [watermarks] is the default list of watermarks. It has the following

@@ -44,6 +44,10 @@ let chop_ext u = match String.cut ~rev:true ~sep:"." u with
 | None -> u
 | Some (u, _) -> u
 
+let chop_git_prefix u = match String.cut ~sep:"git+" u with
+| Some ("", uri) -> uri
+| _ -> u
+
 (* Package *)
 
 type t =
@@ -199,7 +203,7 @@ let distrib_uri ?(raw = false) p =
               opam_field_hd p "dev-repo">>= function
               | None -> not_found ()
               | Some dev_repo ->
-                  Ok (uri_append (chop_ext dev_repo)
+                  Ok (uri_append (chop_git_prefix (chop_ext dev_repo))
                       "releases/download/$(VERSION)/$(NAME)-$(VERSION_NUM).tbz")
   in
   if raw then uri else subst_uri p uri
