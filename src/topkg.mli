@@ -1944,7 +1944,7 @@ the depends field of your opam file should at least have:
 depends: [
   "ocamlfind" {build}
   "ocamlbuild" {build}
-  "topkg" {build} ]
+  "topkg" {build & >= 0.9.0} ]
 v}
 
 The build instructions of the package are simply an invocation of

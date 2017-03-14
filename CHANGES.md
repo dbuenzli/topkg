@@ -1,23 +1,23 @@
-
-v0.8.2 La Forclaz (VS)
+v0.9.0 La Forclaz (VS)
 ----------------------
 
-- `topkg run` do not run `.so` and `.cmxs` files.
-- Fix changelog parsing. Subsections of an entry were not being properly
-  parsed (#103).
-- Fix `topkg opam pkg`'s `url` file generation for github users which
-  have `dev-repo:` with opam "version control bound urls" (#106).
+- Deprecate `--pinned` in favor of `--dev-pkg` in the `build` command.
+  The semantics is the same and with opam < 2.0 it should still be set
+  to `"%{pinned}%"`. With opam >= 2.0 it should be set to `"%{dev}%"`
+  this allows to infer the correct build context for (non-pinned) VCS
+  packages (#79).
+- Improve `ocamlbuild` cross-compilation support. Adds the
+  `Conf.toolchain` configuration key. If specified on the command line
+  or via the `TOPKG_CONF_TOOLCHAIN` environment variable, its value is
+  used with the `-toolchain` option introduced in `ocamlbuild` 0.11.0
+  in default build command `Pkg.build_cmd`. If unspecified the default
+  build command is left unchanged. Thanks to whitequark for the patch.
 - Add the `--raw ARG` repeteable option to the `build` command. Allows
   to skip package build instructions and opam install file generation
   to simply invoke the package build command with the `ARG` argument.
 - `topkg doc` (ocamlbuild specific). Build the documentation using
   the package `build` command and `--raw` arguments. Avoids problems
   encountered by packages that use ocamlbuild plugins (#80).
-- Deprecate `--pinned` in favor of `--dev-pkg` in the `build` command.
-  The semantics is the same and with opam < 2.0 it should still be set
-  to `"%{pinned}%"`. With opam >= 2.0 it should be set to `"%{dev}%"`
-  this allows to infer the correct build context for (non-pinned) VCS
-  packages (#79).
 - Add the `cma`, `cmxa` and `cmxs` optional arguments to `Pkg.mllib`.
   These allow to precisely specify what you (don't) want to build. They
   all default to `true`. Thanks to Stephen Dolan for the suggestion.
@@ -30,14 +30,13 @@ v0.8.2 La Forclaz (VS)
   the last built package. This means that if you have `pkg/pkg.ml
   build -n PKG && pkg/pkg test` invocations you need to turn them into
   `pkg/pkg.ml build -n PKG && pkg/pkg test -n PKG`.
-- Improve `ocamlbuild` cross-compilation support. Adds the
-  `Conf.toolchain` configuration key. If specified on the command line
-  or via the `TOPKG_CONF_TOOLCHAIN` environment variable, its value
-  is used with the `-toolchain` option introduced in
-  `ocamlbuild` 0.11.0 in default build command `Pkg.build_cmd`. If
-  unspecified the default build command is left unchanged. Thanks to
-  whitequark for the patch.
-- Depends at least on `cmdliner.1.0.0` and `opam-format`.
+- Fix `topkg run`, do not run `.so` and `.cmxs` files.
+- Fix changelog parsing. Subsections of an entry were not being properly
+  parsed (#103).
+- Fix `topkg opam pkg`'s `url` file generation for github users which
+  have `dev-repo:` with opam "version control bound" uris (#106).
+- Depends at least on `cmdliner.1.0.0` and `opam-format` (`opam-lib`
+  is out).
 
 v0.8.1 2016-11-02 Zagreb
 ------------------------
