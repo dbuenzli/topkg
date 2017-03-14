@@ -1,7 +1,12 @@
 
+v0.8.2 La Forclaz (VS)
+----------------------
+
 - `topkg run` do not run `.so` and `.cmxs` files.
 - Fix changelog parsing. Subsections of an entry were not being properly
-  parsed.
+  parsed (#103).
+- Fix `topkg opam pkg`'s `url` file generation for github users which
+  have `dev-repo:` with opam "version control bound urls" (#106).
 - Add the `--raw ARG` repeteable option to the `build` command. Allows
   to skip package build instructions and opam install file generation
   to simply invoke the package build command with the `ARG` argument.
@@ -32,7 +37,7 @@
   `ocamlbuild` 0.11.0 in default build command `Pkg.build_cmd`. If
   unspecified the default build command is left unchanged. Thanks to
   whitequark for the patch.
-
+- Depends at least on `cmdliner.1.0.0` and `opam-format`.
 
 v0.8.1 2016-11-02 Zagreb
 ------------------------
