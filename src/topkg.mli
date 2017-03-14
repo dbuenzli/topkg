@@ -1954,7 +1954,7 @@ your package has no configuration options, this simply boils
 down to:
 {[
 # For opam >= 2.0
-build: [[ "ocaml" "pkg/pkg.ml" "build" "--dev-pkg" "%{dev}%" ] ]
+build: [[ "ocaml" "pkg/pkg.ml" "build" "--dev-pkg" "%{dev}%" ]]
 
 # For opam < 2.0
 build: [[ "ocaml" "pkg/pkg.ml" "build" "--dev-pkg" "%{pinned}%" ]]
