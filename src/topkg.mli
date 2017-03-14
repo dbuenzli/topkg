@@ -742,9 +742,10 @@ module Conf : sig
       and the package sources are a checkout from a VCS rather
       than a distribution archive. Usually specified in opam build instruction
       with either:
-{v
+{[
 "--dev-pkg" "%{dev}%"    # for opam >= 2.0
-"--dev-pkg" "%{pinned}%" #           < 2.0 v}
+"--dev-pkg" "%{pinned}%" #           < 2.0
+]}
 *)
 
   val pinned : t -> bool
@@ -1951,13 +1952,13 @@ The build instructions of the package are simply an invocation of
 build configuration on the command line. In the simplest case, if
 your package has no configuration options, this simply boils
 down to:
-{v
+{[
 # For opam >= 2.0
-build: [[ "ocaml" "pkg/pkg.ml" "build" "--dev-pkg" "%{dev}%" ]]
+build: [[ "ocaml" "pkg/pkg.ml" "build" "--dev-pkg" "%{dev}%" ] ]
 
 # For opam < 2.0
 build: [[ "ocaml" "pkg/pkg.ml" "build" "--dev-pkg" "%{pinned}%" ]]
-v}
+]}
 
 The ["--dev-pkg"] configuration key is used to inform the package
 description about the {{!Conf.build_context}build context}. This
@@ -1975,7 +1976,7 @@ automatically by default.
 If you described {{!Pkg.tests}tests} then you should specify
 the instructions as follows (unfortunately for opam < 2.0 this involves
 the repetition of the build line):
-{v
+{[
 # For opam >= 2.0
 
 build:
@@ -1992,7 +1993,7 @@ build:
 build-test:
 [[ "ocaml" "pkg/pkg.ml" "build" "--dev-pkg" "%{pinned}%" "--tests" "true" ]
  [ "ocaml" "pkg/pkg.ml" "test" ]]
-v}
+]}
 
 {b Beyond opam.} If you need to support another package system you
 can invoke [pkg/pkg.ml] as above and then manage the installation and
@@ -2320,12 +2321,12 @@ of the install [etc] directory.}
 {- We install the [etc/mypkg.conf] configuration in the install [etc]
    directory.}}
 The opam build instructions for the package are:
-{v
+{[
 build: [[
   "ocaml" "pkg/pkg.ml" "build"
           "--dev-pkg" "%{dev}%" # use "%{pinned}%" for opam < 2.0
           "--etc-dir" mypkg:etc ]]
-v}
+]}
 
 {2:multiopam Multiple opam packages for a single distribution}
 
@@ -2363,19 +2364,19 @@ let () =
 The build instructions of these opam files need to give the name of
 the package to the build invocation so that the right install description
 can be selected:
-{v
+{[
 build: [[
   "ocaml" "pkg/pkg.ml" "build"
           "--pkg-name" name
           "--dev-pkg" "%{dev}%" # use "%{pinned}%" for opam < 2.0
 ]]
-v}
+]}
 
 In general you will use the default, main, package name and its opam file to
 create and publish the distribution archive file and all packages
 will use the same distribution; the opam packages will only differ in their
 opam file. Releasing the set of packages then becomes:
-{v
+{[
 # Release the distribution and base package (use topkg bistro
 # for doing this via a single invocation)
 topkg distrib
@@ -2386,7 +2387,7 @@ topkg opam submit
 # Create and release the other opam package based on the ditrib
 topkg opam pkg --pkg-name mypkg-snd
 topkg opam submit --pkg-name mypkg-snd
-v}
+]}
 
 See [topkg help release] for more information about releasing
 packages with [topkg].
