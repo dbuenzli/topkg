@@ -39,7 +39,7 @@ let main =
 
 let main () =
   Topkg.Private.disable_main ();
-  Term.(exit @@ eval_choice main cmds)
+  Term.(exit_status @@ eval_choice main cmds)
 
 let () = main ()
 
