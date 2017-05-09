@@ -1455,7 +1455,7 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
 
   val opam_file :
     ?lint:bool -> ?lint_deps_excluding:string list option -> ?install:bool ->
-    fpath -> opam_file
+    ?insert_version:bool -> fpath -> opam_file
   (** [opam_file ~lint ~lint_deps_excluding ~install p] is an opam file
       [p] expressd relative to the distribution root directory such that:
       {ul
@@ -1471,7 +1471,9 @@ fun () -> Ok [".git"; ".gitignore"; ".gitattributes"; ".hg"; ".hgignore";
          {- Package names that start with ["conf-"]}
          {- {!Topkg_care.OCamlfind.base_packages}}
          {- {!Topkg_care.Opam.ocaml_base_packages}}}
-         If [None] the dependency check is disabled.}} *)
+         If [None] the dependency check is disabled.}
+      {- If [insert_version] is [true] (default), the version is automacally
+         inserted in step 2. of {{!distdetails}distribution creation}} *)
 
   val describe :
     ?delegate:Cmd.t ->
