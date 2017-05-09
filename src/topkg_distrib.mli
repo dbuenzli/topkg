@@ -17,15 +17,20 @@ open Topkg_result
 type watermark =
   string *
   [ `String of string | `Name | `Version | `Version_num | `Vcs of [ `Commit_id ]
-  | `Opam of Topkg_fpath.t option * string * string ]
+  | `Opam of Topkg_fpath.t option * string * string
+  | `Delete_bol | `Delete_eol | `Delete_line ]
+
 
 val define_watermarks :
   name:string -> version:string -> opam:Topkg_fpath.t ->
-  watermark list -> (string * string) list
+  watermark list -> (string * Topkg_os.File.edition_command) list
 
-val watermark_file : (string * string) list -> Topkg_fpath.t -> unit result
+val watermark_file :
+  (string * Topkg_os.File.edition_command) list -> Topkg_fpath.t -> unit result
 val watermark_files :
-  (string * string) list -> Topkg_fpath.t list -> unit result
+  (string * Topkg_os.File.edition_command) list ->
+  Topkg_fpath.t list ->
+  unit result
 
 (* Distribution *)
 

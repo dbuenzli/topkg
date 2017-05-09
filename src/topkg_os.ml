@@ -147,48 +147,141 @@ module File = struct
       with exn -> close oc; raise exn
     with Sys_error e -> R.error_msgf "%s: %s" file e
 
-  let write_subst file vars s = (* very ugly mister, too lazy to rewrite *)
+  type edition_command =
+    [ `Replace_by of string
+    | `Delete_bol
+    | `Delete_eol
+    | `Delete_line ]
+
+  type substitution =
+    { start : int
+    ; stop  : int
+    ; repl  : string
+    }
+
+  let compute_substitutions file commands s =
+    let len = String.length s in
+    let longest_id =
+      List.fold_left (fun acc (s, _) -> max (String.length s) acc) 0 commands
+    in
+    let rec find_bol i =
+      if i = 0 || s.[i - 1] = '\n' then
+        i
+      else
+        find_bol (i - 1)
+    in
+    let rec find_eol i =
+      if i = len then
+        i
+      else if s.[i] <> '\n' then
+        find_eol (i + 1)
+      else if i > 0 && s.[i - 1] = '\r' then
+        i - 1
+      else
+        i
+    in
+    let rec loop i acc : substitution list =
+      if i = len then acc else
+        match s.[i] with
+        | '%' -> after_percent (i + 1) acc
+        | _ -> loop (i + 1) acc
+    and after_percent i acc =
+      if i = len then acc else
+        match s.[i] with
+        | '%' -> after_double_percent ~start:(i - 1) (i + 1) acc
+        | _ -> loop (i + 1) acc
+    and after_double_percent ~start i acc =
+      if i = len then acc else
+        match s.[i] with
+        | '%' -> after_double_percent ~start:(i - 1) (i + 1) acc
+        | ' ' -> loop (i + 1) acc
+        | _ -> in_id ~start (i + 1) acc
+    and in_id ~start i acc =
+      if i = len then acc else
+      if i - start > longest_id then loop i acc else
+        match s.[i] with
+        | '%' -> end_of_id ~start (i + 1) acc
+        | ' ' -> loop (i + 1) acc
+        | _ -> in_id ~start (i + 1) acc
+    and end_of_id ~start i acc =
+      if i = len then acc else
+        match s.[i] with
+        | '%' -> begin
+            let id = String.sub s (start + 2) (i - start - 3) in
+            match try Some (List.assoc id commands) with Not_found -> None with
+            | None -> in_id ~start:(i - 1) (i + 1) acc
+            | Some (`Replace_by repl) ->
+              loop (i + 1) ({ start; stop = i + 1; repl } :: acc)
+            | Some `Delete_bol ->
+              let bol = find_bol i in
+              loop (i + 1) ({ start = bol; stop = i + 1; repl = "" } :: acc)
+            | Some `Delete_eol ->
+              let eol = find_eol i in
+              loop (i + 1) ({ start; stop = eol; repl = "" } :: acc)
+            | Some `Delete_line ->
+              let bol = find_bol i in
+              let eol = find_eol i in
+              let next_bol =
+                if eol = len then
+                  eol
+                else if s.[eol] = '\r' then
+                  eol + 2
+                else
+                  eol + 1
+              in
+              loop (i + 1) ({ start = bol; stop = next_bol; repl = "" } :: acc)
+          end
+        | _ -> loop (i + 1) acc
+    in
+    let substs = List.sort compare (loop 0 []) in
+    let offset_to_line ofs =
+      let rec loop i line =
+        if i = ofs then
+          line
+        else if s.[i] = '\n' then
+          loop (i + 1) (line + 1)
+        else
+          loop (i + 1) line
+      in
+      loop 0 1
+    in
+    List.fold_left
+      (fun acc subst ->
+         acc >>= fun pos ->
+         if pos > subst.start then
+           R.error_msgf "%s:%d: overlapping substitutions in this line"
+             file (offset_to_line pos)
+         else
+           Ok subst.stop)
+      (Ok 0)
+      substs
+    >>| fun (_ : int) ->
+    substs
+
+  let write_edit file commands s =
+    compute_substitutions file commands s >>= fun substs ->
     try
       let close oc = if file = dash then () else close_out_noerr oc in
       (if file = dash then Ok stdout else safe_open_out_bin file) >>= fun oc ->
       try
-        let start = ref 0 in
-        let last = ref 0 in
-        let len = String.length s in
-        while (!last < len - 4) do
-          if not (s.[!last] = '%' && s.[!last + 1] = '%') then incr last else
-          begin
-            let start_subst = !last in
-            let last_id = ref (!last + 2) in
-            let stop = ref false in
-            while (!last_id < len - 1 && not !stop) do
-              if not (s.[!last_id] = '%' && s.[!last_id + 1] = '%') then begin
-                if s.[!last_id] <> ' ' then (incr last_id) else
-                (stop := true; last := !last_id)
-              end else begin
-                let id_start = start_subst + 2 in
-                let id = String.sub s (id_start) (!last_id - id_start) in
-                try
-                  let subst = List.assoc id vars in
-                  output oc (Bytes.unsafe_of_string s)
-                    !start (start_subst - !start);
-                  output_string oc subst;
-                  stop := true;
-                  start := !last_id + 2;
-                  last := !last_id + 2;
-                with Not_found ->
-                  stop := true;
-                  last := !last_id
-              end
-            done
-          end
-        done;
-        output oc (Bytes.unsafe_of_string s) !start (len - !start);
+        let pos =
+          List.fold_left
+            (fun pos { start; stop; repl } ->
+               output_substring oc s pos (start - pos);
+               output_string oc repl;
+               stop)
+            0
+            substs
+        in
+        output_substring oc s pos (String.length s - pos);
         flush oc;
         close oc;
         Ok ()
       with exn -> close oc; raise exn
     with Sys_error e -> R.error_msgf "%s: %s" file e
+
+  let write_subst file vars s =
+    write_edit file (List.map (fun (var, s) -> (var, `Replace_by s)) vars) s
 
   let tmp () =
     try

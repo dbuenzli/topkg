@@ -19,7 +19,7 @@ val meta_file : ?lint:bool -> ?install:bool -> Topkg_fpath.t -> meta_file
 type opam_file
 val opam_file :
   ?lint:bool -> ?lint_deps_excluding:string list option -> ?install:bool ->
-  Topkg_fpath.t -> opam_file
+  ?insert_version:bool -> Topkg_fpath.t -> opam_file
 
 type t
 

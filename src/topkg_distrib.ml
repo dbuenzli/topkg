@@ -15,7 +15,11 @@ type watermark =
   | `Version
   | `Version_num
   | `Vcs of [ `Commit_id ]
-  | `Opam of Topkg_fpath.t option * string * string ]
+  | `Opam of Topkg_fpath.t option * string * string
+  | `Delete_bol
+  | `Delete_eol
+  | `Delete_line
+  ]
 
 let opam_fields file =
   (Topkg_opam.File.fields file)
@@ -50,23 +54,30 @@ let vcs_commit_id () =
 let define_watermarks ~name ~version ~opam watermarks =
   let define (id, v) =
     let (id, v as def) = match v with
-    | `String s -> (id, s)
-    | `Version -> (id, version)
-    | `Version_num -> (id, Topkg_string.drop_initial_v version)
-    | `Name -> (id, name)
-    | `Vcs `Commit_id -> (id, vcs_commit_id ())
+    | `String s -> (id, `Replace_by s)
+    | `Version -> (id, `Replace_by version)
+    | `Version_num -> (id, `Replace_by (Topkg_string.drop_initial_v version))
+    | `Name -> (id, `Replace_by name)
+    | `Vcs `Commit_id -> (id, `Replace_by (vcs_commit_id ()))
     | `Opam (file, field, sep) ->
         let file = match file with None -> opam | Some file -> file in
-        (id, String.concat sep (opam_field file field))
+        (id, `Replace_by (String.concat sep (opam_field file field)))
+    | (`Delete_bol | `Delete_eol | `Delete_line as cmd) -> (id, cmd)
     in
-    Topkg_log.info (fun m -> m "Watermark %s = %S" id v);
+    Topkg_log.info (fun m ->
+      m "Watermark %s = %s" id
+        (match v with
+         | `Replace_by s -> Printf.sprintf "`Replace_by %S" s
+         | `Delete_bol -> "`Delete_bol"
+         | `Delete_eol -> "`Delete_eol"
+         | `Delete_line -> "`Delete_line"));
     def
   in
   List.map define watermarks
 
 let watermark_file ws file =
   Topkg_os.File.read file >>= fun content ->
-  Topkg_os.File.write_subst file ws content >>= fun () ->
+  Topkg_os.File.write_edit file ws content >>= fun () ->
   Topkg_log.info (fun m -> m "Watermarked %s" file); Ok ()
 
 let rec watermark_files ws = function
@@ -88,7 +99,10 @@ let default_watermarks =
     "PKG_ISSUES", `Opam (None, "bug-reports", space);
     "PKG_DOC", `Opam (None, "doc", space);
     "PKG_LICENSE", `Opam (None, "license", comma);
-    "PKG_REPO", `Opam (None, "dev-repo", space); ]
+    "PKG_REPO", `Opam (None, "dev-repo", space);
+    "<<", `Delete_bol;
+    ">>", `Delete_eol;
+    "DELETE_LINE", `Delete_line; ]
 
 let default_files_to_watermark =
   let is_file f =

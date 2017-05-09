@@ -13,9 +13,10 @@ type meta_file = std_file * bool
 let meta_file ?(lint = true) ?install file =
   std_file ?install file, lint
 
-type opam_file = std_file * bool * string list option
-let opam_file ?(lint = true) ?(lint_deps_excluding = Some []) ?install file =
-  std_file ?install file, lint, lint_deps_excluding
+type opam_file = std_file * bool * string list option * bool
+let opam_file ?(lint = true) ?(lint_deps_excluding = Some []) ?install
+      ?(insert_version = true) file =
+  std_file ?install file, lint, lint_deps_excluding, insert_version
 
 let std_files_installs readmes licenses change_logs metas opams =
   let add field (p, install) acc = if install then field p :: acc else acc in
@@ -23,7 +24,7 @@ let std_files_installs readmes licenses change_logs metas opams =
   List.fold_right (add Topkg_install.doc) licenses @@
   List.fold_right (add Topkg_install.doc) change_logs @@
   List.fold_right (fun (m, _) -> add Topkg_install.lib m) metas @@
-  List.fold_right (fun (o, _, _) -> add Topkg_install.lib o) opams @@
+  List.fold_right (fun (o, _, _, _) -> add Topkg_install.lib o) opams @@
   []
 
 type t =
@@ -85,14 +86,16 @@ let std_files p =
   List.map fst p.readmes @ List.map fst p.licenses @
   List.map fst p.change_logs @
   List.(rev_append (rev_map (fun (m, _) -> fst m) p.metas)
-    (rev (rev_map (fun (o, _, _) -> fst o) p.opams)))
+    (rev (rev_map (fun (o, _, _, _) -> fst o) p.opams)))
 
 let build_dir p = Topkg_build.dir p.build
 let opam ~name p =
-  let has_name (o, _, _) = Topkg_fpath.(basename @@ rem_ext @@ fst o) = name in
+  let has_name (o, _, _, _) =
+    Topkg_fpath.(basename @@ rem_ext @@ fst o) = name
+  in
   let opams = p.opams in
   match try Some (List.find has_name opams) with Not_found -> None with
-  | Some (opam, _, _) -> fst opam
+  | Some (opam, _, _, _) -> fst opam
   | None ->
       if name <> p.name then
         Topkg_log.warn
@@ -104,7 +107,7 @@ let codec =
   let string_list_option = Topkg_codec.(option @@ list string) in
   let std_file = Topkg_codec.(pair string bool) in
   let meta_file = Topkg_codec.(pair std_file bool) in
-  let opam_file = Topkg_codec.(t3 std_file bool (string_list_option)) in
+  let opam_file = Topkg_codec.(t4 std_file bool (string_list_option) bool) in
   (* fields *)
   let name = Topkg_codec.(with_kind "name" @@ string) in
   let delegate = Topkg_codec.(with_kind "delegate" @@ option cmd) in
@@ -145,11 +148,14 @@ let codec =
 
 let distrib_version_opam_files p ~version =
   let version = Topkg_string.drop_initial_v version in
-  let version_opam_file acc ((file, _), _, _) =
-    acc
-    >>= fun () -> Topkg_os.File.read file
-    >>= fun o -> Ok (Topkg_string.strf "version: \"%s\"\n%s" version o)
-    >>= fun o -> Topkg_os.File.write file o
+  let version_opam_file acc ((file, _), _, _, insert_version) =
+    if insert_version then
+      acc
+      >>= fun () -> Topkg_os.File.read file
+      >>= fun o -> Ok (Topkg_string.strf "version: \"%s\"\n%s" version o)
+      >>= fun o -> Topkg_os.File.write file o
+    else
+      acc
   in
   List.fold_left version_opam_file (Ok ()) p.opams
 
@@ -321,7 +327,7 @@ let lint_metas p =
   List.map (fun ((p, _), lint) -> (p, lint)) p.metas
 
 let lint_opams p =
-  List.map (fun ((p, _), lint, lint_deps) -> (p, lint, lint_deps)) p.opams
+  List.map (fun ((p, _), lint, lint_deps, _) -> (p, lint, lint_deps)) p.opams
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

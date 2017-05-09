@@ -34,6 +34,14 @@ module File : sig
     val write_subst :
       Topkg_fpath.t -> (string * string) list -> string -> unit result
 
+    type edition_command =
+      [ `Replace_by of string
+      | `Delete_bol
+      | `Delete_eol
+      | `Delete_line ]
+    val write_edit :
+      Topkg_fpath.t -> (string * edition_command) list -> string -> unit result
+
     val tmp : unit -> Topkg_fpath.t result
 end
 
