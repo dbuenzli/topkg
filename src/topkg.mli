@@ -1298,7 +1298,8 @@ let clean os ~build_dir = OS.Cmd.run @@ Pkg.clean_cmd os ~build_dir
 
   type watermark = string * [ `String of string | `Version | `Version_num
                             | `Name | `Vcs of [`Commit_id]
-                            | `Opam of fpath option * string * string]
+                            | `Opam of fpath option * string * string
+                            | `Delete_bol | `Delete_eol | `Delete_line]
   (** The type for watermarks. A watermark identifier, e.g. ["ID"] and its
       definition:
       {ul
@@ -1318,7 +1319,13 @@ let clean os ~build_dir = OS.Cmd.run @@ Pkg.clean_cmd os ~build_dir
          {!Topkg_care.Opam.File.field_names}.  {b Warning.} In
          {{!Conf.build_context}dev package ([`Pin]) builds}, [`Opam]
          watermarks are only substituted if the package [topkg-care] is
-         installed.}}
+         installed.}
+      {- [`Delete_bol], is a special identifieer that deletes everything from
+         the beginning of the current line to the end of the watermark.}
+      {- [`Delete_eol], is a special identifieer that deletes everything from
+         the beginning of the watermark to the end of the current line.}
+      {- [`Delete_line], is a special identifieer that deletes the current
+         line entirely.}}
 
       When a file is watermarked with an identifier ["ID"], any occurence of
       the sequence [%%ID%%] in its content is substituted by its definition. *)
@@ -1379,12 +1386,15 @@ let clean os ~build_dir = OS.Cmd.run @@ Pkg.clean_cmd os ~build_dir
       {- [("VERSION_NUM", `Version_num)]}
       {- [("VCS_COMMIT_ID", `Vcs [`Commit_id])]}
       {- [("PKG_MAINTAINER", `Opam (None, "maintainer", ", "))]}
-      {- [("PKG_AUTHORS", `Opam (None, "authors", ", ")]}
-      {- [("PKG_HOMEPAGE", `Opam (None, "homepage", " ")]}
-      {- [("PKG_ISSUES", `Opam (None, "bug-reports", " ")]}
+      {- [("PKG_AUTHORS", `Opam (None, "authors", ", "))]}
+      {- [("PKG_HOMEPAGE", `Opam (None, "homepage", " "))]}
+      {- [("PKG_ISSUES", `Opam (None, "bug-reports", " "))]}
       {- [("PKG_DOC", `Opam (None, "doc", " "))]}
-      {- [("PKG_LICENSE", `Opam (None, "license", ", ")]}
-      {- [("PKG_REPO", `Opam (None, "dev-repo", " "))]}}
+      {- [("PKG_LICENSE", `Opam (None, "license", ", "))]}
+      {- [("PKG_REPO", `Opam (None, "dev-repo", " "))]}
+      {- [("<<", `Delete_bol)]}
+      {- [(">>", `Delete_eol)]}
+      {- [("DELETE_LINE", `Delete_line)]}}
       Prepending to the list overrides default definitions. *)
 
   val files_to_watermark : unit -> fpath list result
