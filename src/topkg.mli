@@ -392,6 +392,26 @@ module OS : sig
         of a string of the form ["%%ID%%"] in [content] is replaced by the
         value of [List.assoc "ID" vars], if any. *)
 
+    (** Edition commands for {!write_edit}:
+        {ul
+        {- [`Replace_by s], replaces [%%ID%%] by [s].}
+        {- [`Delete_bol], delete everything from the beginning of the
+           current line to the end of [%%ID%%].}
+        {- [`Delete_eol], deletes everything from the beginning [%%ID%%] to the
+           end of the current line.}
+        {- [`Delete_line], deletes the current line entirely.}}
+    *)
+    type edition_command =
+      [ `Replace_by of string
+      | `Delete_bol
+      | `Delete_eol
+      | `Delete_line ]
+
+    val write_edit : fpath -> (string * edition_command) list -> string -> unit result
+    (** [write_edit file vars content] is like {!write} except any occurence
+        of a string of the form ["%%ID%%"] in [content] is interpreted by the
+        value of [List.assoc "ID" vars], if any. *)
+
     (** {1:tmpfiles Temporary files} *)
 
     val tmp : unit -> fpath result
