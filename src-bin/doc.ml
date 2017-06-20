@@ -24,8 +24,11 @@ let copy_assets src_dir dst_dir =
       |> Logs.on_error_msg ~use:(fun () -> ())
   | _ -> ()
   in
-  OS.Dir.contents src_dir
-  >>= fun files -> List.iter (copy_asset dst_dir) files; Ok ()
+  OS.Dir.exists src_dir >>= function
+  | false -> Ok ()
+  | true  ->
+      OS.Dir.contents src_dir
+      >>= fun files -> List.iter (copy_asset dst_dir) files; Ok ()
 
 let copy_odig_css doc_dir dst_dir =
   OS.File.exists Fpath.(doc_dir / "style.css") >>= function
@@ -52,8 +55,7 @@ let build_doc pkg pkg_name build_dir dev =
   let out = OS.Cmd.to_stdout in
   let doc_dir = Fpath.v "doc" in
   let odocl = Fpath.(doc_dir / (if dev then "dev.odocl" else "api.odocl")) in
-  OS.File.must_exist odocl
-  >>= fun _ -> Ok Fpath.(set_ext ".docdir" odocl / "index.html")
+  Ok Fpath.(set_ext ".docdir" odocl / "index.html")
   >>= fun target -> Ok (doc_build_args pkg_name build_dir dev target)
   >>= fun args -> OS.Dir.current ()
   >>= fun dir -> Topkg_care.Pkg.build pkg ~dir ~args ~out
