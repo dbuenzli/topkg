@@ -1,3 +1,7 @@
+
+- Improve `topkg doc` for `jbuilder` users. Thanks to Thomas
+  Gazagnaire for the patch.
+
 v0.9.0 La Forclaz (VS)
 ----------------------
 
