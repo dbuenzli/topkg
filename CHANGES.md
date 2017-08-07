@@ -1,6 +1,9 @@
 
 - Improve `topkg doc` for `jbuilder` users. Thanks to Thomas
   Gazagnaire for the patch.
+- `ocamlbuild` users: default to parallel builds. This can
+  be controlled via the `--jobs` command line argument. Thanks
+  to Edwin Török for the patch.
 
 v0.9.0 La Forclaz (VS)
 ----------------------
