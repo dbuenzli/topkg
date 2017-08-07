@@ -370,6 +370,25 @@ let tool ?conf name os = match Topkg_os.Env.var (os_tool_env name os) with
             | Some cmd -> cmd
             | None -> Topkg_cmd.v name
 
+let jobs =
+  let doc = "Allow to run $(docv) commands at once when building." in
+  let absent () = Ok None in
+  discovered_key "jobs" (some int) ~absent ~doc ~docv:"JOBS"
+
+let default_jobs = 4
+let jobs c = match value c jobs with
+| Some n -> n
+| None ->
+    match build_context c with
+    | `Dev ->
+        let getconf = tool "getconf" `Build_os in
+        let use () = default_jobs in
+        Topkg_log.on_error_msg ~level:Topkg_log.Debug ~use @@ begin
+          Topkg_os.Cmd.(run_out Topkg_cmd.(getconf % "_NPROCESSORS_ONLN") |> out_string |> success) >>= fun out ->
+          Topkg_codec.(dec_result int out)
+        end
+    | _ -> default_jobs
+
 (* OCaml configuration, as communicated by ocamlc -config  *)
 
 module OCaml = struct
