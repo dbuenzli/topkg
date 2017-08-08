@@ -115,7 +115,7 @@ topkg log commit";
         opam package description in the build directory with:";
     `Pre "topkg opam pkg";
     `P "then simply submit it to the opam repository with:";
-    `Pre "topkg opam publish";
+    `Pre "topkg opam submit";
     `P "The latter does nothing more than invoking opam-publish-submit(1) on
         the package description generated earlier.";
     `P "Congratulations. You are done. Ditch your computer.";
