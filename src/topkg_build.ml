@@ -7,8 +7,7 @@
 open Topkg_result
 
 let ocamlbuild_flags =
-  Topkg_cmd.(empty % "-use-ocamlfind" % "-classic-display" %
-             "-X" % ".git" % "-X" % "_opam")
+  Topkg_cmd.(empty % "-use-ocamlfind" % "-classic-display" % "-X" % "_opam")
 
 let build_cmd c os =
   let ocamlbuild = Topkg_conf.tool "ocamlbuild" os in
