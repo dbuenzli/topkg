@@ -1,4 +1,8 @@
+v0.9.1 2017-10-16 Zagreb
+------------------------
 
+- Make `topkg build` return a non-zero exit code when the build
+  fails. Thanks to Etienne Millon for the patch.
 - Improve `topkg doc` for `jbuilder` users. Thanks to Thomas
   Gazagnaire for the patch.
 - `ocamlbuild` users: default to parallel builds. This can
