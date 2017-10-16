@@ -754,6 +754,13 @@ module Conf : sig
       [pinned c] is the value of a predefined key [--pinned]. It has
       exactly the same semantics as {!dev_pkg} but is misnamed. *)
 
+  val jobs : t -> int
+  (** [jobs c] is the value of a predefined key [--jobs].
+      If absent it is determined from the build context as follows.
+      {ul
+      {- [`Dev] builds default to number of CPU cores, or 4 if it cannot be determined.}
+      {- all other contexts default to 4}} *)
+
   type build_context = [`Dev | `Distrib | `Pin ]
   (** The type for build contexts. See {!val:build_context} for semantics. *)
 

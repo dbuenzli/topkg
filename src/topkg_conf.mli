@@ -60,6 +60,7 @@ val build_dir : t -> Topkg_fpath.t
 val vcs : t -> bool
 val pinned : t -> bool
 val dev_pkg : t -> bool
+val jobs : t -> int
 
 type build_context = [`Dev | `Distrib | `Pin ]
 val build_context : t -> [`Dev | `Distrib | `Pin ]

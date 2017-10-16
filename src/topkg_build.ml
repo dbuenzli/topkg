@@ -6,6 +6,8 @@
 
 open Topkg_result
 
+let ocamlbuild_flags =
+  Topkg_cmd.(empty % "-use-ocamlfind" % "-classic-display" % "-X" % "_opam")
 
 let build_cmd c os =
   let ocamlbuild = Topkg_conf.tool "ocamlbuild" os in
@@ -17,12 +19,16 @@ let build_cmd c os =
   in
   let debug = Topkg_cmd.(on (Topkg_conf.debug c) (v "-tag" % "debug")) in
   let profile = Topkg_cmd.(on (Topkg_conf.profile c) (v "-tag" % "profile")) in
-  Topkg_cmd.(ocamlbuild % "-use-ocamlfind" %% toolchain % "-classic-display" %%
+  let jobs =
+    let n = Topkg_conf.jobs c in
+    Topkg_log.info (fun m -> m "using %d jobs" n);
+    Topkg_cmd.(on (n != 1) (v "-j" % string_of_int n)) in
+  Topkg_cmd.(ocamlbuild %% ocamlbuild_flags %% toolchain %% jobs %%
                           debug %% profile % "-build-dir" % build_dir)
 
 let clean_cmd os ~build_dir =
   let ocamlbuild = Topkg_conf.tool "ocamlbuild" os in
-  Topkg_cmd.(ocamlbuild % "-use-ocamlfind" % "-classic-display" %
+  Topkg_cmd.(ocamlbuild %% ocamlbuild_flags %
              "-build-dir" % build_dir % "-clean")
 
 type t =
