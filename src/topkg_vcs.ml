@@ -213,10 +213,10 @@ let hg_commit_id ~dirty r ~rev =
   Ok (if is_dirty && dirty then dirtify id else id)
 
 let hg_commit_ptime_s r ~rev =
-  let time = Topkg_cmd.(v "log" % "--template" % "'{date(date, \"%s\")}'" %
+  let time = Topkg_cmd.(v "log" % "--template" % "{date(date, \"%s\")}" %
                         "--rev" % rev)
   in
-  run_git r time Topkg_os.Cmd.out_string
+  run_hg r time Topkg_os.Cmd.out_string
   >>= fun ptime -> try Ok (int_of_string ptime) with
   | Failure _ -> R.error_msgf "Could not parse timestamp from %S" ptime
 
@@ -287,7 +287,7 @@ let hg_tag r ~force ~sign ~msg ~rev tag =
     Topkg_os.Cmd.out_stdout
 
 let hg_delete_tag r tag =
-  run_git r Topkg_cmd.(v "tag" % "--remove" % tag) Topkg_os.Cmd.out_stdout
+  run_hg r Topkg_cmd.(v "tag" % "--remove" % tag) Topkg_os.Cmd.out_stdout
 
 (* Generic VCS support *)
 
@@ -310,7 +310,7 @@ let find ?dir () = match dir with
         | false -> Ok None
         | true ->
             Lazy.force hg >>= function
-            (_, cmd) -> Ok (Some (v `Hg cmd hg_dir))
+            (_, cmd) -> Ok (Some (v `Hg cmd dir))
 
 let get ?dir () = find ?dir () >>= function
 | Some r -> Ok r
@@ -404,3 +404,4 @@ let delete_tag r tag = match r with
    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   ---------------------------------------------------------------------------*)
+
