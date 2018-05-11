@@ -1,3 +1,7 @@
+
+- Use `command -v` rather than `type` to check for tool existence.
+  Thanks to Hannes Mehnert for the patch.
+
 v0.9.1 2017-10-16 Zagreb
 ------------------------
 

@@ -225,7 +225,7 @@ module Cmd = struct
 
   let test_cmd = match Sys.os_type with
   | "Win32" -> Topkg_cmd.v "where"
-  | _ -> Topkg_cmd.v "type"
+  | _ -> Topkg_cmd.(v "command" % "-v")
 
   let cmd_bin cmd =
     try List.hd (Topkg_cmd.to_list cmd) with
