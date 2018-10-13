@@ -1378,9 +1378,9 @@ let clean os ~build_dir = OS.Cmd.run @@ Pkg.clean_cmd os ~build_dir
   (** [files_to_watermark ()] is the default list of files to
       watermark.  It is invoked in the distribution build directory
       and gets the set of {{!Vcs.tracked_files}tracked files} of this
-      directory from which it removes the files that end with [.flv],
+      directory from which it removes the files that end with [.eps], [.flv],
       [.gif], [.ico], [.jpeg], [.jpg], [.mov], [.mp3], [.mp4], [.otf],
-      [.pdf], [.png], [.ttf], [.woff]. *)
+      [.pdf], [.png], [.ps], [.ttf], [.woff]. *)
 
   val massage : unit -> unit result
   (** [massage] is the default distribution massaging function. It is

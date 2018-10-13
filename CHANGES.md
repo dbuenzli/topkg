@@ -1,4 +1,6 @@
 
+- Add `.ps` and `.eps` files to default watermarking excludes.
+  Thanks Christophe Troestler for the suggestion.
 - Use `command -v` rather than `type` to check for tool existence.
   Thanks to Hannes Mehnert for the patch.
 
