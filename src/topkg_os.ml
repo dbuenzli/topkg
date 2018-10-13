@@ -180,7 +180,9 @@ module File = struct
                   stop := true;
                   last := !last_id
               end
-            done
+            done;
+            (* we exited the loop because we reached eof *)
+            if not !stop then last := !last_id
           end
         done;
         output oc (Bytes.unsafe_of_string s) !start (len - !start);

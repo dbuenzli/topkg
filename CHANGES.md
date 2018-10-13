@@ -1,4 +1,7 @@
 
+- Fix infinite loop in `Topkg.OS.File.write_subst`. This could result
+  in `topkg distrib` never finishing.  Thanks to Christophe Troestler
+  for reporting and Jérémie Dimino for the patch.
 - Add `.ps` and `.eps` files to default watermarking excludes.
   Thanks Christophe Troestler for the suggestion.
 - Use `command -v` rather than `type` to check for tool existence.
