@@ -186,8 +186,9 @@ let curl_upload_archive curl archive owner repo release_id =
 
 let publish_distrib uri name version msg archive =
   let git_for_repo r = Cmd.of_list (Topkg.Cmd.to_list @@ Topkg.Vcs.cmd r) in
+  let curl = Cmd.(v "curl" % "-L" % "-s" % "-S" % "-K" % "-") in
   Fpath.of_string archive
-  >>= fun archive -> OS.Cmd.must_exist Cmd.(v "curl" % "-s" % "-S" % "-K" % "-")
+  >>= fun archive -> OS.Cmd.must_exist curl
   >>= fun curl -> Topkg.Vcs.get ()
   >>= fun repo -> Ok (git_for_repo repo)
   >>= fun git -> OS.Cmd.run Cmd.(git % "push" % "--force" % "--tags")
