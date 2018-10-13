@@ -434,7 +434,7 @@ let lint_opams p =
   |> Logs.on_error_msg ~use:(fun () -> 1)
 
 let lint_deps_default_excludes =
-  let exclude = ["ocamlfind"; "ocamlbuild"; "topkg"] in
+  let exclude = ["ocamlfind"; "ocamlbuild"; "topkg"; "ocaml"] in
   Topkg_care_ocamlfind.base_packages
   |> String.Set.union Topkg_care_opam.ocaml_base_packages
   |> String.Set.union (String.Set.of_list exclude)
