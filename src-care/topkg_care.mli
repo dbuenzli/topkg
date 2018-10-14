@@ -134,8 +134,8 @@ module Opam : sig
   (** [ensure_publish ()] makes sure [opam-publish] is in the executable
       search PATH. *)
 
-  val submit : ?msg:string -> pkg_dir:Fpath.t -> (unit, R.msg) result
-  (** [submit ~pkg_dir] submits the package [pkg_dir] with [opam-publish]
+  val submit : ?msg:string -> opam_file:Fpath.t -> (unit, R.msg) result
+  (** [submit ~opam_file] submits the opam file [opam_file] with [opam-publish]
       and submission message [msg] (if any) to the OCaml opam repository. *)
 
   (** {1:pkgs Packages} *)
@@ -186,6 +186,10 @@ module Opam : sig
     val to_string : t -> string
     (** [to_string d] is [d] as a string. *)
 
+    val to_opam_fields : t -> string
+    (** [to_opam_fields d] is [d] as synopsis and description opam v2
+        fields. *)
+
     val of_readme :
       ?flavour:Text.flavour -> string -> (t, R.msg) result
     (** [of_readme r] extracts an opam description file from a readme [r]
@@ -202,13 +206,19 @@ module Opam : sig
 
     (** {1:url Url file} *)
 
-    val v : uri:string -> checksum:string -> string
+    type t
+    (** The type for url file contents. *)
+
+    val v : uri:string -> checksum:string -> t
     (** [v ~uri ~checksum] is an URL file for URI [uri] with
         checksum [checksum]. *)
 
-    val with_distrib_file : uri:string -> Fpath.t -> (string, R.msg) result
+    val with_distrib_file : uri:string -> Fpath.t -> (t, R.msg) result
     (** [with_distrib_file ~uri f] is an URL file for URI [uri] with
         the checksum of file [f]. *)
+
+    val to_opam_section : t -> string
+    (** [to_opam_section u] is [u] as an opam v2 url section. *)
   end
 end
 
@@ -336,8 +346,9 @@ module Pkg : sig
   val opam : t -> (Fpath.t, R.msg) result
   (** [opam p] is [p]'s opam file. *)
 
-  val opam_descr : t -> (Opam.Descr.t, R.msg) result
-  (** [opam_descr p] is [p]'s opam description. *)
+  val opam_descr : t -> (Opam.Descr.t * bool, R.msg) result
+  (** [opam_descr p] is [p]'s opam description. The boolean indicates
+      if the description was found in the opam file itself. *)
 
   val opam_field : t -> string -> (string list option, R.msg) result
   (** [opam_field p f] looks up field [f] of [p]'s opam file. *)

@@ -1,4 +1,9 @@
 
+- Support (only) for opam-publish v2.0.0. The `--pkg-opam-dir` option
+  of `topkg opam` to indicate the old-style opam package directory to
+  submit is renamed to `--opam-publish-file` to indicate the opam file
+  to submit.
+- Add `topkg opam publish` command, alias of `topkg opam submit`.
 - Toy github delegate: make curl follow redirects. Before obscure
   failures would result when repos got moved around (#120). Thanks
   to Richard Mortier for the report.

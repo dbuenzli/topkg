@@ -39,7 +39,7 @@ val opam : t -> (Fpath.t, R.msg) result
 val opam_field : t -> string -> (string list option, R.msg) result
 val opam_field_hd : t -> string -> (string option, R.msg) result
 val opam_fields : t -> (string list String.map, R.msg) result
-val opam_descr : t -> (Topkg_care_opam.Descr.t, R.msg) result
+val opam_descr : t -> (Topkg_care_opam.Descr.t * bool, R.msg) result
 val readmes : t -> (Fpath.t list, R.msg) result
 val readme : t -> (Fpath.t, R.msg) result
 val change_logs : t -> (Fpath.t list, R.msg) result

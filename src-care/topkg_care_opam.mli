@@ -14,7 +14,7 @@ open Bos_setup
 
 val cmd : Cmd.t
 val ensure_publish : unit -> (unit, R.msg) result
-val submit : ?msg:string -> pkg_dir:Fpath.t -> (unit, R.msg) result
+val submit : ?msg:string -> opam_file:Fpath.t -> (unit, R.msg) result
 val ocaml_base_packages : String.set
 
 module File : sig
@@ -27,14 +27,17 @@ module Descr : sig
   type t = string * string
   val of_string : string -> (t, R.msg) result
   val to_string : t -> string
+  val to_opam_fields : t -> string
   val of_readme :
     ?flavour:Topkg_care_text.flavour -> string -> (t, R.msg) result
   val of_readme_file : Fpath.t -> (t, R.msg) result
 end
 
 module Url : sig
-  val v : uri:string -> checksum:string -> string
-  val with_distrib_file : uri:string -> Fpath.t -> (string, R.msg) result
+  type t = string
+  val v : uri:string -> checksum:string -> t
+  val with_distrib_file : uri:string -> Fpath.t -> (t, R.msg) result
+  val to_opam_section : t -> string
 end
 
 (*---------------------------------------------------------------------------

@@ -17,16 +17,24 @@ let publish =
   let absent = Cmd.(v "opam-publish") in
   OS.Env.(value "TOPKG_OPAM_PUBLISH" cmd ~absent)
 
-let ensure_publish () = OS.Cmd.must_exist publish >>| fun _ -> ()
-let submit ?msg ~pkg_dir =
+let ensure_publish () =
+  OS.Cmd.must_exist publish >>= fun cmd ->
+  OS.Cmd.run_out Cmd.(publish % "--version") |> OS.Cmd.out_string
+  >>= fun (version, _) -> match Topkg.String.parse_version version with
+  | None -> R.error_msgf "Could not determine the version of opam-publish"
+  | Some (m, _, _, _) when m < 2 ->
+      R.error_msgf "topkg needs at least opam-publish 2.0.0"
+  | Some _ -> Ok ()
+
+let submit ?msg ~opam_file =
   let msg = match msg with
   | None -> Ok (Cmd.empty)
   | Some msg ->
       OS.File.tmp "topkg-opam-submit-msg-%s"
       >>= fun m -> OS.File.write m msg
-      >>= fun () -> Ok Cmd.(v "--msg" % p m)
+      >>= fun () -> Ok Cmd.(v "--msg-file" % p m)
   in
-  msg >>= fun msg -> OS.Cmd.run Cmd.(publish % "submit" %% msg % p pkg_dir)
+  msg >>= fun msg -> OS.Cmd.run Cmd.(publish %% msg % p opam_file)
 
 (* Packages *)
 
@@ -70,6 +78,8 @@ module File = struct
     opt_field "dev-repo" OpamFile.OPAM.dev_repo (list OpamUrl.to_string);
     field "depends" OpamFile.OPAM.depends deps_conv;
     field "depopts" OpamFile.OPAM.depopts deps_conv;
+    opt_field "synopsis" OpamFile.OPAM.synopsis (list id);
+    opt_field "description" OpamFile.OPAM.descr_body (list id);
   ]
 
   let field_names =
@@ -114,6 +124,9 @@ module Descr = struct
   | synopsis :: descr -> Ok (synopsis, String.concat ~sep:"\n" descr)
 
   let to_string (synopsis, descr) = strf "%s\n%s" synopsis descr
+  let to_opam_fields (synopsis, descr) =
+    strf "synopsis: \"\"\"%s\"\"\"\ndescription: \"\"\"\\\n%s\"\"\""
+      synopsis descr
 
   let of_readme ?flavour r =
     let parse_synopsis l =
@@ -160,12 +173,15 @@ module Descr = struct
 end
 
 module Url = struct
+  type t = string
   let v ~uri ~checksum = strf "archive: \"%s\"\nchecksum: \"%s\"" uri checksum
   let with_distrib_file ~uri distrib_file =
     try
       let checksum = Digest.(to_hex @@ file (Fpath.to_string distrib_file)) in
       Ok (v ~uri ~checksum)
     with Failure msg | Sys_error msg -> R.error_msg msg
+
+  let to_opam_section u = strf "url {\n%s\n}" u
 end
 
 (*---------------------------------------------------------------------------
