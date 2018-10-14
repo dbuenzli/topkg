@@ -1,3 +1,5 @@
+v1.0.0 2018-10-14 Zagreb
+------------------------
 
 - Support (only) for opam-publish v2.0.0. The `--pkg-opam-dir` option
   of `topkg opam` to indicate the old-style opam package directory to
