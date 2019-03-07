@@ -143,25 +143,26 @@ let codec =
                     (t2 publish build)))
 (* Distrib *)
 
-let distrib_version_opam_files p ~version =
+let distrib_version_opam_files p ~version ~opam_adds =
   let version = Topkg_string.drop_initial_v version in
   let version_opam_file acc ((file, _), _, _) =
     acc
     >>= fun () -> Topkg_os.File.read file
-    >>= fun o -> Ok (Topkg_string.strf "version: \"%s\"\n%s" version o)
+    >>= fun o -> Ok (Topkg_string.strf "version: \"%s\"\n%s%s"
+                       version opam_adds o)
     >>= fun o -> Topkg_os.File.write file o
   in
   List.fold_left version_opam_file (Ok ()) p.opams
 
 let distrib_uri p = Topkg_distrib.uri p.distrib
-let distrib_prepare p ~dist_build_dir ~name ~version ~opam =
+let distrib_prepare p ~dist_build_dir ~name ~version ~opam ~opam_adds =
   let d = distrib p in
   let ws = Topkg_distrib.watermarks d in
   let ws_defs = Topkg_distrib.define_watermarks ws ~name ~version ~opam in
   Topkg_os.Dir.set_current dist_build_dir
   >>= fun () -> Topkg_distrib.files_to_watermark d ()
   >>= fun files -> Topkg_distrib.watermark_files ws_defs files
-  >>= fun () -> distrib_version_opam_files p ~version
+  >>= fun () -> distrib_version_opam_files p ~version ~opam_adds
   >>= fun () -> Topkg_distrib.massage d ()
   >>= fun () -> Topkg_distrib.exclude_paths d ()
 
@@ -175,7 +176,7 @@ let distrib_prepare_pin p =
   >>= fun version -> Ok(Topkg_distrib.define_watermarks ws ~name ~version ~opam)
   >>= fun ws_defs -> Topkg_distrib.files_to_watermark d ()
   >>= fun files -> Topkg_distrib.watermark_files ws_defs files
-  >>= fun () -> distrib_version_opam_files p ~version
+  >>= fun () -> distrib_version_opam_files p ~version ~opam_adds:""
   >>= fun () -> Topkg_distrib.massage d ()
 
 (* Publish *)

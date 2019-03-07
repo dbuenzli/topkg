@@ -61,7 +61,7 @@ val opam : name:string -> t -> Topkg_fpath.t
 val distrib_uri : t -> string option
 val distrib_prepare :
   t -> dist_build_dir:Topkg_fpath.t -> name:string -> version:string ->
-  opam:Topkg_fpath.t -> Topkg_fpath.t list result
+  opam:Topkg_fpath.t -> opam_adds:string -> Topkg_fpath.t list result
 
 (* Publish *)
 

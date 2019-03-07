@@ -23,7 +23,7 @@ val pkg : unit -> Topkg_pkg.t t
 val lint_custom : unit -> Topkg_result.R.msg Topkg_result.result list option t
 val distrib_prepare :
   dist_build_dir:string -> name:string -> version:string -> opam:string ->
-  Topkg_fpath.t list result t
+  opam_adds:string -> Topkg_fpath.t list result t
 
 val write_answer : Topkg_cmd.t -> Topkg_pkg.t -> unit Topkg_result.result
 

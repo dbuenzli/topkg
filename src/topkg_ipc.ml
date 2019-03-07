@@ -57,17 +57,19 @@ let distrib_prepared_codec =
   Topkg_codec.version 0 @@
   Topkg_codec.(with_kind "prepared" @@ result_error_msg (list fpath))
 
-let distrib_prepare ~dist_build_dir ~name ~version ~opam =
+let distrib_prepare ~dist_build_dir ~name ~version ~opam ~opam_adds =
   let cmd =
     Topkg_cmd.(v "distrib" % "prepare" %
                "dist-build-dir" % dist_build_dir % "name" % name %
-               "version" % version % "opam" % opam)
+               "version" % version % "opam" % opam % "opam-adds" % opam_adds)
   in
   v cmd distrib_prepared_codec
 
-let answer_distrib_prepare answer p ~dist_build_dir ~name ~version ~opam =
+let answer_distrib_prepare
+    answer p ~dist_build_dir ~name ~version ~opam ~opam_adds
+  =
   Topkg_codec.write answer distrib_prepared_codec @@
-  Topkg_pkg.distrib_prepare p ~dist_build_dir ~name ~version ~opam
+  Topkg_pkg.distrib_prepare p ~dist_build_dir ~name ~version ~opam ~opam_adds
 
 (* IPC answer *)
 
@@ -78,8 +80,10 @@ let write_answer cmd p = match Topkg_cmd.to_list cmd with
     answer_lint_custom answer p
 | answer :: "distrib" :: "prepare" ::
   "dist-build-dir" :: dist_build_dir :: "name" :: name ::
-  "version" :: version :: "opam" :: opam :: [] ->
-    answer_distrib_prepare answer p ~dist_build_dir ~name ~version ~opam
+  "version" :: version :: "opam" :: opam :: "opam-adds" :: opam_adds :: [] ->
+    answer_distrib_prepare
+      answer p ~dist_build_dir ~name ~version ~opam ~opam_adds
+
 | args ->
     error_args args
 

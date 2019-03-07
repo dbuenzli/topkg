@@ -1819,7 +1819,7 @@ module Private : sig
 
     val distrib_prepare :
       dist_build_dir:fpath -> name:string -> version:string -> opam:fpath ->
-      fpath list result t
+      opam_adds:string -> fpath list result t
     (** [distrib_prepare dist_build_dir name version opam] is an IPC to
         prepare a distribution in directory [dist_build_dir]. This
         sets the cwd to [dist_build_dir], performs the distribution

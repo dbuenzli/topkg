@@ -276,11 +276,12 @@ let v
 
 (* Distrib *)
 
-let distrib_prepare_ipc p ~dist_build_dir ~name ~version ~opam =
+let distrib_prepare_ipc p ~dist_build_dir ~name ~version ~opam ~opam_adds =
   let dist_build_dir = Fpath.to_string dist_build_dir in
   let opam = Fpath.to_string opam in
   R.join @@ Topkg_care_ipc.ask ~pkg_file:p.pkg_file
-    (Topkg.Private.Ipc.distrib_prepare ~dist_build_dir ~name ~version ~opam)
+    (Topkg.Private.Ipc.distrib_prepare ~dist_build_dir ~name ~version ~opam
+       ~opam_adds)
 
 let distrib_archive p ~keep_dir =
   Topkg_care_archive.ensure_bzip2 ()
@@ -298,7 +299,13 @@ let distrib_archive p ~keep_dir =
   >>= fun () -> Topkg_vcs.get ~dir:(Fpath.to_string dist_build_dir) ()
   >>= fun clone -> Ok (Topkg_string.strf "topkg-dist-%s" head)
   >>= fun branch -> Topkg_vcs.checkout clone ~branch ~commit_ish:head
-  >>= fun () -> distrib_prepare_ipc p ~dist_build_dir ~name ~version ~opam
+  >>= fun () -> opam_descr p
+  >>= fun (descr, from_opam) ->
+  let opam_adds =
+    if from_opam then "" else
+    (Topkg_care_opam.Descr.to_opam_fields descr ^ "\n")
+  in
+  distrib_prepare_ipc p ~dist_build_dir ~name ~version ~opam ~opam_adds
   >>= fun exclude_paths -> path_set_of_strings exclude_paths
   >>= fun exclude_paths ->
   Topkg_care_archive.tar dist_build_dir ~exclude_paths ~root ~mtime
