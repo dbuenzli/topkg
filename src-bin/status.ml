@@ -15,7 +15,7 @@ let pp_dirty ppf = function
 | true -> Fmt.pf ppf "The repository is %a.@," Topkg_care.Pp.dirty ()
 
 let pp_commit ppf (id, log) =
-  Fmt.(pf ppf "%a %s" Topkg_care.Pp.commit id log)
+  Fmt.pf ppf "%a %s" Topkg_care.Pp.commit id log
 
 let pp_status ppf (dirty, version, changes) = match changes with
 | [] when not dirty -> Fmt.pf ppf "@[<v>No changes%a@]" pp_since version
