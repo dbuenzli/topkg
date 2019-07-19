@@ -2,8 +2,6 @@
 #use "topfind"
 
 (* Bootstrap from source, note #mod_use is 4.01 *)
-#require "bytes"
-#require "result"
 #directory "src"
 #mod_use "topkg_result.ml"
 #mod_use "topkg_string.ml"

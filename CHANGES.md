@@ -1,5 +1,5 @@
-
-
+v1.0.1 2019-07-19 Zagreb
+------------------------
 
 - Require OCaml 4.03 and handle various stdlib deprecations.
 - Drop `result` dependency.
