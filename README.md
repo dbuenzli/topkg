@@ -27,7 +27,6 @@ Topkg-care is distributed under the ISC license it depends on
 [webbrowser]: http://erratique.ch/software/webbrowser
 
 Home page: http://erratique.ch/software/topkg  
-Contact: Daniel Bünzli `<daniel.buenzl i@erratique.ch>`
 
 ## Installation
 

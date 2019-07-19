@@ -17,11 +17,10 @@ type level = App | Error | Warning | Info | Debug
 val level : unit -> level option
 val set_level : level option -> unit
 val level_to_string : level option -> string
-val level_of_string : string -> (level option, [`Msg of string]) Result.result
+val level_of_string : string -> (level option, [`Msg of string]) r
 
 type 'a msgf =
-  (?header:string -> ('a, Format.formatter, unit) Pervasives.format -> 'a) ->
-  unit
+  (?header:string -> ('a, Format.formatter, unit) format -> 'a) -> unit
 
 val msg : level -> 'a msgf -> unit
 val app : 'a msgf -> unit

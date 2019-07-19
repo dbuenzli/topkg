@@ -144,7 +144,7 @@ let parse_mllib contents = (* list of module name and path (for dir/Mod) *)
     | Some (p, _ (* comment *)) -> p
     in
     if path = "" then acc else
-    let mod_name = Topkg_string.capitalize @@ Topkg_fpath.basename path in
+    let mod_name = Topkg_string.capitalize_ascii @@ Topkg_fpath.basename path in
     (mod_name, path) :: acc
   in
   List.fold_left add_mod [] lines
@@ -173,7 +173,7 @@ let mllib
     match api with
     | None -> mod_names (* all the .mllib modules if unspecified *)
     | Some api ->
-        let in_mllib i = List.mem (Topkg_string.capitalize i) mod_names in
+        let in_mllib i = List.mem (Topkg_string.capitalize_ascii i) mod_names in
         let api, orphans = List.partition in_mllib api in
         let warn o =
           Topkg_log.warn (fun m -> m "mllib %s: unknown interface %s" mllib o)
@@ -192,7 +192,7 @@ let mllib
   let add_mods acc mllib_content =
     let api = api mllib_content in
     let add_mod acc (m, path) =
-      let fname = Topkg_string.uncapitalize (Topkg_fpath.basename path) in
+      let fname = Topkg_string.uncapitalize_ascii (Topkg_fpath.basename path) in
       let fpath = match Topkg_fpath.dirname path with
       | "." -> Topkg_fpath.append lib_dir fname
       | parent -> Topkg_fpath.(append lib_dir (append parent fname))

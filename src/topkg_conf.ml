@@ -333,7 +333,7 @@ let os_to_string = function
 
 let os_tool_env name os =
   let pre = match os with `Build_os -> "BUILD_OS_" | `Host_os -> "HOST_OS_" in
-  pre ^ Topkg_string.uppercase name
+  pre ^ Topkg_string.uppercase_ascii name
 
 let os_bin_dir_env = function
 | `Build_os -> "BUILD_OS_BIN"

@@ -27,7 +27,7 @@ val cuts : ?empty:bool -> sep:char -> string -> string list
 
 val with_index_range : ?first:int -> ?last:int -> string -> string
 
-val uppercase : string -> string
+val uppercase_ascii : string -> string
 
 val parse_version : string -> (int * int * int * string option) option
 val drop_initial_v : string -> string

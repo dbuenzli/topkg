@@ -1,3 +1,12 @@
+
+
+
+- Require OCaml 4.03 and handle various stdlib deprecations.
+- Drop `result` dependency.
+- Fix an upcoming `Fmt` incompability.
+- Addition of `synopsis` and `description` fields to the
+  opam file generated for the tarball.
+
 v1.0.0 2018-10-14 Zagreb
 ------------------------
 

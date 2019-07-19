@@ -4,12 +4,10 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-open Result
-
 let ( >>= ) v f = match v with Ok v -> f v | Error _ as e -> e
 let ( >>| ) v f = match v with Ok v -> Ok (f v) | Error _ as e -> e
 
-type ('a, 'b) r = ('a, 'b) Result.result = Ok of 'a |	Error of 'b
+type ('a, 'b) r = ('a, 'b) result = Ok of 'a |	Error of 'b
 type 'a result = ('a, [`Msg of string]) r
 
 module R = struct

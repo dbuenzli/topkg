@@ -16,17 +16,15 @@
     In the most simple cases you won't need this, jump directly to the
     {{!basics}basics} or {{!Pkg}package description API}. *)
 
-val ( >>= ) :
-  ('a, 'b) Result.result -> ('a -> ('c, 'b) Result.result) ->
-  ('c, 'b) Result.result
+val ( >>= ) : ('a, 'b) result -> ('a -> ('c, 'b) result) -> ('c, 'b) result
 (** [r >>= f] is [f v] if [r = Ok v] and [r] if [r = Error _]. *)
 
-val ( >>| ) : ('a, 'b) Result.result -> ('a -> 'c) -> ('c, 'b) Result.result
+val ( >>| ) : ('a, 'b) result -> ('a -> 'c) -> ('c, 'b) result
 (** [r >>| f] is [Ok (f v)] if [r = Ok v] and [r] if [r = Error _]. *)
 
 (** This definition re-export [result]'s constructors so that an
     [open Topkg] gets them in scope. *)
-type ('a, 'b) r = ('a, 'b) Result.result = Ok of 'a | Error of 'b
+type ('a, 'b) r = ('a, 'b) result = Ok of 'a | Error of 'b
 
 type 'a result = ('a, [ `Msg of string]) r
 (** The type for topkg results. *)
@@ -36,8 +34,7 @@ module R : sig
 
   (** {1:err Errors} *)
 
-  val reword_error : ('b -> 'c) -> ('a, 'b) Result.result ->
-    ('a, 'c) Result.result
+  val reword_error : ('b -> 'c) -> ('a, 'b) r -> ('a, 'c) r
   (** [reword_error reword r] is:
       {ul
       {- [r] if [r = Ok v]}
@@ -48,16 +45,15 @@ module R : sig
   type msg = [ `Msg of string ]
   (** The type for (error) messages. *)
 
-  val error_msg : string -> ('b, [> msg]) Result.result
+  val error_msg : string -> ('b, [> msg]) r
   (** [error_msg s] is [Error (`Msg s)]. *)
 
   val error_msgf :
-    ('a, Format.formatter, unit, ('b, [> msg]) Result.result) format4 -> 'a
+    ('a, Format.formatter, unit, ('b, [> msg]) r) format4 -> 'a
   (** [error_msgf fmt ...] is an error formatted according to [fmt]. *)
 
   val reword_error_msg :
-    ?replace:bool -> (string -> msg) -> ('a, msg) Result.result ->
-    ('a, [> msg]) Result.result
+    ?replace:bool -> (string -> msg) -> ('a, msg) r -> ('a, [> msg]) r
   (** [reword_error_msg ~replace reword r] is like {!reword_error} except
       if [replace] is [false] (default), the result of [reword old_msg] is
       concatened, on a new line to the old message. *)
@@ -273,15 +269,14 @@ module Log : sig
   (** [level_to_string l] converts [l] to an unspecified human-readable
       US-ASCII string that can be parsed back by {!level_of_string}. *)
 
-  val level_of_string : string -> (level option, [`Msg of string]) Result.result
+  val level_of_string : string -> (level option, [`Msg of string]) r
   (** [level_of_string s] parses the representation of {!level_to_string}
       from [s]. *)
 
   (** {1:logf Log functions} *)
 
   type 'a msgf =
-    (?header:string ->
-     ('a, Format.formatter, unit) Pervasives.format -> 'a) -> unit
+    (?header:string -> ('a, Format.formatter, unit) format -> 'a) -> unit
 
   val msg : level -> 'a msgf -> unit
   (** [msg l (fun m -> m fmt ...)] logs with level [l] a message formatted
@@ -379,12 +374,12 @@ module OS : sig
 
     val read : fpath -> string result
     (** [read file] is [file]'s contents. If [file] is {!dash} reads
-        from {!Pervasives.stdin} and the channel is not closed when
+        from {!stdin} and the channel is not closed when
         the function returns. *)
 
     val write : fpath -> string -> unit result
     (** [write file content] writes [content] to [file]. If [file] is {!dash}
-        writes to {!Pervasives.stdout} and flushes but doesn't close the channel
+        writes to {!stdout} and flushes but doesn't close the channel
         when the function returns. *)
 
     val write_subst : fpath -> (string * string) list -> string -> unit result
@@ -1672,7 +1667,7 @@ module Private : sig
     val option : 'a t -> 'a option t
     (** [option el] codecs [el] options. *)
 
-    val result : ok:'a t -> error:'b t -> ('a, 'b) Result.result t
+    val result : ok:'a t -> error:'b t -> ('a, 'b) r t
     (** [result ~ok ~error] codecs [ok], [error] results. *)
 
     val list : 'a t -> 'a list t

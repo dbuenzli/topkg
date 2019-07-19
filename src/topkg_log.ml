@@ -46,8 +46,7 @@ let level_of_string = function
 | l -> R.error_msgf "%S: unknown log level" l
 
 type 'a msgf =
-  (?header:string ->
-   ('a, Format.formatter, unit) Pervasives.format -> 'a) -> unit
+  (?header:string -> ('a, Format.formatter, unit) format -> 'a) -> unit
 
 let _err_count = ref 0
 let err_count () = !_err_count

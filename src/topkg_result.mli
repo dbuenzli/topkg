@@ -8,32 +8,25 @@
 
     Abbridged  [rresult]. See {!section:Topkg.prels} for documention. *)
 
-val ( >>= ) :
-  ('a, 'b) Result.result -> ('a -> ('c, 'b) Result.result) ->
-  ('c, 'b) Result.result
+val ( >>= ) : ('a, 'b) result -> ('a -> ('c, 'b) result) -> ('c, 'b) result
+val ( >>| ) : ('a, 'b) result -> ('a -> 'c) -> ('c, 'b) result
 
-val ( >>| ) :
-  ('a, 'b) Result.result -> ('a -> 'c) -> ('c, 'b) Result.result
-
-type ('a, 'b) r = ('a, 'b) Result.result = Ok of 'a | Error of 'b
-
+type ('a, 'b) r = ('a, 'b) result = Ok of 'a | Error of 'b
 type 'a result = ('a, [ `Msg of string]) r
 
 module R : sig
-  val reword_error :
-    ('b -> 'c) -> ('a, 'b) Result.result -> ('a, 'c) Result.result
+  val reword_error : ('b -> 'c) -> ('a, 'b) r -> ('a, 'c) r
 
   type msg = [ `Msg of string ]
 
   val msgf : ('a, Format.formatter, unit, [> msg]) format4 -> 'a
 
-  val error_msg : string -> ('b, [> msg]) Result.result
+  val error_msg : string -> ('b, [> msg]) r
   val error_msgf :
-    ('a, Format.formatter, unit, ('b, [> msg]) Result.result) format4 -> 'a
+    ('a, Format.formatter, unit, ('b, [> msg]) r) format4 -> 'a
 
   val reword_error_msg :
-    ?replace:bool -> (string -> msg) -> ('a, msg) Result.result ->
-    ('a, [> msg]) Result.result
+    ?replace:bool -> (string -> msg) -> ('a, msg) r -> ('a, [> msg]) r
 end
 
 (*---------------------------------------------------------------------------

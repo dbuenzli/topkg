@@ -21,7 +21,7 @@ let p f = f
 (* Predicates and comparison *)
 
 let equal l l' = l = l'
-let compare l l' = Pervasives.compare l l'
+let compare l l' = compare l l'
 
 (* Conversions and pretty printing *)
 

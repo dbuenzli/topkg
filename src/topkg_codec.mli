@@ -34,7 +34,7 @@ val bool : bool t
 val int : int t
 val string : string t
 val option : 'a t -> 'a option t
-val result : ok:'a t -> error:'b t -> ('a, 'b) Result.result t
+val result : ok:'a t -> error:'b t -> ('a, 'b) r t
 val list : 'a t -> 'a list t
 val pair : 'a t -> 'b t -> ('a * 'b) t
 val t2 : 'a t -> 'b t -> ('a * 'b) t
