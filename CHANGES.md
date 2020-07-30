@@ -1,3 +1,6 @@
+- Support OCaml configurations without shared library support
+  (#136). Thanks to Antonio Nuno Monteiro for the report
+
 v1.0.1 2019-07-19 Zagreb
 ------------------------
 

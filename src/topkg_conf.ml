@@ -563,6 +563,14 @@ module OCaml = struct
     let file _ = "dynlink.cmxa" in
     get_bool_stdlib_file_exists_discovery "natdynlink" c ~file ~on_error:false
 
+  let supports_shared_libraries c =
+    let key = "supports_shared_libraries" in
+    let asm_dynlib c = "libasmrun_shared" ^ (ext_dll c) in
+    let caml_dynlib c = "libcamlrun_shared" ^ (ext_dll c) in
+    let on_error = false in
+    get_bool_stdlib_file_exists_discovery key c ~file:asm_dynlib ~on_error ||
+    get_bool_stdlib_file_exists_discovery key c ~file:caml_dynlib ~on_error
+
   let word_size c =
     let sizeof_ptr_of_config_h file =
       let err l =

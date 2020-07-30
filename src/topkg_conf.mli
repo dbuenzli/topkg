@@ -91,6 +91,7 @@ module OCaml : sig
   val ext_exe : t -> string
   val native : t -> bool
   val native_dynlink : t -> bool
+  val supports_shared_libraries : t -> bool
   val word_size : t -> int
   val dump : Format.formatter -> t -> unit
 end

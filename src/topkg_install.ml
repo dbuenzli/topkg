@@ -36,10 +36,16 @@ let split_ext s = match Topkg_string.cut ~rev:true s ~sep:'.' with
 | Some (name, ext) -> name, `Ext (Topkg_string.strf ".%s" ext)
 
 let bin_drop_exts native = if native then [] else Topkg_fexts.ext ".native"
-let lib_drop_exts native native_dynlink =
-  if native
-  then (if native_dynlink then [] else Topkg_fexts.ext ".cmxs")
-  else Topkg_fexts.(c_library @ exts [".cmx"; ".cmxa"; ".cmxs"])
+let lib_drop_exts native native_dynlink supports_shared_libraries =
+  match native with
+  | false -> Topkg_fexts.(c_library @ exts [".cmx"; ".cmxa"; ".cmxs"])
+  | true ->
+      match supports_shared_libraries with
+      | false -> `Dll :: Topkg_fexts.ext ".cmxs"
+      | true ->
+          match native_dynlink with
+          | false -> Topkg_fexts.ext ".cmxs"
+          | true -> []
 
 let to_build ?header c os i =
   let bdir = Topkg_conf.build_dir c in
@@ -48,11 +54,17 @@ let to_build ?header c os i =
   let ocaml_conf = Topkg_conf.OCaml.v c os in
   let native = Topkg_conf.OCaml.native ocaml_conf in
   let native_dylink = Topkg_conf.OCaml.native_dynlink ocaml_conf in
+  let supports_shared_libraries =
+    Topkg_conf.OCaml.supports_shared_libraries ocaml_conf
+  in
   let ext_to_string = Topkg_fexts.ext_to_string ocaml_conf in
   let file_to_str (n, ext) = Topkg_string.strf "%s%s" n (ext_to_string ext) in
   let maybe_build = [ ".cmti"; ".cmt" ] in
   let bin_drops = List.map ext_to_string (bin_drop_exts native) in
-  let lib_drops = List.map ext_to_string (lib_drop_exts native native_dylink) in
+  let lib_drops =
+    List.map ext_to_string
+      (lib_drop_exts native native_dylink supports_shared_libraries)
+  in
   let add acc m =
     if m.debugger_support && not debugger_support then acc else
     let mv (targets, moves, tests as acc) src dst =

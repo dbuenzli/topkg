@@ -918,6 +918,15 @@ module Conf : sig
         [true] is returned iff the standard library directory has the
         [dynlink.cmxa] library. *)
 
+    val supports_shared_libraries : t -> bool
+    (** [supports_shared_libraries] is [true] if compilation of C
+        shared libraries is supported. Until OCaml 4.08 this
+        information is not readily available (see
+        {{:https://github.com/ocaml/ocaml/pull/1691}PR 1691}).  Before
+        that it checks for the existence of either ["libasmrun_shared"
+        ^ ext_dll c] or ["libcamlrun_shared" ^ ext_dll c] in the standard
+        library directory. *)
+
     val word_size : t -> int
     (** [word_size] is the bit size of one word on the OS that will
         execute the programs produced by the compiler (i.e. the value
