@@ -71,7 +71,7 @@ let to_build ?header c os i =
       let src = file_to_str src in
       let drop = not m.force && match m.field with
       | `Bin -> List.exists (Filename.check_suffix src) bin_drops
-      | `Lib -> List.exists (Filename.check_suffix src) lib_drops
+      | `Lib | `Stublibs -> List.exists (Filename.check_suffix src) lib_drops
       | _ -> false
       in
       if drop then (targets, moves, tests) else
