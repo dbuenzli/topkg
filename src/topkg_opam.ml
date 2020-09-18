@@ -107,7 +107,7 @@ module Install = struct
       field
     in
     let sortable (field, mv) = (field_to_string field, mv) in
-    let moves = List.(sort compare (rev_map sortable mvs)) in
+    let moves = List.sort compare (List.rev_map sortable mvs) in
     pr_header b h;
     let last = List.fold_left (pr_move b) "" moves in
     pr_field_end b last;

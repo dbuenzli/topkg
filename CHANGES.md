@@ -1,3 +1,9 @@
+v1.0.3 2020-09-19 Zagreb
+------------------------
+
+- Fix for OCaml 4.12. The M.() notation is evil. 
+  Thanks to Florian Angeletti for the fix.
+
 v1.0.2 2020-07-30 Zagreb
 ------------------------
 
