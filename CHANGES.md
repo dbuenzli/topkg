@@ -1,7 +1,9 @@
+v1.0.4 2021-10-04 Zagreb
+-------------------------
 
-
-- Remove mentions of `Result.result` in the code base.
-  We got the dependency indirectly through `bos`.
+- Remove mentions of `Result.result` in the code base. We got the
+  dependency indirectly through `bos` and the latest version of the
+  latter no longer depends on it.
 
 v1.0.3 2020-09-19 Zagreb
 ------------------------
