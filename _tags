@@ -1,5 +1,6 @@
 true : bin_annot, safe_string
 
+<_b0> : -traverse
 <src> : include
 
 <src-{care,bin}> : include
