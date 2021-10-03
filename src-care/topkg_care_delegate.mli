@@ -14,15 +14,15 @@ open Bos_setup
 
 val publish_distrib :
   Topkg_care_pkg.t -> msg:string -> archive:Fpath.t ->
-  (unit, R.msg) Result.result
+  (unit, R.msg) result
 
 val publish_doc :
   Topkg_care_pkg.t -> msg:string -> docdir:Fpath.t ->
-  (unit, R.msg) Result.result
+  (unit, R.msg) result
 
 val publish_alt :
   Topkg_care_pkg.t -> kind:string -> msg:string -> archive:Fpath.t ->
-  (unit, R.msg) Result.result
+  (unit, R.msg) result
 
 val publish_in_git_branch :
   remote:string -> branch:string ->

@@ -1,3 +1,8 @@
+
+
+- Remove mentions of `Result.result` in the code base.
+  We got the dependency indirectly through `bos`.
+
 v1.0.3 2020-09-19 Zagreb
 ------------------------
 

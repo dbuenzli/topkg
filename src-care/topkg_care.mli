@@ -438,18 +438,18 @@ module Delegate : sig
   (** {1 Publish} *)
 
   val publish_distrib :
-    Pkg.t -> msg:string -> archive:Fpath.t -> (unit, R.msg) Result.result
+    Pkg.t -> msg:string -> archive:Fpath.t -> (unit, R.msg) result
   (** [publish_distrib p ~msg ~archive] publishes the distribution
       archive [archive] of package [p] with publication message [msg]. *)
 
   val publish_doc :
-    Pkg.t -> msg:string -> docdir:Fpath.t -> (unit, R.msg) Result.result
+    Pkg.t -> msg:string -> docdir:Fpath.t -> (unit, R.msg) result
   (** [publish_distrib p ~msg ~docdir] publishes the documentation
       directory [docdir] of package [p] with publication message [msg]. *)
 
   val publish_alt :
     Pkg.t -> kind:string -> msg:string -> archive:Fpath.t ->
-    (unit, R.msg) Result.result
+    (unit, R.msg) result
   (** [publish_alt p ~kind ~msg ~archive] publishes the
       artefact [kind] for distribution archive [archive] of package [p]
       with publication message [msg]. *)
