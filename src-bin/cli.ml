@@ -89,7 +89,7 @@ let delegate =
              for the lookup procedure."
   in
   let docv = "TOOL" in
-  let to_cmd = function None -> None | Some s -> Some (Cmd.v s) in
+  let to_cmd = function None -> None | Some s -> Some (Bos.Cmd.v s) in
   Term.(const to_cmd $
         Arg.(value & opt (some string) None & info ["delegate"] ~doc ~docv))
 
@@ -150,10 +150,10 @@ let setup =
 (* Verbosity propagation. *)
 
 let propagate_verbosity_to_pkg_file () = match Logs.level () with
-| None -> Cmd.(v "-q")
-| Some Logs.Info -> Cmd.(v "-v")
-| Some Logs.Debug -> Cmd.(v "-v" % "-v")
-| Some _ -> Cmd.empty
+| None -> Bos.Cmd.(v "-q")
+| Some Logs.Info -> Bos.Cmd.(v "-v")
+| Some Logs.Debug -> Bos.Cmd.(v "-v" % "-v")
+| Some _ -> Bos.Cmd.empty
 
 (* Error handling *)
 
