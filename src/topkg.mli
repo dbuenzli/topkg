@@ -124,9 +124,9 @@ module String : sig
   val parse_version : string -> (int * int * int * string option) option
   (** [parse_version] parses version strings of the form:
 {[
-"[v]major.minor[.patchlevel][+additional-info]"
+"[v]major.minor[.patchlevel][(+|~)additional-info]"
 ]}
-      into [(major, minor, patch, additiona_info)] tuples. *)
+      into [(major, minor, patch, (+|~)additional_info)] tuples. *)
 
   val drop_initial_v : string -> string
   (** [drop_initial_v s] drops a leading ['v'] or ['V'] from [s]. *)
