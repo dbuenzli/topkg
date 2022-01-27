@@ -49,7 +49,7 @@ module Dir = struct
       | [] -> List.rev acc
       | f :: fs ->
           let acc =
-            if not dotfiles && Topkg_string.is_prefix "." f then acc else
+            if not dotfiles && Topkg_string.is_prefix ~affix:"." f then acc else
             if rel then f :: acc else Topkg_fpath.append p f :: acc
           in
           loop acc fs

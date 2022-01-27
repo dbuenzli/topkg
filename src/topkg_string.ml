@@ -89,7 +89,9 @@ let cuts ?(empty = true) ~sep s =
 (* Version strings *)
 
 let parse_version v =
-  let version = if is_prefix "v" v then with_index_range ~first:1 v else v in
+  let version =
+    if is_prefix ~affix:"v" v then with_index_range ~first:1 v else v
+  in
   let cut_left_plus_or_tilde s =
     let cut = match String.index_opt s '+', String.index_opt s '~' with
     | None, None -> None

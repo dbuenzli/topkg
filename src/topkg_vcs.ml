@@ -57,7 +57,7 @@ let find_git () = Lazy.force git >>= function
     let git_dir = Topkg_cmd.(git % "rev-parse" % "--git-dir") in
     Topkg_os.Cmd.(run_out ~err:Topkg_os.File.null git_dir |> out_string)
     >>= function
-    | (dir, (_, `Exited 0)) -> Ok (Some (v `Git git dir))
+    | (dir, (_, `Exited 0)) -> Ok (Some (v `Git git ~dir))
     | _ -> Ok None
 
 let err_git cmd c = R.error_msgf "%a exited with %d" Topkg_cmd.dump cmd c
@@ -178,7 +178,7 @@ let find_hg () = Lazy.force hg >>= function
     let hg_root = Topkg_cmd.(hg % "root") in
     Topkg_os.Cmd.(run_out ~err:Topkg_os.File.null hg_root |> out_string)
     >>= function
-    | (dir, (_, `Exited 0)) -> Ok (Some (v `Hg hg dir))
+    | (dir, (_, `Exited 0)) -> Ok (Some (v `Hg hg ~dir))
     | _ -> Ok None
 
 let err_hg cmd c = R.error_msgf "%a exited with %d" Topkg_cmd.dump cmd c
@@ -302,7 +302,7 @@ let find ?dir () = match dir with
     Topkg_os.Dir.exists git_dir >>= function
     | true ->
         begin Lazy.force git >>= function
-        | (_, cmd) ->  Ok (Some (v `Git cmd git_dir))
+        | (_, cmd) ->  Ok (Some (v `Git cmd ~dir:git_dir))
         end
     | false ->
         let hg_dir = Topkg_fpath.append dir ".hg" in
@@ -310,7 +310,7 @@ let find ?dir () = match dir with
         | false -> Ok None
         | true ->
             Lazy.force hg >>= function
-            (_, cmd) -> Ok (Some (v `Hg cmd dir))
+            (_, cmd) -> Ok (Some (v `Hg cmd ~dir))
 
 let get ?dir () = find ?dir () >>= function
 | Some r -> Ok r
@@ -404,4 +404,3 @@ let delete_tag r tag = match r with
    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
   ---------------------------------------------------------------------------*)
-

@@ -92,7 +92,7 @@ let build_cmd pkg kind args =
 
 let test_cmd pkg name build_dir list tests args =
   let pkg = Topkg_pkg.with_name_and_build_dir ?name ?build_dir pkg in
-  Topkg_pkg.test pkg list tests args
+  Topkg_pkg.test pkg ~list ~tests ~args
 
 let clean_cmd pkg name build_dir =
   let pkg = Topkg_pkg.with_name_and_build_dir ?name ?build_dir pkg in
@@ -118,7 +118,7 @@ let incr_verb = function
 | Some Topkg_log.Info -> Some Topkg_log.Debug
 | v -> v
 
-let is_opt s = Topkg_string.(is_prefix "-" s || is_prefix "--" s)
+let is_opt s = Topkg_string.(is_prefix ~affix:"-" s || is_prefix ~affix:"--" s)
 
 let parse_cli_help_version_verbosity args =
   let is_help = function "-h" | "--help" | "-help" -> true | _ -> false in

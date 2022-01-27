@@ -32,7 +32,7 @@ let int =
   conv ~docv:"INT" parse Format.pp_print_int
 
 let string = conv ~docv:"STRING" (fun s -> Ok s) Format.pp_print_string
-let fpath = conv_with_docv string "PATH"
+let fpath = conv_with_docv string ~docv:"PATH"
 
 let some ?(none = "") conv =
   let parse s = match conv.parse s with
@@ -88,7 +88,7 @@ let _key ?docv ?(doc = "Undocumented") ?env name conv absent =
   let to_univ, of_univ = univ () in
   let conv = match docv with
   | None -> conv
-  | Some docv -> conv_with_docv conv docv
+  | Some docv -> conv_with_docv conv ~docv
   in
   let key = { id; name; conv; absent; env; to_univ; of_univ; doc } in
   key_index := Kset.add (Key.V key) !key_index;
@@ -580,7 +580,8 @@ module OCaml = struct
       | [] -> R.error_msgf "could not find SIZEOF_PTR in %s" file
       | l :: ls ->
           let l = Topkg_string.trim l in
-          let is_size_of_ptr = Topkg_string.is_prefix "#define SIZEOF_PTR" l in
+          let affix = "#define SIZEOF_PTR" in
+          let is_size_of_ptr = Topkg_string.is_prefix ~affix l in
           if not is_size_of_ptr then parse ls else
           match Topkg_string.cut ~rev:true ~sep:' ' l with
           | None -> err l

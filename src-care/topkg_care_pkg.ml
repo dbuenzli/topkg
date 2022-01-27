@@ -487,7 +487,7 @@ let lint_opam_deps errs (opam, _, exclude) =
       let exclude = String.Set.union exclude lint_deps_default_excludes in
       let keep id =
         not (String.Set.mem id exclude) &&
-        not (String.is_prefix "conf-" id)
+        not (String.is_prefix ~affix:"conf-" id)
       in
       let opam_deps = Topkg_care_opam.File.deps ~opts:true fields in
       let opam = String.Set.filter keep opam_deps in
