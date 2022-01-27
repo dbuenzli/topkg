@@ -1,8 +1,9 @@
 
 
-- Topkg.String.parse_version. Support for the new OCaml 
+- `Topkg.String.parse_version`. Support for the new OCaml 
   version string format (https://github.com/ocaml/ocaml/pull/9712)
-
+- Switch from `opam config var` to `opam var`.
+- Fix compilation for next version of cmdliner. 
 
 v1.0.4 2021-10-04 Zagreb
 -------------------------

@@ -97,7 +97,7 @@ let steal_opam_publish_github_auth () =
   OS.Cmd.exists opam >>= function
   | false -> Ok None
   | true ->
-      OS.Cmd.(run_out Cmd.(opam % "config" % "var" % "root") |> to_string)
+      OS.Cmd.(run_out Cmd.(opam % "var" % "root") |> to_string)
       >>= fun root -> Fpath.of_string root
       >>= fun root -> OS.Path.query Fpath.(root // publish / "$(user).token")
       >>= function
