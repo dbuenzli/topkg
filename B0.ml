@@ -26,7 +26,7 @@ let topkg =
     let open B0_meta in
     base_metadata
     |> add B0_opam.Meta.depends
-      [ "ocaml", {|>= "4.03.0"|};
+      [ "ocaml", {|>= "4.05.0"|};
         "ocamlfind", {|build & >= "1.6.1"|};
         "ocamlbuild", ""; ]
   in
@@ -39,7 +39,7 @@ let topkg_care =
     |> add B0_release.Meta.src_archive_name (B0_pack.basename topkg)
     |> tag B0_opam.tag
     |> add B0_opam.Meta.depends
-      [ "ocaml", {|>= "4.03.0"|};
+      [ "ocaml", {|>= "4.05.0"|};
         "ocamlfind", {|build & >= "1.6.1"|};
         "ocamlbuild", "";
         "topkg", {|= version|};
