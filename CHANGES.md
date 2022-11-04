@@ -1,3 +1,8 @@
+
+
+- Fix native dynlink detection on OCaml 5.0 and thus `cmxs` file
+  installation. Thanks to @kit-ty-kate for the report and the patch.
+
 v1.0.5 2022-01-28 La Forclaz (VS)
 ---------------------------------
 

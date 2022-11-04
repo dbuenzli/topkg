@@ -560,7 +560,13 @@ module OCaml = struct
     get_bool_stdlib_file_exists_discovery "native" c ~file ~on_error:false
 
   let native_dynlink c =
-    let file _ = "dynlink.cmxa" in
+    let file c =
+      let (major_ocaml_version, _minor, _patch, _extra) = version c in
+      if major_ocaml_version >= 5 then
+        "dynlink/dynlink.cmxa"
+      else
+        "dynlink.cmxa"
+    in
     get_bool_stdlib_file_exists_discovery "natdynlink" c ~file ~on_error:false
 
   let supports_shared_libraries c =
