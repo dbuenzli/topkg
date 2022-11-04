@@ -1,26 +1,6 @@
 opam-version: "2.0"
-synopsis: """The transitory OCaml software packager"""
-maintainer: ["Daniel Bünzli <daniel.buenzl i@erratique.ch>"]
-authors: ["The topkg programmers"]
-homepage: "https://erratique.ch/software/topkg"
-doc: "https://erratique.ch/software/topkg/doc"
-dev-repo: "git+https://erratique.ch/repos/topkg.git"
-bug-reports: "https://github.com/dbuenzli/topkg/issues"
-license: ["ISC"]
-tags: ["packaging" "ocamlbuild" "org:erratique"]
-depends: ["ocaml" {>= "4.05.0"}
-          "ocamlfind" {build & >= "1.6.1"}
-          "ocamlbuild"
-          "topkg" {= version}
-          "fmt"
-          "logs"
-          "bos" {>= "0.1.5"}
-          "cmdliner" {>= "1.0.0"}
-          "webbrowser"
-          "opam-format" {>= "2.0.0"}]
-build: [["ocaml" "pkg/pkg.ml" "build" "--pkg-name" name
-                                      "--dev-pkg" "%{dev}%"]]
-description: """
+synopsis: "The transitory OCaml software packager"
+description: """\
 Topkg is a packager for distributing OCaml software. It provides an
 API to describe the files a package installs in a given build
 configuration and to specify information about the package's
@@ -46,3 +26,24 @@ Topkg-care is distributed under the ISC license it depends on
 [webbrowser]: http://erratique.ch/software/webbrowser
 
 Home page: http://erratique.ch/software/topkg"""
+maintainer: "Daniel Bünzli <daniel.buenzl i@erratique.ch>"
+authors: "The topkg programmers"
+license: "ISC"
+tags: ["packaging" "ocamlbuild" "org:erratique"]
+homepage: "https://erratique.ch/software/topkg"
+doc: "https://erratique.ch/software/topkg/doc"
+bug-reports: "https://github.com/dbuenzli/topkg/issues"
+depends: [
+  "ocaml" {>= "4.05.0"}
+  "ocamlfind" {build & >= "1.6.1"}
+  "ocamlbuild"
+  "topkg" {= version}
+  "fmt"
+  "logs"
+  "bos" {>= "0.1.5"}
+  "cmdliner" {>= "1.0.0"}
+  "webbrowser"
+  "opam-format" {>= "2.0.0"}
+]
+build: ["ocaml" "pkg/pkg.ml" "build" "--pkg-name" name "--dev-pkg" "%{dev}%"]
+dev-repo: "git+https://erratique.ch/repos/topkg.git"
