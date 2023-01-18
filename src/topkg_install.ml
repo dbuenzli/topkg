@@ -60,22 +60,21 @@ let to_build ?header c os i =
   let ext_to_string = Topkg_fexts.ext_to_string ocaml_conf in
   let file_to_str (n, ext) = Topkg_string.strf "%s%s" n (ext_to_string ext) in
   let maybe_build = [ ".cmti"; ".cmt" ] in
-  let bin_drops = List.map ext_to_string (bin_drop_exts native) in
+  let bin_drops = bin_drop_exts native in
   let lib_drops =
-    List.map ext_to_string
-      (lib_drop_exts native native_dylink supports_shared_libraries)
+    lib_drop_exts native native_dylink supports_shared_libraries
   in
   let add acc m =
     if m.debugger_support && not debugger_support then acc else
-    let mv (targets, moves, tests as acc) src dst =
-      let src = file_to_str src in
+    let mv (targets, moves, tests as acc) ((_, src_ext) as src) dst =
       let drop = not m.force && match m.field with
-      | `Bin -> List.exists (Filename.check_suffix src) bin_drops
+      | `Bin -> List.exists (( = ) src_ext) bin_drops
       | `Lib | `Lib_root | `Stublibs ->
-          List.exists (Filename.check_suffix src) lib_drops
+          List.exists (( = ) src_ext) lib_drops
       | _ -> false
       in
       if drop then (targets, moves, tests) else
+      let src = file_to_str src in
       let dst = file_to_str dst in
       let maybe = List.exists (Filename.check_suffix src) maybe_build in
       let targets = if m.built && not maybe then src :: targets else targets in
@@ -275,7 +274,7 @@ let clib
     >>= fun contents ->
     let cobjs = parse_clib contents in
     let lib = Topkg_fpath.append lib_dir ("lib" ^ lib_base) in
-    let lib = libfield ~exts:Topkg_fexts.c_library lib ?dst:(lib_dst lib) in
+    let lib = libfield ~exts:Topkg_fexts.real_c_library lib ?dst:(lib_dst lib)in
     let dll = Topkg_fpath.append lib_dir ("dll" ^ lib_base) in
     let dll = dllfield ~exts:Topkg_fexts.c_dll_library dll in
     Ok (flatten @@ lib :: dll :: add_debugger_support cobjs)

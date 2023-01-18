@@ -4,12 +4,13 @@
    %%NAME%% %%VERSION%%
   ---------------------------------------------------------------------------*)
 
-type ext = [ `Ext of string | `Obj | `Lib | `Dll | `Exe ]
+type ext = [ `Ext of string | `Obj | `Real_clib | `Lib | `Dll | `Exe ]
 type t = ext list
 
 let interface = [ `Ext ".mli"; `Ext ".cmi"; `Ext ".cmti"; ]
 let cmx = [ `Ext ".cmx" ]
 let api = interface @ cmx
+let real_c_library = [ `Real_clib ]
 let c_library = [ `Lib ]
 let c_dll_library = [ `Dll ]
 let library = [` Ext ".cma"; `Ext ".cmxa"; `Ext ".cmxs" ] @ c_library
@@ -26,7 +27,7 @@ let ext_to_string c =
   function
   | `Ext s -> s
   | `Obj -> ext_obj
-  | `Lib -> ext_lib
+  | `Lib | `Real_clib -> ext_lib
   | `Dll -> ext_dll
   | `Exe -> ext_exe
 

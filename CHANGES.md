@@ -1,3 +1,8 @@
+
+
+- Fix install of C stubs in byte code only installations.
+  Thanks to @kit-ty-kate for the investigation (#140).
+
 v1.0.6 2022-11-04 Zagreb
 ------------------------
 

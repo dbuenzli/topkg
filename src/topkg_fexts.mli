@@ -10,13 +10,14 @@
 
 (** {1 File extensions} *)
 
-type ext = [`Ext of string | `Obj | `Lib | `Dll | `Exe]
+type ext = [`Ext of string | `Obj | `Real_clib | `Lib | `Dll | `Exe]
 
 type t = ext list
 
 val interface : ext list
 val api : ext list
 val cmx : ext list
+val real_c_library : ext list
 val c_library : ext list
 val c_dll_library : ext list
 val library : ext list
