@@ -1,4 +1,5 @@
-
+v1.0.7 2022-01-20 La Forclaz (VS)
+---------------------------------
 
 - Fix install of C stubs in byte code only installations.
   Thanks to @kit-ty-kate for the investigation (#140).
