@@ -1,43 +1,40 @@
 open B0_kit.V000
 open Result.Syntax
 
-(* Just to define the opam files and use .opam.pubish for now. *)
+(* Just to define the opam files and use .opam publish for now. *)
 
 (* Packs *)
 
 let base_metadata =
-  let open B0_meta in
-  empty
-  |> add authors ["The topkg programmers"]
-  |> add maintainers ["Daniel Bünzli <daniel.buenzl i@erratique.ch>"]
-  |> add homepage "https://erratique.ch/software/topkg"
-  |> add online_doc "https://erratique.ch/software/topkg/doc"
-  |> add licenses ["ISC"]
-  |> add repo "git+https://erratique.ch/repos/topkg.git"
-  |> add issues "https://github.com/dbuenzli/topkg/issues"
-  |> add description_tags ["packaging"; "ocamlbuild"; "org:erratique"]
-  |> tag B0_opam.tag
-  |> add B0_opam.Meta.build
+  B0_meta.empty
+  |> B0_meta.(add authors) ["The topkg programmers"]
+  |> B0_meta.(add maintainers) ["Daniel Bünzli <daniel.buenzl i@erratique.ch>"]
+  |> B0_meta.(add homepage) "https://erratique.ch/software/topkg"
+  |> B0_meta.(add online_doc) "https://erratique.ch/software/topkg/doc"
+  |> B0_meta.(add licenses) ["ISC"]
+  |> B0_meta.(add repo) "git+https://erratique.ch/repos/topkg.git"
+  |> B0_meta.(add issues) "https://github.com/dbuenzli/topkg/issues"
+  |> B0_meta.(add description_tags)
+     ["packaging"; "ocamlbuild"; "org:erratique"]
+  |> B0_meta.tag B0_opam.tag
+  |> B0_meta.add B0_opam.build
     {|[["ocaml" "pkg/pkg.ml" "build" "--pkg-name" name
                                       "--dev-pkg" "%{dev}%"]]|}
 let topkg =
   let meta =
-    let open B0_meta in
     base_metadata
-    |> add B0_opam.Meta.depends
+    |> B0_meta.add B0_opam.depends
       [ "ocaml", {|>= "4.05.0"|};
         "ocamlfind", {|build & >= "1.6.1"|};
         "ocamlbuild", ""; ]
   in
-  B0_pack.v "topkg" ~doc:"topkg package" ~meta ~locked:true []
+  B0_pack.make "topkg" ~doc:"topkg package" ~meta ~locked:true []
 
 let topkg_care =
   let meta =
-    let open B0_meta in
     base_metadata
-    |> add B0_release.Meta.src_archive_name (B0_pack.basename topkg)
-    |> tag B0_opam.tag
-    |> add B0_opam.Meta.depends
+    |> B0_meta.add B0_release.src_archive_name (B0_pack.basename topkg)
+    |> B0_meta.add B0_opam.depends
       [ "ocaml", {|>= "4.05.0"|};
         "ocamlfind", {|build & >= "1.6.1"|};
         "ocamlbuild", "";
@@ -50,4 +47,4 @@ let topkg_care =
         "opam-format", {|>= "2.0.0"|};
       ]
   in
-  B0_pack.v "topkg-care" ~doc:"topkg-care package" ~meta ~locked:true []
+  B0_pack.make "topkg-care" ~doc:"topkg-care package" ~meta ~locked:true []
