@@ -57,7 +57,8 @@ let submit pkg opam_pkg_dst =
   | true ->
       Logs.app (fun m -> m "Publishing %a" Topkg_care.Pp.path opam_file);
       Topkg_care.Pkg.publish_msg pkg
-      >>= fun msg -> Topkg_care.Opam.submit ~opam_file ~msg >>= fun () -> Ok 0
+      >>= fun msg -> Topkg_care.Opam.submit ~opam_file ~msg ()
+      >>= fun () -> Ok 0
 
 let field pkg field = match field with
 | None -> Logs.err (fun m -> m "Missing FIELD positional argument"); Ok 1

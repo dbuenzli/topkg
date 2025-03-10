@@ -25,7 +25,7 @@ let ensure_publish () =
       R.error_msgf "topkg needs at least opam-publish 2.0.0"
   | Some _ -> Ok ()
 
-let submit ?msg ~opam_file =
+let submit ?msg ~opam_file () =
   let msg = match msg with
   | None -> Ok (Cmd.empty)
   | Some msg ->

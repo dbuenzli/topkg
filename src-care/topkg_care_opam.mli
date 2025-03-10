@@ -13,7 +13,7 @@ open Bos_setup
 
 val cmd : Cmd.t
 val ensure_publish : unit -> (unit, R.msg) result
-val submit : ?msg:string -> opam_file:Fpath.t -> (unit, R.msg) result
+val submit : ?msg:string -> opam_file:Fpath.t -> unit -> (unit, R.msg) result
 val ocaml_base_packages : String.set
 
 module File : sig

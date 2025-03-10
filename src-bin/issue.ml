@@ -13,7 +13,7 @@ let get_issue_msg ~info = function
 | Some "" -> Ok None
 | Some msg -> Ok (Some (String.cuts ~sep:"\n" msg))
 | None ->
-    let is_msg s = not (String.is_prefix "#" s) in
+    let is_msg s = not (String.is_prefix ~affix:"#" s) in
     let rec rem_white_prefix = function
     | l :: ls when String.for_all Char.Ascii.is_white l -> rem_white_prefix ls
     | ls -> ls

@@ -68,7 +68,7 @@ let artefacts =
   let parser = function
   | "do" | "doc" -> Ok `Doc
   | "di" | "dis" | "dist" | "distr" | "distri" | "distrib" -> Ok `Distrib
-  | s when String.is_prefix alt_prefix s ->
+  | s when String.is_prefix ~affix:alt_prefix s ->
       begin match String.(with_range ~first:(length alt_prefix) s) with
       | "" -> Error ("`alt-' alternative artefact kind is missing")
       | kind -> Ok (`Alt kind)

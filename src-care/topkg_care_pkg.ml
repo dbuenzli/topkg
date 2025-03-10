@@ -505,7 +505,7 @@ let lint_opam_deps errs (opam, _, exclude) =
     >>= fun opam -> match exclude with
     | None ->
         Ok (lint_disabled @@
-            Fmt.(strf_like
+            Fmt.(str_like
                    stdout "opam dependency linting for %a" pp_path opam))
     | Some exclude ->
         let tags = Fpath.v "_tags" in
@@ -551,11 +551,11 @@ let lint ?(ignore_pkg = false) p ~dir todo =
     | 0 ->
         Logs.app (fun m -> m "%a lint@ %a %a"
                      pp_status `Ok pp_path dir
-                     (Fmt.styled_unit `Green "success") ()); 0
+                     Fmt.(styled `Green (any "success")) ()); 0
     | n ->
         Logs.app (fun m -> m "%a lint@ %a@ %a:@ %d@ errors."
                      pp_status `Fail pp_path dir
-                     (Fmt.styled_unit `Red "failure") () n); 1
+                     Fmt.(styled `Red (any "failure")) () n); 1
   in
   let p =
     if ignore_pkg then Ok (empty p) else
