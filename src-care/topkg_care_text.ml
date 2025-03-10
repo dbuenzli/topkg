@@ -158,9 +158,9 @@ module Pp = struct
   let name = Fmt.(styled `Bold string)
   let version = Fmt.(styled `Cyan string)
   let commit = Fmt.(styled `Yellow string)
-  let dirty = Fmt.(styled_unit `Red "dirty")
+  let dirty = Fmt.(styled `Red (any "dirty"))
   let path = Fmt.(styled `Bold Fpath.pp)
   let status ppf = function
-  | `Ok -> Fmt.(brackets @@ styled_unit `Green " OK ") ppf ()
-  | `Fail -> Fmt.(brackets @@ styled_unit `Red "FAIL") ppf ()
+  | `Ok -> Fmt.(brackets @@ styled `Green (any " OK ")) ppf ()
+  | `Fail -> Fmt.(brackets @@ styled `Red (any "FAIL")) ppf ()
 end

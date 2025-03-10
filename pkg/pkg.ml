@@ -42,6 +42,7 @@ let () =
       Ok [ Pkg.lib "pkg/META";
            Pkg.lib "topkg.opam" ~dst:"opam";
            Pkg.mllib ~api:["Topkg"] "src/topkg.mllib";
+           Pkg.doc "doc/index.mld" ~dst:"odoc-pages/index.mld";
            Pkg.test "test/test"; ]
   | "topkg-care" ->
       Ok [ Pkg.lib "topkg-care.opam" ~dst:"opam";

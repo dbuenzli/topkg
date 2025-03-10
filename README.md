@@ -1,6 +1,7 @@
 Topkg — The transitory OCaml software packager
--------------------------------------------------------------------------------
-%%VERSION%%
+==============================================
+
+**Warning** Topkg is in maintenance mode and should not longer be used.
 
 Topkg is a packager for distributing OCaml software. It provides an
 API to describe the files a package installs in a given build
@@ -26,7 +27,7 @@ Topkg-care is distributed under the ISC license it depends on
 [cmdliner]: http://erratique.ch/software/cmdliner
 [webbrowser]: http://erratique.ch/software/webbrowser
 
-Home page: http://erratique.ch/software/topkg  
+Home page: <http://erratique.ch/software/topkg>
 
 ## Installation
 
