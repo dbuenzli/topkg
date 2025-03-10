@@ -42,7 +42,7 @@ let () =
       Ok [ Pkg.lib "pkg/META";
            Pkg.lib "topkg.opam" ~dst:"opam";
            Pkg.mllib ~api:["Topkg"] "src/topkg.mllib";
-           Pkg.doc "doc/index.mld" ~dst:"odoc-pages/index.mld";
+           Pkg.doc "doc/index-topkg.mld" ~dst:"odoc-pages/index.mld";
            Pkg.test "test/test"; ]
   | "topkg-care" ->
       Ok [ Pkg.lib "topkg-care.opam" ~dst:"opam";
@@ -50,6 +50,7 @@ let () =
            Pkg.bin "src-bin/topkg_bin" ~dst:"topkg";
            Pkg.bin "src-bin/toy_github_delegate"
              ~dst:"toy-github-topkg-delegate";
+           Pkg.doc "doc/index-topkg-care.mld" ~dst:"odoc-pages/index.mld";
            Pkg.doc "test/unsupportive-delegate";
            Pkg.doc "test/echo-delegate" ]
   | other ->

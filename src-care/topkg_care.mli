@@ -13,9 +13,7 @@
     {b WARNING.} Do not use this API in your package description file, use
     only {!Topkg}. This API was not thoroughly designed, is not stable and
     may change even between minor versions of [topkg]. Use at your own
-    risk.
-
-    {e %%VERSION%% - {{:%%PKG_HOMEPAGE%% }homepage}} *)
+    risk. *)
 
 open Bos_setup
 

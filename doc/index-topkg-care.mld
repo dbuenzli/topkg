@@ -3,10 +3,6 @@
 {b Warning.} Topkg is in maintenance mode and should not longer be
 used.
 
-{1:library_topkg Library [topkg]}
-
-{!modules: Topkg}
-
 {1:library_topkg_care Library [topkg.care]}
 
 {!modules: Topkg_care }

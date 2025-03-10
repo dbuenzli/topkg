@@ -1,3 +1,9 @@
+v1.0.8 2025-03-10 La Forclaz (VS)
+---------------------------------
+
+- `topkg-care`: handle `fmt` and `cmdliner` deprecations.
+- Require OCaml >= 4.08
+
 v1.0.7 2022-01-20 La Forclaz (VS)
 ---------------------------------
 
