@@ -73,9 +73,9 @@ let until =
 let doc = "List commits to publish in the next distribution"
 let sdocs = Manpage.s_common_options
 let exits =
-  (Term.exit_info 0 ~doc:"changes have been detected.") ::
-  (Term.exit_info 1 ~doc:"no changes have been detected.") ::
-  Term.default_error_exits
+  (Cmd.Exit.info 0 ~doc:"changes have been detected.") ::
+  (Cmd.Exit.info 1 ~doc:"no changes have been detected.") ::
+  Cmd.Exit.defaults
 
 let man_xrefs = [ `Main ]
 let man =
@@ -84,8 +84,9 @@ let man =
         list of commits that define the changes for the next distribution." ]
 
 let cmd =
-  Term.(pure status $ Cli.setup $ Cli.pkg_file $ after $ until),
-  Term.info "status" ~doc ~sdocs ~exits ~man ~man_xrefs
+  Cmd.v (Cmd.info "status" ~doc ~sdocs ~exits ~man ~man_xrefs) @@
+  Term.(const status $ Cli.setup $ Cli.pkg_file $ after $ until)
+
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

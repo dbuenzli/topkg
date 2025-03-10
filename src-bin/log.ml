@@ -77,9 +77,9 @@ let doc = "Show and edit the package's change log"
 let sdocs = Manpage.s_common_options
 let exits = Cli.exits
 let envs =
-  [ Term.env_info "EDITOR" ~doc:"The editor used to edit the change log.";
-    Term.env_info "PAGER" ~doc:"The pager used to consult the change log.";
-    Term.env_info "TERM" ~doc:"See option $(b,--no-pager)." ]
+  [ Cmd.Env.info "EDITOR" ~doc:"The editor used to edit the change log.";
+    Cmd.Env.info "PAGER" ~doc:"The pager used to consult the change log.";
+    Cmd.Env.info "TERM" ~doc:"See option $(b,--no-pager)." ]
 
 let man_xrefs = [ `Main; `Cmd "publish"; `Cmd "tag"; `Cmd "opam"; ]
 let man =
@@ -122,9 +122,10 @@ etc.";
                         VCS.") ]
 
 let cmd =
-  Term.(pure log $ Cli.setup $ Cli.pkg_file $ Cli.change_log $ action $
-        last $ last_version $ no_pager),
-  Term.info "log" ~doc ~sdocs ~exits ~envs ~man
+  Cmd.v (Cmd.info "log" ~doc ~sdocs ~exits ~envs ~man) @@
+  Term.(const log $ Cli.setup $ Cli.pkg_file $ Cli.change_log $ action $
+        last $ last_version $ no_pager)
+
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

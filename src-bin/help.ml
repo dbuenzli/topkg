@@ -343,14 +343,16 @@ let help man_format topic commands = match topic with
 | Some topic ->
     let topics = "topics" :: commands @ (List.map fst pages) in
     let topics = List.sort compare topics in
-    let conv, _ = Cmdliner.Arg.enum (List.rev_map (fun s -> (s, s)) topics) in
+    let conv =
+      Cmdliner.Arg.(conv_parser (enum (List.rev_map (fun s -> (s, s)) topics)))
+    in
     match conv topic with
-    | `Error e -> `Error (false, e)
-    | `Ok t when List.mem t commands -> `Help (man_format, Some t)
-    | `Ok t when t = "topics" ->
+    | Error (`Msg e) -> `Error (false, e)
+    | Ok t when List.mem t commands -> `Help (man_format, Some t)
+    | Ok t when t = "topics" ->
         Fmt.pr "@[<v>%a@]@." Fmt.(list string) topics;
         `Ok 0
-    | `Ok t ->
+    | Ok t ->
         let man = try List.assoc t pages with Not_found -> assert false in
         Fmt.pr "%a" (Cmdliner.Manpage.print man_format) man;
         `Ok 0
@@ -373,8 +375,9 @@ let man =
     `P "Use `topics' as $(i,TOPIC) to get a list of topics." ]
 
 let cmd =
-  Term.(ret (const help $ Term.man_format $ topic $ Term.choice_names)),
-  Term.info "help" ~doc ~exits ~man ~man_xrefs
+  Cmd.v (Cmd.info "help" ~doc ~exits ~man ~man_xrefs) @@
+  Term.(ret (const help $ Arg.man_format $ topic $ Term.choice_names))
+
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

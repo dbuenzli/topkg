@@ -35,7 +35,7 @@ open Cmdliner
 
 let doc = "Clean the package's build"
 let sdocs = Manpage.s_common_options
-let exits = Term.exit_info 1 ~doc:"on clean failure." :: Cli.exits
+let exits = Cmd.Exit.info 1 ~doc:"on clean failure." :: Cli.exits
 let man_xrefs = [`Main; `Cmd "build"]
 let man =
   [ `S Manpage.s_synopsis;
@@ -46,8 +46,8 @@ let man =
     `Pre "ocaml ./pkg/pkg.ml clean";]
 
 let cmd =
-  Term.(pure clean $ Cli.setup $ Cli.pkg_file $ Cli.pkg_name $ Cli.build_dir),
-  Term.info "clean" ~doc ~sdocs ~exits ~man ~man_xrefs
+  Cmd.v (Cmd.info "clean" ~doc ~sdocs ~exits ~man ~man_xrefs) @@
+  Term.(const clean $ Cli.setup $ Cli.pkg_file $ Cli.pkg_name $ Cli.build_dir)
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

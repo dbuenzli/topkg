@@ -76,9 +76,10 @@ let man =
         $(b,topkg log -t) to check the extracted value." ]
 
 let cmd =
-  Term.(pure tag $ Cli.setup $ Cli.pkg_file $ Cli.change_log $
-        version $ commit $ force $ sign $ delete $ msg),
-  Term.info "tag" ~doc ~sdocs ~exits ~man ~man_xrefs
+  Cmd.v (Cmd.info "tag" ~doc ~sdocs ~exits ~man ~man_xrefs) @@
+  Term.(const tag $ Cli.setup $ Cli.pkg_file $ Cli.change_log $
+        version $ commit $ force $ sign $ delete $ msg)
+
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

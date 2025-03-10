@@ -37,8 +37,9 @@ topkg opam submit   # Submit it to OCaml's opam repository";
     `P "See topkg-release(7) for more information."; ]
 
 let cmd =
-  Term.(pure bistro $ Cli.setup),
-  Term.info "bistro" ~doc ~sdocs ~exits ~man ~man_xrefs
+  Cmd.v (Cmd.info "bistro" ~doc ~sdocs ~exits ~man ~man_xrefs) @@
+  Term.(const bistro $ Cli.setup)
+
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

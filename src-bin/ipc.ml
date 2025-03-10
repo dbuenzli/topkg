@@ -47,8 +47,9 @@ let man =
         undocumented." ]
 
 let cmd =
-  Term.(ret (pure ipc $ Cli.setup $ args)),
-  Term.info "ipc" ~doc ~sdocs ~exits ~man ~man_xrefs
+  Cmd.v (Cmd.info "ipc" ~doc ~sdocs ~exits ~man ~man_xrefs) @@
+  Term.(ret (const ipc $ Cli.setup $ args))
+
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

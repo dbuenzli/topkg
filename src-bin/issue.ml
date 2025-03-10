@@ -116,8 +116,8 @@ let doc = "Interact with the package's issue tracker"
 let sdocs = Manpage.s_common_options
 let exits = Cli.exits
 let envs =
-  [ Term.env_info "EDITOR" ~doc:"The editor used to edit issue messages.";
-    Term.env_info "TOPKG_DELEGATE" ~doc:"The package delegate to use, see
+  [ Cmd.Env.info "EDITOR" ~doc:"The editor used to edit issue messages.";
+    Cmd.Env.info "TOPKG_DELEGATE" ~doc:"The package delegate to use, see
     topkg-delegate(7)." ]
 
 let man_xrefs = [ `Main ]
@@ -141,10 +141,9 @@ let man =
         "Close issue $(i,ID).") ]
 
 let cmd =
-  Term.(pure issue $ Cli.setup $ Cli.pkg_file $ Cli.opam $ Cli.delegate $
-        action $ id $ msg),
-  Term.info "issue" ~doc ~sdocs ~exits ~envs ~man ~man_xrefs
-
+  Cmd.v (Cmd.info "issue" ~doc ~sdocs ~exits ~envs ~man ~man_xrefs) @@
+  Term.(const issue $ Cli.setup $ Cli.pkg_file $ Cli.opam $ Cli.delegate $
+        action $ id $ msg)
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

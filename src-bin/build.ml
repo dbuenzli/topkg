@@ -84,12 +84,12 @@ let debug =
              saved in build artefacts. This is equivalent to specify the
              same option after the -- token."
   in
-  let env = Arg.env_var "TOPKG_CONF_DEBUG" in
+  let env = Cmd.Env.info "TOPKG_CONF_DEBUG" in
   Arg.(value & opt (some bool) None  & info ["debug"] ~env ~doc ~docv:"BOOL")
 
 let doc = "Build the package"
 let sdocs = Manpage.s_common_options
-let exits = Term.exit_info 1 ~doc:"on build failure." :: Cli.exits
+let exits = Cmd.Exit.info 1 ~doc:"on build failure." :: Cli.exits
 let man_xrefs = [ `Main ]
 let man =
   [ `S Manpage.s_synopsis;
@@ -100,9 +100,9 @@ let man =
     `Pre "ocaml ./pkg/pkg.ml build $(i,BUILD_CONF)..."; ]
 
 let cmd =
-  Term.(pure build $ Cli.setup $ Cli.pkg_file $ pkg_name $ build_dir $
-        dry_run $ raws $ tests $ debug $ args),
-  Term.info "build" ~doc ~sdocs ~exits ~man ~man_xrefs
+  Cmd.v (Cmd.info "build" ~doc ~sdocs ~exits ~man ~man_xrefs) @@
+  Term.(const build $ Cli.setup $ Cli.pkg_file $ pkg_name $ build_dir $
+        dry_run $ raws $ tests $ debug $ args)
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

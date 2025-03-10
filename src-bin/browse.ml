@@ -63,7 +63,8 @@ let targets =
 let parse_target, max_target_len =
   let add (acc, len) (t, v, _) = (t, v) :: acc, max len (String.length t) in
   let index, max = List.fold_left add ([], 0) targets in
-  fst (Cmdliner.Arg.enum index) (* This gives us trie lookup *) , max
+  (* This gives us trie lookup *)
+  Cmdliner.Arg.conv_parser (Cmdliner.Arg.enum index), max
 
 (* opam field uris *)
 
@@ -79,15 +80,15 @@ let opam_field_uri opam field =
 let browse () pkg_file opam browser prefix background target =
   begin
     let uri = match parse_target target with
-    | `Ok (`Uri uri) -> Ok uri
-    | `Ok (`Opam field) ->
+    | Ok (`Uri uri) -> Ok uri
+    | Ok (`Opam field) ->
         let pkg = Topkg_care.Pkg.v ?opam pkg_file in
         Topkg_care.Pkg.opam pkg >>= fun opam -> opam_field_uri opam field
-    | `Error msg ->
+    | Error msg ->
         let uri_prefixes = ["http://"; "https://"; "file://"] in
         if List.exists (fun p -> String.is_prefix ~affix:p target) uri_prefixes
         then Ok target
-        else Error (`Msg msg)
+        else Error msg
     in
     uri
     >>= fun uri -> Webbrowser.reload ~background ~prefix ?browser uri
@@ -121,10 +122,11 @@ let man =
     `Blocks (List.(tl @@ rev @@ fold_left target [] targets)); ]
 
 let cmd =
-  Term.(pure browse $ Cli.setup $ Cli.pkg_file $ Cli.opam $
+  Cmd.v (Cmd.info "browse" ~doc ~sdocs ~exits ~man ~man_xrefs) @@
+  Term.(const browse $ Cli.setup $ Cli.pkg_file $ Cli.opam $
         Webbrowser_cli.browser $ Webbrowser_cli.prefix $
-        Webbrowser_cli.background $ target),
-  Term.info "browse" ~doc ~sdocs ~exits ~man ~man_xrefs
+        Webbrowser_cli.background $ target)
+
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

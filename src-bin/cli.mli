@@ -79,7 +79,7 @@ val warn_if_vcs_dirty : string -> (unit, R.msg) result
 val handle_error : (int, R.msg) result -> int
 (** [handle_error r] is [r]'s result or logs [r]'s error and returns [3]. *)
 
-val exits : Term.exit_info list
+val exits : Cmd.Exit.info list
 (** [exits] is are the exit codes common to all commands. *)
 
 (*---------------------------------------------------------------------------

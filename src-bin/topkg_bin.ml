@@ -34,14 +34,15 @@ let man =
     `P "Daniel C. Buenzli, $(i,http://erratique.ch)"; ]
 
 let main =
-  Term.(ret (const main $ Cli.setup)),
-  Term.info "topkg" ~version:"%%VERSION%%" ~doc ~sdocs ~exits ~man
+  let default = Term.(ret (const main $ Cli.setup)) in
+  let info = Cmd.info "topkg" ~version:"%%VERSION%%" ~doc ~sdocs ~exits ~man in
+  Cmd.group ~default info cmds
 
 let main () =
   Topkg.Private.disable_main ();
-  Term.(exit_status @@ eval_choice main cmds)
+  Cmd.eval' main
 
-let () = main ()
+let () = if !Sys.interactive then () else exit (main ())
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

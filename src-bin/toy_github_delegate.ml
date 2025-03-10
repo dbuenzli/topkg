@@ -260,14 +260,13 @@ let ipc_cmd =
     let doc = "IPC call arguments" in
     Arg.(value (pos_all string [] & info [] ~doc ~docv:"ARG"))
   in
-  let info = Term.info "ipc" ~doc ~man in
-  let t = Term.(const ipc_cmd $ args) in
-  (t, info)
+  Cmd.v (Cmd.info "ipc" ~doc ~man) @@
+  Term.(const ipc_cmd $ args)
 
 let main_cmd =
   let doc = "Topkg's toy GitHub delegate" in
   let envs =
-    [ Term.env_info "TOPKG_GITHUB_AUTH" ~doc:"GitHub authentication data, see
+    [ Cmd.Env.info "TOPKG_GITHUB_AUTH" ~doc:"GitHub authentication data, see
       the section GITHUB AUTHENTICATION for details." ]
   in
   let man_xrefs = [ `Tool "topkg" ] in
@@ -313,18 +312,20 @@ let main_cmd =
           password will be prompted twice on the command line by curl (ugh).")]
   in
   let version = "%%VERSION%%" in
-  Term.(ret (const main_cmd $ const ())),
-  Term.info "toy-github-topkg-delegate" ~version ~doc ~envs ~man ~man_xrefs
-
+  let default = Term.(ret (const main_cmd $ const ())) in
+  let info =
+    Cmd.info "toy-github-topkg-delegate" ~version ~doc ~envs ~man ~man_xrefs
+  in
+  Cmd.group ~default info [ipc_cmd]
 
 let main () =
   Topkg.Private.disable_main ();
-  match Term.eval_choice main_cmd [ipc_cmd] with
-  | `Error _ -> exit 3
-  | `Ok ret -> exit ret
-  | _ -> exit 0
+  match Cmd.eval_value main_cmd with
+  | Error _ -> 3
+  | Ok (`Ok ret) -> ret
+  | Ok _ -> 0
 
-let () = main ()
+let () = if !Sys.interactive then () else exit (main ())
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

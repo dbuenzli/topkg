@@ -132,11 +132,11 @@ let setup style_renderer log_level cwd =
 
 let setup =
   let style_renderer =
-    let env = Arg.env_var "TOPKG_COLOR" in
+    let env = Cmd.Env.info "TOPKG_COLOR" in
     Fmt_cli.style_renderer ~docs:Manpage.s_common_options ~env ()
   in
   let log_level =
-    let env = Arg.env_var "TOPKG_VERBOSITY" in
+    let env = Cmd.Env.info "TOPKG_VERBOSITY" in
     Logs_cli.level ~docs:Manpage.s_common_options ~env ()
   in
   let cwd =
@@ -173,8 +173,8 @@ let handle_error = function
 | Error _ as r -> Logs.on_error_msg ~use:(fun _ -> 3) r
 
 let exits =
-  Term.exit_info 3 ~doc:"on indiscriminate errors reported on stderr." ::
-  Term.default_exits
+  Cmd.Exit.info 3 ~doc:"on indiscriminate errors reported on stderr." ::
+  Cmd.Exit.defaults
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

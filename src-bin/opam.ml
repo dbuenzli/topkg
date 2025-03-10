@@ -165,7 +165,7 @@ let pkg_descr =
 let doc = "Interaction with opam and the OCaml opam repository"
 let sdocs = Manpage.s_common_options
 let envs =
-  [ Term.env_info "TOPKG_OPAM_PUBLISH" ~doc:"The $(b,opam-publish) tool to use
+  [ Cmd.Env.info "TOPKG_OPAM_PUBLISH" ~doc:"The $(b,opam-publish) tool to use
     to submit packages." ]
 
 let man_xrefs = [`Main; `Cmd "distrib" ]
@@ -191,15 +191,13 @@ let man =
         "outputs the field $(i,FIELD) of the package's opam file."); ]
 
 let cmd =
-  let info = Term.info "opam" ~doc ~sdocs ~envs ~man ~man_xrefs in
-  let t = Term.(pure opam $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $
-                Cli.dist_name $ Cli.dist_version $ Cli.dist_opam $
-                Cli.dist_uri $ Cli.dist_file $
-                opam_publish_file $ Cli.pkg_name $ pkg_version $ pkg_opam $
-                pkg_descr $ Cli.readme $ Cli.change_log $ Cli.publish_msg $
-                action $ field)
-  in
-  (t, info)
+  Cmd.v (Cmd.info "opam" ~doc ~sdocs ~envs ~man ~man_xrefs) @@
+  Term.(const opam $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $
+        Cli.dist_name $ Cli.dist_version $ Cli.dist_opam $
+        Cli.dist_uri $ Cli.dist_file $
+        opam_publish_file $ Cli.pkg_name $ pkg_version $ pkg_opam $
+        pkg_descr $ Cli.readme $ Cli.change_log $ Cli.publish_msg $
+        action $ field)
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

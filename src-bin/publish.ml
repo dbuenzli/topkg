@@ -67,21 +67,21 @@ open Cmdliner
 let artefacts =
   let alt_prefix = "alt-" in
   let parser = function
-  | "do" | "doc" -> `Ok `Doc
-  | "di" | "dis" | "dist" | "distr" | "distri" | "distrib" -> `Ok `Distrib
+  | "do" | "doc" -> Ok `Doc
+  | "di" | "dis" | "dist" | "distr" | "distri" | "distrib" -> Ok `Distrib
   | s when String.is_prefix alt_prefix s ->
       begin match String.(with_range ~first:(length alt_prefix) s) with
-      | "" -> `Error ("`alt-' alternative artefact kind is missing")
-      | kind -> `Ok (`Alt kind)
+      | "" -> Error ("`alt-' alternative artefact kind is missing")
+      | kind -> Ok (`Alt kind)
       end
-  | s -> `Error (strf "`%s' unknown publication artefact" s)
+  | s -> Error (strf "`%s' unknown publication artefact" s)
   in
   let printer ppf = function
   | `Doc -> Fmt.string ppf "doc"
   | `Distrib -> Fmt.string ppf "distrib"
   | `Alt a -> Fmt.pf ppf "alt-%s" a
   in
-  let artefact = parser, printer in
+  let artefact = Arg.conv' (parser, printer) in
   let doc = strf "The artefact to publish. $(docv) must be one of `doc`,
                   `distrib` or `alt-$(i,KIND)`. If absent, the set of
                   default publication artefacts is determined by the
@@ -93,7 +93,7 @@ let doc = "Publish package distribution archives and derived artefacts"
 let sdocs = Manpage.s_common_options
 let exits = Cli.exits
 let envs =
-  [ Term.env_info "TOPKG_DELEGATE" ~doc:"The package delegate to use, see
+  [ Cmd.Env.info "TOPKG_DELEGATE" ~doc:"The package delegate to use, see
     topkg-delegate(7)."; ]
 
 let man_xrefs = [`Main; `Cmd "distrib" ]
@@ -119,11 +119,12 @@ let man =
          more details."); ]
 
 let cmd =
-  Term.(pure publish $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $
+  Cmd.v (Cmd.info "publish" ~doc ~sdocs ~exits ~envs ~man ~man_xrefs) @@
+  Term.(const publish $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $
         Cli.dist_name $ Cli.dist_version $ Cli.dist_opam $
         Cli.delegate $ Cli.change_log $ Cli.dist_uri $ Cli.dist_file $
-        Cli.publish_msg $ artefacts),
-  Term.info "publish" ~doc ~sdocs ~exits ~envs ~man ~man_xrefs
+        Cli.publish_msg $ artefacts)
+
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

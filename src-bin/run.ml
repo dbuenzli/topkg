@@ -26,7 +26,7 @@ let exec_match exec p =
 let find_exec exec dir =
   let ambiguous l =
     R.error_msgf "Ambiguous matches for %a, could match any of %a"
-      pp_exec exec Fmt.(list ~sep:(unit ", ") Fpath.pp) l
+      pp_exec exec Fmt.(list ~sep:(any ", ") Fpath.pp) l
   in
   OS.Dir.exists dir >>= function
   | false -> R.error_msgf "Build directory %a does not exist" Fpath.pp dir
@@ -87,7 +87,7 @@ let exec =
 
 let doc = "Run built executables"
 let sdocs = Manpage.s_common_options
-let exits = Term.exit_info 1 ~doc:"on run non-zero status exit." :: Cli.exits
+let exits = Cmd.Exit.info 1 ~doc:"on run non-zero status exit." :: Cli.exits
 let man_xrefs = [ `Main ]
 let man =
   [ `S Manpage.s_synopsis;
@@ -100,8 +100,9 @@ let man =
         in the future." ]
 
 let cmd =
-  Term.(pure run $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $ exec $ args),
-  Term.info "run" ~doc ~sdocs ~exits ~man ~man_xrefs
+  Cmd.v (Cmd.info "run" ~doc ~sdocs ~exits ~man ~man_xrefs) @@
+  Term.(const run $ Cli.setup $ Cli.pkg_file $ Cli.build_dir $ exec $ args)
+
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

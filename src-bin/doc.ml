@@ -126,10 +126,10 @@ let man =
         installed, its ocamldoc stylesheet is used." ]
 
 let cmd =
-  Term.(pure doc_cmd $ Cli.setup $ Cli.pkg_file $ Cli.pkg_name $ Cli.build_dir
+  Cmd.v (Cmd.info "doc" ~doc ~sdocs ~exits ~man ~man_xrefs) @@
+  Term.(const doc_cmd $ Cli.setup $ Cli.pkg_file $ Cli.pkg_name $ Cli.build_dir
         $ dev $ reload_browser $ Webbrowser_cli.background $
-        Webbrowser_cli.browser),
-  Term.info "doc" ~doc ~sdocs ~exits ~man ~man_xrefs
+        Webbrowser_cli.browser)
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli

@@ -104,10 +104,10 @@ let doc = "Create a package distribution archive"
 let sdocs = Manpage.s_common_options
 let exits = Cli.exits
 let envs =
-  [ Term.env_info "TOPKG_BZIP2" ~doc:"The $(b,bzip2) tool to use to compress the
+  [ Cmd.Env.info "TOPKG_BZIP2" ~doc:"The $(b,bzip2) tool to use to compress the
     archive. Gets the archive on stdin and must output the result on
     standard out.";
-    Term.env_info "TOPKG_TAR" ~doc:"The $(b,tar) tool to use to unarchive a tbz
+    Cmd.Env.info "TOPKG_TAR" ~doc:"The $(b,tar) tool to use to unarchive a tbz
     archive (archive creation itself is handled by topkg)."; ]
 
 let man_xrefs = [ `Main ]
@@ -159,10 +159,11 @@ let man =
          the future, for example to correct bugs."); ]
 
 let cmd =
-  Term.(pure distrib $ Cli.setup $ Cli.pkg_file $ Cli.dist_opam $
+  Cmd.v (Cmd.info "distrib" ~doc ~sdocs ~exits ~envs ~man ~man_xrefs) @@
+  Term.(const distrib $ Cli.setup $ Cli.pkg_file $ Cli.dist_opam $
         Cli.build_dir $ Cli.dist_name $ Cli.dist_version $ keep_build_dir $
-        skip_lint $ skip_build $ skip_tests),
-  Term.info "distrib" ~doc ~sdocs ~exits ~envs ~man ~man_xrefs
+        skip_lint $ skip_build $ skip_tests)
+
 
 (*---------------------------------------------------------------------------
    Copyright (c) 2016 Daniel C. Bünzli
