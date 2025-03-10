@@ -86,7 +86,7 @@ let topkg_care =
         "ocamlfind", {|build & >= "1.6.1"|};
         "ocamlbuild", "";
         "topkg", {|= version|};
-        "fmt", {|>= 0.9.0};
+        "fmt", {|>= "0.9.0"|};
         "logs", "";
         "bos", {|>= "0.2.1"|};
         "cmdliner", {|>= "1.3.0"|};
