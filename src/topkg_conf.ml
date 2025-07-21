@@ -173,7 +173,7 @@ let debugger_support =
              by debuggers. This key should not be specified explicitly in \
              your package build instructions."
   in
-  key "debugger-support" bool ~env:"TOPKG_CONF_DEBUGGER_SUPPORT" ~absent:false
+  key "debugger-support" bool ~env:"TOPKG_CONF_DEBUGGER_SUPPORT" ~absent:true
     ~doc
 
 let profile =

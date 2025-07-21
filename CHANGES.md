@@ -1,3 +1,11 @@
+
+
+- Change the default of `Topkg.Conf.debugger_support` from `false` to
+  `true`. This enables the install of `.ml` and `.cmt` files by
+  default which is expected for a good experience on `ocaml.org`.  The
+  previous behaviour can be recovered by setting
+  `TOPKG_CONF_DEBUGGER_SUPPORT=false` in your environment.
+
 v1.0.8 2025-03-10 La Forclaz (VS)
 ---------------------------------
 
