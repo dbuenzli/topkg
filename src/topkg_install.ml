@@ -211,7 +211,8 @@ let mllib
       let dst = dst fname in
       let exts, debugger_support_exts = match List.mem m api with
       | true -> Topkg_fexts.api, Topkg_fexts.exts [".ml"; ".cmt"]
-      | false -> Topkg_fexts.cmx, Topkg_fexts.exts [".ml"; ".cmi"; ".cmt"; ]
+      | false ->
+          Topkg_fexts.cmx, Topkg_fexts.exts [".mli"; ".ml"; ".cmti"; ".cmt"]
       in
       field ?dst ~exts fpath ::
       debugger_support_field ?dst ~exts:debugger_support_exts fpath ::
