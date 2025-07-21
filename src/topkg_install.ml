@@ -212,7 +212,15 @@ let mllib
       let exts, debugger_support_exts = match List.mem m api with
       | true -> Topkg_fexts.api, Topkg_fexts.exts [".ml"; ".cmt"]
       | false ->
-          Topkg_fexts.cmx, Topkg_fexts.exts [".mli"; ".ml"; ".cmti"; ".cmt"]
+          let debugger_support_exts =
+            (* Hidden modules are not forced to have an mli this
+               information is not explicitely specified at the topkg
+               level so we look up the file system. *)
+            if Sys.file_exists (fpath ^ ".mli")
+            then [".mli"; ".ml"; ".cmti"; ".cmt"]
+            else [".ml"; ".cmt"]
+          in
+          Topkg_fexts.cmx, Topkg_fexts.exts debugger_support_exts
       in
       field ?dst ~exts fpath ::
       debugger_support_field ?dst ~exts:debugger_support_exts fpath ::

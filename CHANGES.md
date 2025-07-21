@@ -7,8 +7,9 @@
   `TOPKG_CONF_DEBUGGER_SUPPORT=false` in your environment (#143).
 
 - Fix install of hidden library modules when `Topkg.Conf.debugger_support` is
-  `true`: The `.cmi` files were being installed instead of the `.cmti`
-  and the `.mli` was missing (#143).
+  `true`. When the hidden module has an `.mli`, the `.cmi` files was being installed 
+  instead of the `.cmti` and the `.mli` was missing (#143). When the hidden module
+  had no `.mli` the installation would fail by requiring one.
 
 v1.0.8 2025-03-10 La Forclaz (VS)
 ---------------------------------
