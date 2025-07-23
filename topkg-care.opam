@@ -1,5 +1,4 @@
 opam-version: "2.0"
-name: "topkg-care"
 synopsis: "The transitory OCaml software packager"
 description: """\
 **Warning** Topkg is in maintenance mode and should not longer be used.
