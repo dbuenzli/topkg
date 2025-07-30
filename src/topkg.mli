@@ -799,7 +799,7 @@ module Conf : sig
   (** [debugger_support c] is the value of a predefined key
       [--debugger-support] that indicates if build artefacts needed
       for source level debuggers should be built and installed. If
-      absent the value is [false] or the value of the environment
+      absent the value is [true] or the value of the environment
       variable TOPKG_CONF_DEBUGGER_SUPPORT if specified. *)
 
   val profile : t -> bool
