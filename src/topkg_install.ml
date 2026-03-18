@@ -229,9 +229,11 @@ let mllib
     List.fold_left add_mod acc mllib_content
   in
   begin
-    Topkg_os.File.read mllib
-    >>= fun contents -> Ok (parse_mllib contents)
-    >>= fun mllib_content -> Ok (flatten @@ add_mods [library] mllib_content)
+    try
+      Topkg_os.File.read mllib
+      >>= fun contents -> Ok (parse_mllib contents)
+      >>= fun mllib_content -> Ok (flatten @@ add_mods [library] mllib_content)
+    with Sys_error e -> Error e
   end
   |> Topkg_log.on_error_msg ~use:(fun () -> [])
 
