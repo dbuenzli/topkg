@@ -233,7 +233,7 @@ let mllib
       Topkg_os.File.read mllib
       >>= fun contents -> Ok (parse_mllib contents)
       >>= fun mllib_content -> Ok (flatten @@ add_mods [library] mllib_content)
-    with Sys_error e -> Error e
+    with Sys_error e -> Error (`Msg e)
   end
   |> Topkg_log.on_error_msg ~use:(fun () -> [])
 
